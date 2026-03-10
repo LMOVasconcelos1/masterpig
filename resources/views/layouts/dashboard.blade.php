@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>MasterPig - @yield('title', 'Dashboard')</title>
     
     <!-- Fonts -->
@@ -55,41 +56,63 @@
                 </div>
 
                 <!-- Nav Items -->
-                <nav class="flex-1 px-3 py-4 space-y-1">
-                    <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-3 text-white transition-colors rounded-lg bg-primary-700/50 hover:bg-primary-700">
-                        <i class="fa-solid fa-gauge-high w-6 text-center"></i>
-                        <span x-show="sidebarOpen" class="ml-3 font-medium">Dashboard</span>
-                    </a>
+                <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                    <div x-data="{ open: {{ request()->routeIs('dashboard') ? 'true' : 'false' }} }">
+                        <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white group">
+                            <div class="flex items-center">
+                                <i class="fa-solid fa-leaf w-6 text-center"></i>
+                                <span x-show="sidebarOpen" class="ml-3 font-medium">Manejos</span>
+                            </div>
+                            <i x-show="sidebarOpen" class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
+                        </button>
 
-                    <div class="pt-4 pb-2">
-                        <span x-show="sidebarOpen" class="px-4 text-xs font-semibold tracking-wider text-primary-300 uppercase">Gerenciamento</span>
-                        <hr x-show="!sidebarOpen" class="mx-4 border-primary-700">
+                        <div x-show="open && sidebarOpen" x-cloak class="mt-1 ml-4 pl-4 border-l border-primary-600 space-y-1">
+                            <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('dashboard') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Plantel Reprodutivo
+                            </a>
+                        </div>
                     </div>
 
-                    <a href="#" class="flex items-center px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
-                        <i class="fa-solid fa-users w-6 text-center"></i>
-                        <span x-show="sidebarOpen" class="ml-3 font-medium">Usuários</span>
-                    </a>
-
-                    <a href="#" class="flex items-center px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
-                        <i class="fa-solid fa-box w-6 text-center"></i>
-                        <span x-show="sidebarOpen" class="ml-3 font-medium">Produtos</span>
-                    </a>
-
-                    <a href="#" class="flex items-center px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
-                        <i class="fa-solid fa-chart-line w-6 text-center"></i>
-                        <span x-show="sidebarOpen" class="ml-3 font-medium">Relatórios</span>
-                    </a>
-
-                    <div class="pt-4 pb-2">
-                        <span x-show="sidebarOpen" class="px-4 text-xs font-semibold tracking-wider text-primary-300 uppercase">Configurações</span>
-                        <hr x-show="!sidebarOpen" class="mx-4 border-primary-700">
+                    <!-- Utilitários Dropdown -->
+                    <div x-data="{ open: {{ request()->is('admin/*') ? 'true' : 'false' }} }">
+                        <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white group">
+                            <div class="flex items-center">
+                                <i class="fa-solid fa-screwdriver-wrench w-6 text-center"></i>
+                                <span x-show="sidebarOpen" class="ml-3 font-medium">Utilitários</span>
+                            </div>
+                            <i x-show="sidebarOpen" class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
+                        </button>
+                        
+                        <div x-show="open && sidebarOpen" x-cloak class="mt-1 ml-4 pl-4 border-l border-primary-600 space-y-1">
+                            <!-- Cadastros Sub-dropdown -->
+                            <div x-data="{ subOpen: {{ request()->is('admin/causas*') || request()->is('admin/racoes*') ? 'true' : 'false' }} }">
+                                <button @click="subOpen = !subOpen" class="flex items-center justify-between w-full px-4 py-2 text-sm text-primary-200 transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                    <span class="font-medium">Cadastros</span>
+                                    <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="subOpen ? 'rotate-180' : ''"></i>
+                                </button>
+                                
+                                <div x-show="subOpen" x-cloak class="mt-1 ml-2 space-y-1">
+                                    @if(Auth::user()->perfil === 'administrador')
+                                    <a href="{{ route('admin.causas.index') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.causas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                        <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                        Causas
+                                    </a>
+                                    <a href="{{ route('admin.racoes.index') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.racoes.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                        <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                        Rações
+                                    </a>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <a href="#" class="flex items-center px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                         <i class="fa-solid fa-gear w-6 text-center"></i>
                         <span x-show="sidebarOpen" class="ml-3 font-medium">Ajustes</span>
                     </a>
+                </nav>
                 </nav>
 
                 <!-- Sidebar Footer -->
@@ -128,12 +151,42 @@
 
                         <div class="h-8 border-l border-gray-200"></div>
 
-                        <div class="flex items-center space-x-3 cursor-pointer group">
-                            <div class="flex flex-col items-end">
-                                <span class="text-sm font-semibold text-gray-700 group-hover:text-primary-600 transition-colors">Admin User</span>
-                                <span class="text-xs text-gray-500">Super Admin</span>
+                        <!-- User Profile Dropdown -->
+                        <div class="relative" x-data="{ userMenuOpen: false }">
+                            <button @click="userMenuOpen = !userMenuOpen" class="flex items-center space-x-3 cursor-pointer group focus:outline-none">
+                                <div class="flex flex-col items-end">
+                                    <span class="text-sm font-semibold text-gray-700 group-hover:text-primary-600 transition-colors">{{ Auth::user()->nome }}</span>
+                                    <span class="text-xs text-gray-500 uppercase">{{ Auth::user()->perfil }}</span>
+                                </div>
+                                <img class="w-10 h-10 rounded-full border-2 border-primary-100 group-hover:border-primary-300 transition-all shadow-sm" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->nome) }}&background=3b82f6&color=fff" alt="User Avatar">
+                            </button>
+
+                            <!-- Dropdown Menu -->
+                            <div 
+                                x-show="userMenuOpen" 
+                                @click.away="userMenuOpen = false"
+                                x-transition:enter="transition ease-out duration-100"
+                                x-transition:enter-start="transform opacity-0 scale-95"
+                                x-transition:enter-end="transform opacity-100 scale-100"
+                                x-transition:leave="transition ease-in duration-75"
+                                x-transition:leave-start="transform opacity-100 scale-100"
+                                x-transition:leave-end="transform opacity-0 scale-95"
+                                class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 z-50 border border-gray-100"
+                                x-cloak
+                            >
+                                <a href="{{ route('profile.edit') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600 transition-colors">
+                                    <i class="fa-solid fa-user w-5"></i>
+                                    <span>Perfil</span>
+                                </a>
+                                <div class="my-1 border-t border-gray-100"></div>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors text-left">
+                                        <i class="fa-solid fa-right-from-bracket w-5"></i>
+                                        <span>Sair</span>
+                                    </button>
+                                </form>
                             </div>
-                            <img class="w-10 h-10 rounded-full border-2 border-primary-100 group-hover:border-primary-300 transition-all shadow-sm" src="https://ui-avatars.com/api/?name=Admin+User&background=3b82f6&color=fff" alt="User Avatar">
                         </div>
                     </div>
                 </div>
@@ -142,14 +195,12 @@
             <!-- Content Area -->
             <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
                 <div class="max-w-7xl mx-auto">
-                    <!-- Page Heading -->
-                    <div class="flex items-center justify-between mb-8">
-                        <h1 class="text-2xl font-bold text-gray-800">@yield('page_title', 'Dashboard')</h1>
-                        <button class="inline-flex items-center px-4 py-2 bg-primary-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary-700 focus:bg-primary-700 active:bg-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-md">
-                            <i class="fa-solid fa-download mr-2"></i>
-                            Gerar Relatório
-                        </button>
-                    </div>
+                    @php($pageTitle = trim($__env->yieldContent('page_title', '')))
+                    @if($pageTitle !== '')
+                        <div class="flex items-center justify-between mb-8">
+                            <h1 class="text-2xl font-bold text-gray-800">{{ $pageTitle }}</h1>
+                        </div>
+                    @endif
 
                     <!-- Content -->
                     @yield('content')
