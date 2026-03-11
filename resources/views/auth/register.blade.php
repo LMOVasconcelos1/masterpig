@@ -6,7 +6,7 @@
         </div>
 
         <div class="bg-white/90 backdrop-blur rounded-3xl shadow-lg border border-gray-100 p-6 transition-all duration-300 hover:shadow-xl hover:border-primary-200">
-            <form method="POST" action="{{ route('register', absolute: false) }}" class="space-y-4">
+            <form method="POST" action="{{ route('register') }}" class="space-y-4">
                 @csrf
                 <div>
                     <label for="cnpj" class="block text-sm font-medium text-gray-700">CNPJ</label>
@@ -62,7 +62,7 @@
                 </div>
 
                 <div class="flex items-center justify-between pt-2">
-                    <a class="text-sm text-primary-600 hover:text-primary-700 font-semibold" href="{{ route('login', absolute: false) }}">
+                    <a class="text-sm text-primary-600 hover:text-primary-700 font-semibold" href="{{ route('login') }}">
                         Já tem conta? Entrar
                     </a>
                     <button type="submit" class="inline-flex items-center justify-center rounded-2xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-transform duration-200 hover:scale-[1.02]">

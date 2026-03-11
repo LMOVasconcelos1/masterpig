@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Support\TenantDatabase;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +28,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'cnpj' => ['nullable', 'string'],
+            'cnpj' => ['required', 'string'],
             'identificador' => ['required', 'string'],
             'senha' => ['required', 'string'],
         ];
@@ -42,6 +43,22 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
+        $cnpjDigits = TenantDatabase::normalizeCnpj($this->input('cnpj'));
+        if (! preg_match('/^\d{14}$/', $cnpjDigits)) {
+            throw ValidationException::withMessages([
+                'cnpj' => 'CNPJ inválido.',
+            ]);
+        }
+
+        $tenantDb = TenantDatabase::databaseNameFromCnpj($cnpjDigits);
+        $tenantUser = TenantDatabase::usernameFromCnpj($cnpjDigits);
+        TenantDatabase::ensureDatabaseExists($tenantDb, $tenantUser);
+        TenantDatabase::applyDatabase($tenantDb, $tenantUser);
+
+        $this->session()->put('tenant_cnpj', $cnpjDigits);
+        $this->session()->put('tenant_db', $tenantDb);
+        $this->session()->put('tenant_user', $tenantUser);
+
         $identificador = $this->input('identificador');
         $senha = $this->input('senha');
 
@@ -50,7 +67,7 @@ class LoginRequest extends FormRequest
 
         $credentials = [
             $loginField => $identificador,
-            'password' => $senha
+            'password' => $senha,
         ];
 
         if (! Auth::attempt($credentials, $this->boolean('remember'))) {
@@ -92,6 +109,8 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->input('identificador')).'|'.$this->ip());
+        $cnpj = TenantDatabase::normalizeCnpj($this->input('cnpj'));
+
+        return Str::transliterate(Str::lower($cnpj.'|'.$this->input('identificador')).'|'.$this->ip());
     }
 }

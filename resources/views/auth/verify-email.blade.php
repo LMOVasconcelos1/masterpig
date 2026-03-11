@@ -24,14 +24,14 @@
             </div>
 
             <div class="mt-2 flex items-center justify-between">
-                <form method="POST" action="{{ route('verification.send', absolute: false) }}">
+                <form method="POST" action="{{ route('verification.send') }}">
                     @csrf
                     <button type="submit" class="inline-flex items-center justify-center rounded-2xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-transform duration-200 hover:scale-[1.02]">
                         Reenviar link de verificação
                     </button>
                 </form>
 
-                <form method="POST" action="{{ route('logout', absolute: false) }}">
+                <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="inline-flex items-center justify-center rounded-2xl border border-primary-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-primary-700 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-transform duration-200 hover:scale-[1.02]">
                         Sair

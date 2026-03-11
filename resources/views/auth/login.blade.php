@@ -15,7 +15,7 @@
         <div class="bg-white/90 backdrop-blur rounded-3xl shadow-lg border border-gray-100 p-6 transition-all duration-300 hover:shadow-xl hover:border-primary-200">
             <x-auth-session-status class="mb-4" :status="session('status')" />
 
-            <form id="login-form" method="POST" action="{{ route('login', absolute: false) }}" class="space-y-4">
+            <form id="login-form" method="POST" action="{{ route('login') }}" class="space-y-4">
                 @csrf
 
                 <div>
@@ -45,7 +45,7 @@
                         <span class="ms-2 text-sm text-gray-600">Lembrar-me</span>
                     </label>
                     @if (Route::has('password.request'))
-                        <a class="text-sm text-primary-600 hover:text-primary-700 font-semibold" href="{{ route('password.request', absolute: false) }}">
+                        <a class="text-sm text-primary-600 hover:text-primary-700 font-semibold" href="{{ route('password.request') }}">
                             Esqueci minha senha
                         </a>
                     @endif
@@ -59,7 +59,7 @@
                 </div>
 
                 <div class="pt-3 text-center">
-                    <a href="{{ route('register', absolute: false) }}" class="inline-flex items-center justify-center w-full rounded-2xl border border-primary-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-primary-700 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-transform duration-200 hover:scale-[1.02]">
+                    <a href="{{ route('register') }}" class="inline-flex items-center justify-center w-full rounded-2xl border border-primary-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-primary-700 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-transform duration-200 hover:scale-[1.02]">
                         <i class="fa-solid fa-user-plus mr-2"></i>
                         Se inscrever
                     </a>
@@ -69,20 +69,23 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            try {
-                var cnpjInput = document.getElementById('cnpj');
-                var saved = localStorage.getItem('masterpig:cnpj');
-                if (cnpjInput && saved) cnpjInput.value = saved;
-                var form = document.getElementById('login-form');
-                if (form) {
-                    form.addEventListener('submit', function () {
-                        if (cnpjInput && cnpjInput.value.trim() !== '') {
-                            localStorage.setItem('masterpig:cnpj', cnpjInput.value.trim());
-                        }
-                    });
-                }
-            } catch (e) {}
-        });
+        (() => {
+            const key = 'mp_cnpj';
+            const input = document.getElementById('cnpj');
+            const form = document.getElementById('login-form');
+            if (!input || !form) return;
+
+            const normalize = (v) => (v || '').toString().replace(/\D+/g, '');
+
+            const cached = normalize(localStorage.getItem(key));
+            if (!input.value && cached) input.value = cached;
+
+            const persist = () => {
+                localStorage.setItem(key, normalize(input.value));
+            };
+
+            input.addEventListener('input', persist);
+            form.addEventListener('submit', persist);
+        })();
     </script>
 </x-guest-layout>

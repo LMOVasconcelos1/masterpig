@@ -28,7 +28,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        URL::forceRootUrl(config('app.url'));
+        $appUrl = (string) (config('masterpig.app_url') ?: config('app.url'));
+        URL::forceRootUrl($appUrl);
+        $scheme = parse_url($appUrl, PHP_URL_SCHEME);
+        if (is_string($scheme) && $scheme !== '') {
+            URL::forceScheme($scheme);
+        }
 
         VerifyEmail::toMailUsing(function ($notifiable, string $url) {
             $logoPath = file_exists(public_path('logoSemPalavra.png'))
