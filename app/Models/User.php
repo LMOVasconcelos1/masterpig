@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -45,6 +44,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'usuario',
         'perfil',
         'senha',
+        'foto_perfil',
     ];
 
     /**
@@ -130,5 +130,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getRememberTokenName()
     {
         return 'lembrete_token';
+    }
+
+    public function getFotoPerfilUrlAttribute(): ?string
+    {
+        $path = (string) ($this->foto_perfil ?? '');
+
+        if ($path === '') {
+            return null;
+        }
+
+        return route('profile.photo', ['path' => $path], false);
     }
 }

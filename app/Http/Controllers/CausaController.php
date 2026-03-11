@@ -43,15 +43,42 @@ class CausaController extends Controller
         $validated = $request->validate([
             'codigo' => ['required', 'string', 'max:50', 'unique:causa,codigo'],
             'nome' => ['required', 'string', 'max:255'],
-            'situacao' => ['nullable'],
+            'situacao' => ['nullable', 'boolean'],
             'grupo_causa_id' => ['required', 'exists:grupo_causa,id'],
         ]);
 
-        $validated['situacao'] = $request->has('situacao');
+        $validated['situacao'] = $request->boolean('situacao');
 
         Causa::create($validated);
 
         return redirect()->route('admin.causas.index')->with('success', 'Causa cadastrada com sucesso!');
+    }
+
+    public function update(Request $request, Causa $causa)
+    {
+        $validated = $request->validate([
+            'codigo' => ['required', 'string', 'max:50', Rule::unique('causa', 'codigo')->ignore($causa->id)],
+            'nome' => ['required', 'string', 'max:255'],
+            'situacao' => ['nullable', 'boolean'],
+            'grupo_causa_id' => ['required', 'exists:grupo_causa,id'],
+        ]);
+
+        $validated['situacao'] = $request->boolean('situacao');
+
+        $causa->update($validated);
+
+        return redirect()->route('admin.causas.index')->with('success', 'Causa atualizada com sucesso!');
+    }
+
+    public function destroy(Causa $causa)
+    {
+        try {
+            $causa->delete();
+        } catch (\Throwable $e) {
+            return redirect()->route('admin.causas.index')->with('error', 'Não foi possível excluir a causa. Verifique se ela está sendo utilizada.');
+        }
+
+        return redirect()->route('admin.causas.index')->with('success', 'Causa excluída com sucesso!');
     }
 
     /**

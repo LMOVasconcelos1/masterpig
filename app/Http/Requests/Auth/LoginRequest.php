@@ -27,6 +27,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'cnpj' => ['nullable', 'string'],
             'identificador' => ['required', 'string'],
             'senha' => ['required', 'string'],
         ];

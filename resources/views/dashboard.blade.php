@@ -92,7 +92,7 @@
                 </div>
             </div>
             <div class="p-3 bg-primary-50 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
-                <i class="fa-solid fa-venus text-2xl"></i>
+                <i class="fa-solid fa-piggy-bank text-2xl"></i>
             </div>
         </div>
         <div class="mt-4 flex items-center justify-between text-sm text-gray-500">
@@ -127,7 +127,7 @@
                 </div>
             </div>
             <div class="p-3 bg-primary-50 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
-                <i class="fa-solid fa-venus-double text-2xl"></i>
+                <i class="fa-solid fa-piggy-bank text-2xl"></i>
             </div>
         </div>
         <div class="mt-4 flex items-center justify-between text-sm text-gray-500">
@@ -162,7 +162,7 @@
                 </div>
             </div>
             <div class="p-3 bg-primary-50 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
-                <i class="fa-solid fa-mars text-2xl"></i>
+                <i class="fa-solid fa-piggy-bank text-2xl"></i>
             </div>
         </div>
         <div class="mt-4 flex items-center justify-between text-sm text-gray-500">
@@ -245,8 +245,11 @@
         mov: 'compra',
         compraFemeasTipo: 'leitoa',
         openNovo: false,
+        openNovoTab: 'principal',
+        nascimentoAuto: true,
+        lastAutoNascimento: '',
+        syncingNascimento: false,
         novoSubtipo: null,
-        filtroCompraFemeas: '',
         lancamentosLoading: false,
         lancamentosError: '',
         comprasFemeas: [],
@@ -377,7 +380,27 @@
             const dd = String(d.getDate()).padStart(2, '0');
             return `${dd}/${mm}/${yyyy}`;
         },
-        init() {},
+        init() {
+            this.$watch('dataCompra', () => this.syncNascimentoFromCiclos());
+            this.$watch('ciclosAteCompra', () => this.syncNascimentoFromCiclos());
+            this.$watch('compraFemeasTipo', () => this.syncNascimentoFromCiclos());
+        },
+        syncNascimentoFromCiclos() {
+            if (!(this.item === 'femeas' && this.mov === 'compra' && this.compraFemeasTipo === 'matriz_vazia')) return;
+            const sugestao = this.sugestaoNascimento;
+            if (!sugestao) return;
+
+            const current = String(this.dataNascimento || '').trim();
+            const shouldAuto = this.nascimentoAuto || current === '' || current === this.lastAutoNascimento;
+
+            if (!shouldAuto) return;
+
+            this.syncingNascimento = true;
+            this.dataNascimento = sugestao;
+            this.lastAutoNascimento = sugestao;
+            this.nascimentoAuto = true;
+            this.syncingNascimento = false;
+        },
         ensureRacas() {
             if (this.racasLoaded) return;
             this.racasLoaded = true;
@@ -462,10 +485,7 @@
             this.lancamentosLoading = true;
             this.lancamentosError = '';
 
-            const params = new URLSearchParams();
-            if (this.filtroCompraFemeas) params.set('tipo_compra', this.filtroCompraFemeas);
-
-            fetch(`/api/plantel/femeas/compras?${params.toString()}`, { headers: { 'Accept': 'application/json' } })
+            fetch('/api/plantel/femeas/compras', { headers: { 'Accept': 'application/json' } })
                 .then(r => r.json())
                 .then(data => {
                     this.comprasFemeas = data.items ?? [];
@@ -622,6 +642,9 @@
             return `${Math.floor(n)}`;
         },
         resetForm() {
+            this.openNovoTab = 'principal';
+            this.nascimentoAuto = true;
+            this.lastAutoNascimento = '';
             this.racaId = '';
             this.fornecedorId = '';
             this.idPrimaria = '';
@@ -1097,11 +1120,11 @@
                 <div class="bg-white border border-gray-100 rounded-2xl p-4">
                     <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">1) Item</div>
                     <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <button type="button" @click="item = 'femeas'; mov = 'compra'; compraFemeasTipo = 'leitoa'; filtroCompraFemeas = ''; loadComprasFemeas()" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="item === 'femeas' ? 'border-primary-200 bg-primary-50' : 'border-gray-100 bg-white hover:border-gray-200'">
+                        <button type="button" @click="item = 'femeas'; mov = 'compra'; compraFemeasTipo = 'leitoa'; loadComprasFemeas()" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="item === 'femeas' ? 'border-primary-200 bg-primary-50' : 'border-gray-100 bg-white hover:border-gray-200'">
                             <div class="flex items-center justify-between">
                                 <div class="text-sm font-semibold text-gray-900">Fêmeas</div>
                                 <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="item === 'femeas' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'">
-                                    <i class="fa-solid fa-venus"></i>
+                                    <i class="fa-solid fa-piggy-bank"></i>
                                 </div>
                             </div>
                             <div class="mt-2 text-xs text-gray-500">Matrizes / fêmeas do plantel.</div>
@@ -1110,7 +1133,7 @@
                             <div class="flex items-center justify-between">
                                 <div class="text-sm font-semibold text-gray-900">Machos</div>
                                 <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="item === 'machos' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'">
-                                    <i class="fa-solid fa-mars"></i>
+                                    <i class="fa-solid fa-piggy-bank"></i>
                                 </div>
                             </div>
                             <div class="mt-2 text-xs text-gray-500">Reprodutores / machos do plantel.</div>
@@ -1183,60 +1206,62 @@
                 <div class="flex items-center gap-2">
                     <template x-if="item === 'femeas' && mov === 'compra'">
                         <div class="flex items-center gap-2">
-                            <button type="button" @click="openNovoForm('leitoa')" class="inline-flex items-center rounded-xl border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                                <i class="fa-solid fa-plus mr-2 text-primary-600"></i>
+                            <button type="button" @click="openNovoForm('leitoa')" class="inline-flex items-center gap-2 rounded-full border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-pink-50 text-pink-600">
+                                    <i class="fa-solid fa-piggy-bank"></i>
+                                </span>
                                 Leitoa
                             </button>
-                            <button type="button" @click="openNovoForm('matriz_vazia')" class="inline-flex items-center rounded-xl border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                                <i class="fa-solid fa-plus mr-2 text-primary-600"></i>
+                            <button type="button" @click="openNovoForm('matriz_vazia')" class="inline-flex items-center gap-2 rounded-full border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-sky-50 text-sky-600">
+                                    <i class="fa-solid fa-piggy-bank"></i>
+                                </span>
                                 Matriz vazia
                             </button>
-                            <button type="button" @click="openNovoForm('matriz_gestante')" class="inline-flex items-center rounded-xl border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                                <i class="fa-solid fa-plus mr-2 text-primary-600"></i>
+                            <button type="button" @click="openNovoForm('matriz_gestante')" class="inline-flex items-center gap-2 rounded-full border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-violet-50 text-violet-600">
+                                    <i class="fa-solid fa-egg"></i>
+                                </span>
                                 Matriz gestante
                             </button>
                         </div>
                     </template>
+                    <template x-if="item === 'machos' && mov === 'compra'">
+                        <button type="button" @click="openNovoForm()" class="inline-flex items-center gap-2 rounded-full border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary-50 text-primary-600">
+                                <i class="fa-solid fa-piggy-bank"></i>
+                            </span>
+                            Macho
+                        </button>
+                    </template>
                     <template x-if="item === 'femeas' && mov === 'morte'">
-                        <button type="button" @click="openNovoMorte()" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                            <i class="fa-solid fa-plus mr-2"></i>
-                            Registrar morte
+                        <button type="button" @click="openNovoMorte()" title="Registrar morte" class="inline-flex items-center justify-center w-11 h-11 rounded-2xl border border-transparent shadow-sm bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            <i class="fa-solid fa-skull-crossbones"></i>
                         </button>
                     </template>
                     <template x-if="item === 'machos' && mov === 'morte'">
-                        <button type="button" @click="openNovoMorteMacho()" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-red-600 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                            <i class="fa-solid fa-plus mr-2"></i>
-                            Registrar morte
+                        <button type="button" @click="openNovoMorteMacho()" title="Registrar morte" class="inline-flex items-center justify-center w-11 h-11 rounded-2xl border border-transparent shadow-sm bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            <i class="fa-solid fa-skull-crossbones"></i>
                         </button>
                     </template>
                     <template x-if="item === 'femeas' && mov === 'descarte'">
-                        <button type="button" @click="openNovoDescarte()" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-sm font-semibold text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">
-                            <i class="fa-solid fa-plus mr-2"></i>
-                            Registrar descarte
+                        <button type="button" @click="openNovoDescarte()" title="Registrar descarte" class="inline-flex items-center justify-center w-11 h-11 rounded-2xl border border-transparent shadow-sm bg-amber-600 text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">
+                            <i class="fa-solid fa-ban"></i>
                         </button>
                     </template>
                     <template x-if="item === 'machos' && mov === 'descarte'">
-                        <button type="button" @click="openNovoDescarteMacho()" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-amber-600 text-sm font-semibold text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">
-                            <i class="fa-solid fa-plus mr-2"></i>
-                            Registrar descarte
+                        <button type="button" @click="openNovoDescarteMacho()" title="Registrar descarte" class="inline-flex items-center justify-center w-11 h-11 rounded-2xl border border-transparent shadow-sm bg-amber-600 text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500">
+                            <i class="fa-solid fa-ban"></i>
                         </button>
                     </template>
                     <template x-if="item === 'femeas' && mov === 'venda'">
-                        <button type="button" @click="openNovoVenda()" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-emerald-600 text-sm font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
-                            <i class="fa-solid fa-plus mr-2"></i>
-                            Registrar venda
+                        <button type="button" @click="openNovoVenda()" title="Registrar venda" class="inline-flex items-center justify-center w-11 h-11 rounded-2xl border border-transparent shadow-sm bg-emerald-600 text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+                            <i class="fa-solid fa-hand-holding-dollar"></i>
                         </button>
                     </template>
                     <template x-if="item === 'machos' && mov === 'venda'">
-                        <button type="button" @click="openNovoVendaMacho()" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-emerald-600 text-sm font-semibold text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
-                            <i class="fa-solid fa-plus mr-2"></i>
-                            Registrar venda
-                        </button>
-                    </template>
-                    <template x-if="!(item === 'femeas' && mov === 'compra') && !(item === 'femeas' && mov === 'morte') && !(item === 'femeas' && mov === 'descarte') && !(item === 'femeas' && mov === 'venda')">
-                        <button type="button" @click="openNovoForm()" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                            <i class="fa-solid fa-plus mr-2"></i>
-                            Novo
+                        <button type="button" @click="openNovoVendaMacho()" title="Registrar venda" class="inline-flex items-center justify-center w-11 h-11 rounded-2xl border border-transparent shadow-sm bg-emerald-600 text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
+                            <i class="fa-solid fa-hand-holding-dollar"></i>
                         </button>
                     </template>
                 </div>
@@ -1247,20 +1272,6 @@
                         <div class="mb-4 flex items-center justify-between">
                             <div class="flex items-center gap-2">
                                 <div class="text-sm font-semibold text-gray-700">Listagem</div>
-                                <div class="hidden sm:flex items-center gap-1">
-                                    <button type="button" @click="filtroCompraFemeas = ''; loadComprasFemeas()" class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors" :class="filtroCompraFemeas === '' ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'">
-                                        Todas
-                                    </button>
-                                    <button type="button" @click="filtroCompraFemeas = 'leitoa'; loadComprasFemeas()" class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors" :class="filtroCompraFemeas === 'leitoa' ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'">
-                                        Leitoa
-                                    </button>
-                                    <button type="button" @click="filtroCompraFemeas = 'matriz_vazia'; loadComprasFemeas()" class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors" :class="filtroCompraFemeas === 'matriz_vazia' ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'">
-                                        Matriz vazia
-                                    </button>
-                                    <button type="button" @click="filtroCompraFemeas = 'matriz_gestante'; loadComprasFemeas()" class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors" :class="filtroCompraFemeas === 'matriz_gestante' ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'">
-                                        Matriz gestante
-                                    </button>
-                                </div>
                             </div>
                             <div class="text-xs text-gray-500" x-show="lancamentosLoading">Carregando...</div>
                         </div>
@@ -1576,19 +1587,35 @@
             <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                 <div x-show="openNovo" @click="openNovo = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                <div x-show="openNovo" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-gray-100">
+                <div x-show="openNovo" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-flex flex-col align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-gray-100 max-h-[85vh]">
                     <div class="bg-gradient-to-r from-primary-700 to-primary-600 px-6 py-5">
                         <div class="flex items-start justify-between">
                             <div class="text-left">
                                 <h3 class="text-lg leading-6 font-semibold text-white" x-text="(item === 'femeas' && mov === 'morte') ? 'Registrar morte' : ((item === 'femeas' && mov === 'descarte') ? 'Registrar descarte' : ((item === 'femeas' && mov === 'venda') ? 'Registrar venda' : modalTitle))"></h3>
-                                <p class="mt-1 text-xs text-primary-100">Informe os campos necessários para eu finalizar o formulário e o SQL.</p>
+                                <p class="mt-1 text-xs text-primary-100" x-text="(item === 'femeas' && mov === 'compra' && compraFemeasTipo === 'leitoa') ? 'Cadastro de leitoa: use para registrar a compra de uma fêmea jovem que ainda vai entrar no ciclo reprodutivo. Informe identificação, datas e fornecedor.' : ((item === 'femeas' && mov === 'compra' && compraFemeasTipo === 'matriz_vazia') ? 'Cadastro de matriz vazia: use para registrar uma fêmea adulta comprada que não está gestante no momento. Informe a data de compra e os ciclos até a compra para estimarmos a data de nascimento.' : ((item === 'femeas' && mov === 'compra' && compraFemeasTipo === 'matriz_gestante') ? 'Cadastro de matriz gestante: use para registrar uma fêmea adulta comprada já em gestação. Informe data de cobertura (gestação) e a data de compra; o sistema exibe os dias de gestação.' : 'Informe os campos necessários para concluir o cadastro.'))"></p>
                             </div>
                             <button type="button" @click="openNovo = false" class="text-white/80 hover:text-white transition-colors">
                                 <i class="fa-solid fa-xmark text-lg"></i>
                             </button>
                         </div>
                     </div>
-                    <div class="bg-white px-6 py-6">
+                    <div class="bg-white px-6 py-6 overflow-y-auto flex-1 min-h-0">
+                        <div x-show="mov === 'compra'" class="-mx-6 -mt-6 mb-6 px-6 pt-4 pb-3 bg-white/95 backdrop-blur border-b border-gray-100 sticky top-0 z-10" x-cloak>
+                            <div class="inline-flex items-center gap-1 rounded-2xl bg-gray-100 p-1 shadow-sm border border-gray-200">
+                                <button type="button" @click="openNovoTab = 'principal'" class="px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" :class="openNovoTab === 'principal' ? 'bg-white text-primary-700 shadow border border-gray-200' : 'bg-transparent text-gray-600 hover:text-gray-800 hover:bg-white/60'">
+                                    <span class="inline-flex items-center gap-2">
+                                        <i class="fa-solid fa-list-check text-sm"></i>
+                                        Principal
+                                    </span>
+                                </button>
+                                <button type="button" @click="openNovoTab = 'complementares'" class="px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" :class="openNovoTab === 'complementares' ? 'bg-white text-primary-700 shadow border border-gray-200' : 'bg-transparent text-gray-600 hover:text-gray-800 hover:bg-white/60'">
+                                    <span class="inline-flex items-center gap-2">
+                                        <i class="fa-solid fa-sliders text-sm"></i>
+                                        Complementares
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
                         <template x-if="item === 'femeas' && mov === 'morte'">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div class="sm:col-span-2">
@@ -1793,57 +1820,169 @@
                         </template>
                         <template x-if="item === 'machos' && mov === 'compra'">
                             <div class="space-y-4">
-                                <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
-                                    <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Identificação e Datas</div>
-                                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">ID primária</label>
-                                            <input type="text" x-model="idPrimaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 2001">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">ID secundária</label>
-                                            <input type="text" x-model="idSecundaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Opcional">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">Data de compra</label>
-                                            <input type="text" x-model="dataCompra" @input="dataCompra = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">Data de nascimento</label>
-                                            <input type="text" x-model="dataNascimento" @input="dataNascimento = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
-                                    <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Classificação</div>
-                                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">Raça</label>
-                                            <div class="mt-1 flex items-center space-x-2">
-                                                <select x-model="racaId" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
-                                                    <option value="">Selecione...</option>
-                                                    <template x-for="r in racas" :key="r.id">
-                                                        <option :value="String(r.id)" x-text="r.nome"></option>
-                                                    </template>
-                                                </select>
-                                                <button type="button" @click="openNovaRaca = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 rounded-xl shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar raça">
-                                                    <i class="fa-solid fa-plus"></i>
-                                                </button>
+                                <template x-if="openNovoTab === 'principal'">
+                                    <div class="space-y-4">
+                                        <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Identificação e Datas</div>
+                                            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">ID primária</label>
+                                                    <input type="text" x-model="idPrimaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 2001">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">ID secundária</label>
+                                                    <input type="text" x-model="idSecundaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Opcional">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">Data de compra</label>
+                                                    <input type="text" x-model="dataCompra" @input="dataCompra = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">Data de nascimento</label>
+                                                    <input type="text" x-model="dataNascimento" @input="dataNascimento = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
+                                                </div>
                                             </div>
                                         </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">Fornecedor</label>
-                                            <select x-model="fornecedorId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
-                                                <option value="">Selecione...</option>
-                                                <template x-for="f in fornecedores" :key="f.id">
-                                                    <option :value="String(f.id)" x-text="f.nome"></option>
-                                                </template>
-                                            </select>
+
+                                        <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Classificação</div>
+                                            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">Raça</label>
+                                                    <div class="mt-1 flex items-center space-x-2">
+                                                        <select x-model="racaId" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                                            <option value="">Selecione...</option>
+                                                            <template x-for="r in racas" :key="r.id">
+                                                                <option :value="String(r.id)" x-text="r.nome"></option>
+                                                            </template>
+                                                        </select>
+                                                        <button type="button" @click="openNovaRaca = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 rounded-xl shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar raça">
+                                                            <i class="fa-solid fa-plus"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700">Fornecedor</label>
+                                                    <select x-model="fornecedorId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                                        <option value="">Selecione...</option>
+                                                        <template x-for="f in fornecedores" :key="f.id">
+                                                            <option :value="String(f.id)" x-text="f.nome"></option>
+                                                        </template>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <template x-if="openNovoTab === 'complementares'">
+                                    <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                                        <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Complementares</div>
+                                        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Peso na compra</label>
+                                                <div class="mt-1 relative">
+                                                    <input type="number" step="0.01" x-model="pesoCompra" class="w-full pr-12 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="0,00">
+                                                    <span class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400">kg</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Valor da compra</label>
+                                                <div class="mt-1 relative">
+                                                    <span class="absolute inset-y-0 left-3 flex items-center text-xs text-gray-400">R$</span>
+                                                    <input type="number" step="0.01" x-model="valorCompra" class="w-full pl-9 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="0,00">
+                                                </div>
+                                            </div>
+                                            <div class="sm:col-span-2">
+                                                <label class="block text-sm font-medium text-gray-700">Características</label>
+                                                <textarea x-model="caracteristicas" rows="2" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Opcional"></textarea>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Localização</label>
+                                                <input type="text" x-model="localizacao" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Galpão A">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Baia</label>
+                                                <input type="text" x-model="baia" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 12">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                        <template x-if="item === 'femeas' && mov === 'compra'">
+                        <div class="space-y-4">
+                            <template x-if="openNovoTab === 'principal'">
+                                <div class="space-y-4">
+                                    <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                                        <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Identificação e Datas</div>
+                                        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">ID primária</label>
+                                                <input type="text" x-model="idPrimaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 1001">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">ID secundária</label>
+                                                <input type="text" x-model="idSecundaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Opcional">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Data de compra</label>
+                                                <input type="text" x-model="dataCompra" @input="dataCompra = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
+                                            </div>
+                                            <div x-show="ciclosObrigatorio" x-cloak>
+                                                <label class="block text-sm font-medium text-gray-700">Ciclos até a compra</label>
+                                                <input type="number" min="0" step="1" x-model="ciclosAteCompra" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 3">
+                                                <div class="mt-1 text-xs text-gray-500">Usado para sugerir a data de nascimento.</div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Data de nascimento</label>
+                                                <input type="text" x-model="dataNascimento" @input="nascimentoAuto = false; dataNascimento = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
+                                                <div class="mt-1 text-xs text-gray-500" x-show="!dataNascimento && sugestaoNascimento">
+                                                    Sugestão: <button type="button" class="font-semibold text-primary-700 hover:underline" @click="nascimentoAuto = true; dataNascimento = sugestaoNascimento" x-text="sugestaoNascimento"></button>
+                                                </div>
+                                            </div>
+                                            <div x-show="coberturaObrigatorio" x-cloak>
+                                                <label class="block text-sm font-medium text-gray-700">Data de cobertura</label>
+                                                <input type="text" x-model="dataCobertura" @input="dataCobertura = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
+                                                <div class="mt-1 text-xs text-gray-500" x-show="diasGestacao !== null">
+                                                    Dias de gestação: <span class="font-semibold text-gray-700" x-text="diasGestacao"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                                        <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Classificação</div>
+                                        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Raça</label>
+                                                <div class="mt-1 flex items-center space-x-2">
+                                                    <select x-model="racaId" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                                        <option value="">Selecione...</option>
+                                                        <template x-for="r in racas" :key="r.id">
+                                                            <option :value="String(r.id)" x-text="r.nome"></option>
+                                                        </template>
+                                                    </select>
+                                                    <button type="button" @click="openNovaRaca = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 rounded-xl shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar raça">
+                                                        <i class="fa-solid fa-plus"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Fornecedor</label>
+                                                <select x-model="fornecedorId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                                    <option value="">Selecione...</option>
+                                                    <template x-for="f in fornecedores" :key="f.id">
+                                                        <option :value="String(f.id)" x-text="f.nome"></option>
+                                                    </template>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+                            </template>
 
+                            <template x-if="openNovoTab === 'complementares'">
                                 <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
                                     <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Complementares</div>
                                     <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1875,105 +2014,7 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </template>
-                        <template x-if="item === 'femeas' && mov === 'compra'">
-                        <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
-                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Identificação e Datas</div>
-                            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">ID primária</label>
-                                    <input type="text" x-model="idPrimaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 1001">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">ID secundária</label>
-                                    <input type="text" x-model="idSecundaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Opcional">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Data de compra</label>
-                                    <input type="text" x-model="dataCompra" @input="dataCompra = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
-                                </div>
-                                <div x-show="ciclosObrigatorio" x-cloak>
-                                    <label class="block text-sm font-medium text-gray-700">Ciclos até a compra</label>
-                                    <input type="number" min="0" step="1" x-model="ciclosAteCompra" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 3">
-                                    <div class="mt-1 text-xs text-gray-500">Usado para sugerir a data de nascimento.</div>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Data de nascimento</label>
-                                    <input type="text" x-model="dataNascimento" @input="dataNascimento = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
-                                    <div class="mt-1 text-xs text-gray-500" x-show="!dataNascimento && sugestaoNascimento">
-                                        Sugestão: <button type="button" class="font-semibold text-primary-700 hover:underline" @click="dataNascimento = sugestaoNascimento" x-text="sugestaoNascimento"></button>
-                                    </div>
-                                </div>
-                                <div x-show="coberturaObrigatorio" x-cloak>
-                                    <label class="block text-sm font-medium text-gray-700">Data de cobertura</label>
-                                    <input type="text" x-model="dataCobertura" @input="dataCobertura = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
-                                    <div class="mt-1 text-xs text-gray-500" x-show="diasGestacao !== null">
-                                        Dias de gestação: <span class="font-semibold text-gray-700" x-text="diasGestacao"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-4 bg-gray-50 border border-gray-100 rounded-2xl p-4">
-                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Classificação</div>
-                            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Raça</label>
-                                <div class="mt-1 flex items-center space-x-2">
-                                    <select x-model="racaId" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
-                                        <option value="">Selecione...</option>
-                                        <template x-for="r in racas" :key="r.id">
-                                            <option :value="String(r.id)" x-text="r.nome"></option>
-                                        </template>
-                                    </select>
-                                    <button type="button" @click="openNovaRaca = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 rounded-xl shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar raça">
-                                        <i class="fa-solid fa-plus"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Fornecedor</label>
-                                <select x-model="fornecedorId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
-                                    <option value="">Selecione...</option>
-                                    <template x-for="f in fornecedores" :key="f.id">
-                                        <option :value="String(f.id)" x-text="f.nome"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-4 bg-gray-50 border border-gray-100 rounded-2xl p-4">
-                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Complementares</div>
-                            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Peso na compra</label>
-                                <div class="mt-1 relative">
-                                    <input type="number" step="0.01" x-model="pesoCompra" class="w-full pr-12 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="0,00">
-                                    <span class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400">kg</span>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Valor da compra</label>
-                                <div class="mt-1 relative">
-                                    <span class="absolute inset-y-0 left-3 flex items-center text-xs text-gray-400">R$</span>
-                                    <input type="number" step="0.01" x-model="valorCompra" class="w-full pl-9 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="0,00">
-                                </div>
-                            </div>
-                            <div class="sm:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700">Características</label>
-                                <textarea x-model="caracteristicas" rows="2" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Opcional"></textarea>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Localização</label>
-                                <input type="text" x-model="localizacao" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Galpão A">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Baia</label>
-                                <input type="text" x-model="baia" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 12">
-                            </div>
-                            </div>
+                            </template>
                         </div>
                         </template>
                     </div>
@@ -2067,6 +2108,9 @@
 </div>
 
 <div x-show="tab === 'relatorios'" x-cloak>
+    <div class="mb-4 bg-amber-50 border border-amber-100 text-amber-900 rounded-xl px-4 py-3 text-sm">
+        Relatórios em desenvolvimento.
+    </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
@@ -2095,5 +2139,6 @@
         </div>
     </div>
 </div>
+
 </div>
 @endsection

@@ -4,17 +4,19 @@ use App\Http\Controllers\CausaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FemeaCompraController;
 use App\Http\Controllers\FemeaController;
-use App\Http\Controllers\FemeaMorteController;
 use App\Http\Controllers\FemeaDescarteController;
+use App\Http\Controllers\FemeaMorteController;
 use App\Http\Controllers\FemeaMovimentoController;
 use App\Http\Controllers\FemeaVendaController;
 use App\Http\Controllers\FornecedorController;
+use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\GrupoCausaController;
 use App\Http\Controllers\MachoCompraController;
 use App\Http\Controllers\MachoDescarteController;
 use App\Http\Controllers\MachoMorteController;
 use App\Http\Controllers\MachoMovimentoController;
 use App\Http\Controllers\MachoVendaController;
+use App\Http\Controllers\MetasController;
 use App\Http\Controllers\PlantelApiController;
 use App\Http\Controllers\PlantelRelatorioController;
 use App\Http\Controllers\ProfileController;
@@ -24,21 +26,29 @@ use App\Http\Controllers\TipoRacaoController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/login');
 });
 
 Route::get('/dashboard', DashboardController::class)->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile/photo/{path}', [ProfileController::class, 'photo'])->where('path', '.*')->name('profile.photo');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 // Rotas de Administração
 Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/funcionarios', [FuncionarioController::class, 'index'])->name('funcionarios.index');
+    Route::post('/funcionarios', [FuncionarioController::class, 'store'])->name('funcionarios.store');
+    Route::patch('/funcionarios/{funcionario}', [FuncionarioController::class, 'update'])->name('funcionarios.update');
+    Route::delete('/funcionarios/{funcionario}', [FuncionarioController::class, 'destroy'])->name('funcionarios.destroy');
+
     Route::get('/causas', [CausaController::class, 'index'])->name('causas.index');
     Route::post('/causas', [CausaController::class, 'store'])->name('causas.store');
+    Route::patch('/causas/{causa}', [CausaController::class, 'update'])->name('causas.update');
+    Route::delete('/causas/{causa}', [CausaController::class, 'destroy'])->name('causas.destroy');
     Route::patch('/causas/{causa}/toggle', [CausaController::class, 'toggleSituacao'])->name('causas.toggle');
     Route::get('/causas/export/pdf', [CausaController::class, 'exportPdf'])->name('causas.export-pdf');
     Route::get('/racoes', [RacaoController::class, 'index'])->name('racoes.index');
@@ -61,6 +71,8 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/plantel/femeas/{femea}', [FemeaController::class, 'show'])->name('plantel.femeas.show');
     Route::get('/relatorios/plantel/femeas', [PlantelRelatorioController::class, 'femeas'])->name('relatorios.plantel.femeas');
     Route::get('/relatorios/plantel/machos', [PlantelRelatorioController::class, 'machos'])->name('relatorios.plantel.machos');
+    Route::get('/metas', [MetasController::class, 'page'])->name('metas.index');
+    Route::post('/metas', [MetasController::class, 'store'])->name('metas.store');
     Route::post('/grupo-causa', [GrupoCausaController::class, 'store'])->name('grupo-causa.store');
 });
 
@@ -82,5 +94,6 @@ Route::get('/api/plantel/machos', [PlantelApiController::class, 'machos']);
 Route::get('/api/plantel/machos/mortes', [MachoMovimentoController::class, 'mortes']);
 Route::get('/api/plantel/machos/descartes', [MachoMovimentoController::class, 'descartes']);
 Route::get('/api/plantel/machos/vendas', [MachoMovimentoController::class, 'vendas']);
+Route::get('/api/metas', [MetasController::class, 'index']);
 
 require __DIR__.'/auth.php';
