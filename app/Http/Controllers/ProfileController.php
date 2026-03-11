@@ -7,6 +7,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -26,15 +28,55 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $validated = $request->validated();
+        unset($validated['foto_perfil']);
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $user->fill($validated);
+
+        if ($user->isDirty('email')) {
+            $user->{$user->getEmailVerifiedAtColumn()} = null;
         }
 
-        $request->user()->save();
+        if ($request->hasFile('foto_perfil')) {
+            if (! Schema::hasColumn($user->getTable(), 'foto_perfil')) {
+                return Redirect::to(route('profile.edit', [], false))->withErrors([
+                    'foto_perfil' => 'O campo de foto de perfil ainda não existe no banco. Execute o SQL de ajuste e tente novamente.',
+                ]);
+            }
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+            $path = $request->file('foto_perfil')->store('profile-photos', 'public');
+
+            if (! empty($user->foto_perfil)) {
+                Storage::disk('public')->delete($user->foto_perfil);
+            }
+
+            $user->foto_perfil = $path;
+        }
+
+        $user->save();
+
+        return Redirect::to(route('profile.edit', [], false))->with('status', 'profile-updated');
+    }
+
+    public function photo(Request $request, string $path)
+    {
+        $user = $request->user();
+        $path = ltrim($path, '/');
+
+        if (! Schema::hasColumn($user->getTable(), 'foto_perfil')) {
+            abort(404);
+        }
+
+        if ($path === '' || $user->foto_perfil !== $path) {
+            abort(404);
+        }
+
+        if (! Storage::disk('public')->exists($path)) {
+            abort(404);
+        }
+
+        return response()->file(Storage::disk('public')->path($path));
     }
 
     /**
