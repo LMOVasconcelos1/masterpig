@@ -9,6 +9,16 @@ use Throwable;
 
 class TenantDatabase
 {
+    public static function tenantConnectionName(): string
+    {
+        return 'tenant';
+    }
+
+    public static function baseConnectionName(): string
+    {
+        return (string) (config('masterpig.base_connection') ?: config('database.default'));
+    }
+
     public static function normalizeCnpj(?string $cnpj): string
     {
         return preg_replace('/\D+/', '', (string) $cnpj) ?? '';
@@ -16,7 +26,7 @@ class TenantDatabase
 
     public static function tenantPrefix(): string
     {
-        return (string) (config('masterpig.tenant_prefix') ?: 'mp');
+        return strtolower((string) (config('masterpig.tenant_prefix') ?: 'mp'));
     }
 
     public static function databaseNameFromCnpj(string $cnpjDigits): string
@@ -36,15 +46,16 @@ class TenantDatabase
         return $value === null ? null : (string) $value;
     }
 
-    public static function ensureDatabaseExists(string $databaseName, string $username): void
+    public static function ensureCanConnect(string $databaseName, string $username): void
     {
-        $connection = (string) config('database.default');
-
-        if (! in_array($connection, ['mysql', 'mariadb'], true)) {
-            return;
+        $baseConnection = self::baseConnectionName();
+        if (! in_array($baseConnection, ['mysql', 'mariadb'], true)) {
+            throw ValidationException::withMessages([
+                'cnpj' => 'Conexão de banco não suportada.',
+            ]);
         }
 
-        $baseConfig = config("database.connections.$connection");
+        $baseConfig = config("database.connections.$baseConnection");
         if (! is_array($baseConfig)) {
             throw ValidationException::withMessages([
                 'cnpj' => 'Configuração de banco inválida.',
@@ -53,7 +64,7 @@ class TenantDatabase
 
         $probeConnection = 'tenant_probe';
         $probeConfig = $baseConfig;
-        $probeConfig['database'] = 'information_schema';
+        $probeConfig['database'] = $databaseName;
         $probeConfig['username'] = $username;
         $probeConfig['password'] = self::password() ?? ($probeConfig['password'] ?? null);
         Config::set("database.connections.$probeConnection", $probeConfig);
@@ -61,38 +72,56 @@ class TenantDatabase
         DB::purge($probeConnection);
 
         try {
-            $row = DB::connection($probeConnection)->selectOne(
-                'SELECT SCHEMA_NAME AS name FROM SCHEMATA WHERE SCHEMA_NAME = ? LIMIT 1',
-                [$databaseName]
-            );
-        } catch (Throwable) {
-            throw ValidationException::withMessages([
-                'cnpj' => 'Não foi possível validar o banco para este CNPJ.',
-            ]);
-        }
+            DB::connection($probeConnection)->selectOne('SELECT 1');
+        } catch (Throwable $e) {
+            report($e);
 
-        if (! $row) {
+            $message = $e->getMessage();
+            if (is_string($message) && str_contains($message, 'Unknown database')) {
+                throw ValidationException::withMessages([
+                    'cnpj' => 'Banco de dados do CNPJ não existe.',
+                ]);
+            }
+
+            if (is_string($message) && str_contains($message, 'Access denied')) {
+                throw ValidationException::withMessages([
+                    'cnpj' => 'Usuário do banco do CNPJ sem acesso ou senha incorreta.',
+                ]);
+            }
+
             throw ValidationException::withMessages([
-                'cnpj' => 'Nenhum banco encontrado para este CNPJ.',
+                'cnpj' => 'Não foi possível conectar ao banco deste CNPJ.',
             ]);
         }
     }
 
     public static function applyDatabase(string $databaseName, string $username): void
     {
-        $connection = (string) config('database.default');
-
-        if (! in_array($connection, ['mysql', 'mariadb'], true)) {
-            return;
+        $baseConnection = self::baseConnectionName();
+        if (! in_array($baseConnection, ['mysql', 'mariadb'], true)) {
+            throw ValidationException::withMessages([
+                'cnpj' => 'Conexão de banco não suportada.',
+            ]);
         }
 
-        Config::set("database.connections.$connection.database", $databaseName);
-        Config::set("database.connections.$connection.username", $username);
+        $baseConfig = config("database.connections.$baseConnection");
+        if (! is_array($baseConfig)) {
+            throw ValidationException::withMessages([
+                'cnpj' => 'Configuração de banco inválida.',
+            ]);
+        }
+
+        $tenantConnection = self::tenantConnectionName();
+        $tenantConfig = $baseConfig;
+        $tenantConfig['database'] = $databaseName;
+        $tenantConfig['username'] = $username;
         if (self::password() !== null) {
-            Config::set("database.connections.$connection.password", self::password());
+            $tenantConfig['password'] = self::password();
         }
-        DB::purge($connection);
-        DB::reconnect($connection);
-        DB::setDefaultConnection($connection);
+
+        Config::set("database.connections.$tenantConnection", $tenantConfig);
+        DB::purge($tenantConnection);
+        DB::reconnect($tenantConnection);
+        DB::setDefaultConnection($tenantConnection);
     }
 }

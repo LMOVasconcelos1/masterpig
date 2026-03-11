@@ -43,7 +43,7 @@ class RegisteredUserController extends Controller
 
         $tenantDb = TenantDatabase::databaseNameFromCnpj($cnpjDigits);
         $tenantUser = TenantDatabase::usernameFromCnpj($cnpjDigits);
-        TenantDatabase::ensureDatabaseExists($tenantDb, $tenantUser);
+        TenantDatabase::ensureCanConnect($tenantDb, $tenantUser);
         TenantDatabase::applyDatabase($tenantDb, $tenantUser);
 
         $request->validate([
@@ -56,7 +56,7 @@ class RegisteredUserController extends Controller
             'senha' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
+        $user = User::on(TenantDatabase::tenantConnectionName())->create([
             'nome' => $request->nome,
             'cpf' => $request->cpf,
             'usuario' => $request->usuario,
@@ -85,10 +85,25 @@ class RegisteredUserController extends Controller
             report($e);
         }
 
-        event(new Registered($user));
-
         Auth::login($user);
+        $request->session()->regenerate();
 
-        return redirect(route('dashboard', [], false));
+        $verificationSent = true;
+        try {
+            event(new Registered($user));
+        } catch (Throwable $e) {
+            report($e);
+            $verificationSent = false;
+        }
+
+        if ($verificationSent) {
+            $request->session()->flash('status', 'verification-link-sent');
+        } else {
+            return redirect()->route('verification.notice')->withErrors([
+                'email' => 'Não foi possível enviar o e-mail de verificação. Verifique as configurações de e-mail e tente reenviar.',
+            ]);
+        }
+
+        return redirect()->route('verification.notice');
     }
 }

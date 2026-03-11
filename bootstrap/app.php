@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,8 +16,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\CheckAdmin::class,
         ]);
 
+        $middleware->prependToPriorityList(
+            AuthenticatesRequests::class,
+            \App\Http\Middleware\EnsureTenantSelected::class
+        );
+
         $middleware->web(append: [
-            \App\Http\Middleware\SetTenantDatabase::class,
+            \App\Http\Middleware\EnsureTenantSelected::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {})->create();

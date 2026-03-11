@@ -17,6 +17,7 @@
                 Um novo link de verificação foi enviado para o seu e-mail.
             </div>
         @endif
+        <x-input-error :messages="$errors->get('email')" class="mb-4 text-center" />
 
         <div class="bg-white/90 backdrop-blur rounded-3xl shadow-lg border border-gray-100 p-6 transition-all duration-300 hover:shadow-xl hover:border-primary-200">
             <div class="text-sm text-gray-600 mb-4">

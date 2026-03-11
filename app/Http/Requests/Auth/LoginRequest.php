@@ -52,7 +52,7 @@ class LoginRequest extends FormRequest
 
         $tenantDb = TenantDatabase::databaseNameFromCnpj($cnpjDigits);
         $tenantUser = TenantDatabase::usernameFromCnpj($cnpjDigits);
-        TenantDatabase::ensureDatabaseExists($tenantDb, $tenantUser);
+        TenantDatabase::ensureCanConnect($tenantDb, $tenantUser);
         TenantDatabase::applyDatabase($tenantDb, $tenantUser);
 
         $this->session()->put('tenant_cnpj', $cnpjDigits);

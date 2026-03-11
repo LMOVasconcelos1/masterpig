@@ -35,6 +35,42 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme($scheme);
         }
 
+        VerifyEmail::createUrlUsing(function ($notifiable) {
+            $appUrl = (string) (config('masterpig.app_url') ?: config('app.url'));
+            $publicUrl = rtrim((string) (config('masterpig.public_url') ?: $appUrl), '/');
+            $publicScheme = parse_url($publicUrl, PHP_URL_SCHEME);
+            if (! is_string($publicScheme) || $publicScheme === '') {
+                $publicScheme = 'http';
+            }
+
+            $cnpj = '';
+            try {
+                $cnpj = (string) request()->session()->get('tenant_cnpj', '');
+            } catch (\Throwable) {
+                $cnpj = '';
+            }
+
+            URL::forceRootUrl($publicUrl);
+            URL::forceScheme($publicScheme);
+            $signedUrl = URL::temporarySignedRoute(
+                'verification.verify',
+                now()->addMinutes(60),
+                [
+                    'id' => $notifiable->getKey(),
+                    'hash' => sha1($notifiable->getEmailForVerification()),
+                    'cnpj' => $cnpj,
+                ]
+            );
+
+            URL::forceRootUrl($appUrl);
+            $appScheme = parse_url($appUrl, PHP_URL_SCHEME);
+            if (is_string($appScheme) && $appScheme !== '') {
+                URL::forceScheme($appScheme);
+            }
+
+            return $signedUrl;
+        });
+
         VerifyEmail::toMailUsing(function ($notifiable, string $url) {
             $logoPath = file_exists(public_path('logoSemPalavra.png'))
                 ? public_path('logoSemPalavra.png')
