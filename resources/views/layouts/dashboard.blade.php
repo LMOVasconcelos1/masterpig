@@ -335,6 +335,146 @@
         </div>
     </div>
 
+    @if((bool) config('masterpig.chatbot_enabled', false))
+    <div
+        x-data="{
+            open: false,
+            expanded: false,
+            loading: false,
+            input: '',
+            messages: [
+                { role: 'bot', text: 'Me pergunte algo do banco.\n\nExemplos:\n- Quantas fêmeas ativas?\n- Quantos machos ativos?\n- Quantas leitoas ativas?\n- Quantas matrizes ativas?\n- Quantas mortes este mês?\n- Quantas vendas nos últimos 30 dias?' },
+            ],
+            toggle() {
+                this.open = !this.open;
+                if (this.open) {
+                    this.$nextTick(() => this.scrollBottom());
+                }
+            },
+            toggleExpanded() {
+                this.expanded = !this.expanded;
+                this.$nextTick(() => this.scrollBottom());
+            },
+            scrollBottom() {
+                const el = this.$refs.list;
+                if (el) el.scrollTop = el.scrollHeight;
+            },
+            async send() {
+                const text = String(this.input || '').trim();
+                if (!text || this.loading) return;
+                this.messages.push({ role: 'user', text });
+                this.input = '';
+                this.loading = true;
+                this.$nextTick(() => this.scrollBottom());
+                try {
+                    const r = await fetch('/api/chatbot', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=\\'csrf-token\\']').getAttribute('content'),
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({ message: text }),
+                    });
+
+                    const ct = String(r.headers.get('content-type') || '');
+                    let data = null;
+                    if (ct.includes('application/json')) {
+                        data = await r.json().catch(() => ({}));
+                    } else {
+                        const raw = await r.text().catch(() => '');
+                        data = { message: raw };
+                    }
+
+                    if (!r.ok) {
+                        if (r.status === 419) throw new Error('Sessão expirada. Atualize a página e tente novamente.');
+                        if (r.status === 401) throw new Error('Você não está autenticado. Faça login e tente novamente.');
+                        const msg = data?.message || 'Erro ao consultar.';
+                        throw new Error(String(msg));
+                    }
+
+                    const answer = data?.answer ?? data?.message ?? '';
+                    this.messages.push({ role: 'bot', text: String(answer) || 'Sem resposta.' });
+                } catch (e) {
+                    this.messages.push({ role: 'bot', text: String(e?.message || 'Erro ao consultar.') });
+                } finally {
+                    this.loading = false;
+                    this.$nextTick(() => this.scrollBottom());
+                }
+            },
+        }"
+        class="fixed z-[120] right-4 bottom-4 sm:right-6 sm:bottom-6"
+    >
+        <div
+            x-show="open"
+            x-cloak
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 translate-y-2 sm:translate-y-0 sm:scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+            x-transition:leave-end="opacity-0 translate-y-2 sm:translate-y-0 sm:scale-95"
+            class="fixed inset-0 sm:absolute sm:inset-auto sm:right-0 sm:bottom-16 bg-white border border-gray-200 shadow-2xl overflow-hidden sm:rounded-2xl"
+            :class="expanded ? 'sm:w-[520px] sm:h-[72vh]' : 'sm:w-[400px] sm:h-[56vh]'"
+        >
+            <div class="px-4 py-3 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between sticky top-0 z-10">
+                <div class="min-w-0">
+                    <div class="font-bold text-gray-900 truncate">Chatbot</div>
+                    <div class="text-xs text-gray-500 truncate">Perguntas do banco</div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" class="hidden sm:inline-flex w-9 h-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" @click="toggleExpanded()" title="Aumentar/Diminuir">
+                        <i class="fa-solid" :class="expanded ? 'fa-down-left-and-up-right-to-center' : 'fa-up-right-and-down-left-from-center'"></i>
+                    </button>
+                    <button type="button" class="w-9 h-9 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" @click="toggle()" title="Fechar">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+            <div x-ref="list" class="px-4 py-3 space-y-3 overflow-y-auto h-[calc(100vh-130px)] sm:h-auto" :class="expanded ? 'sm:h-[calc(72vh-118px)]' : 'sm:h-[calc(56vh-118px)]'">
+                <template x-for="(m, idx) in messages" :key="idx">
+                    <div class="flex" :class="m.role === 'user' ? 'justify-end' : 'justify-start'">
+                        <div class="max-w-[85%] rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap"
+                             :class="m.role === 'user' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-800'">
+                            <span x-text="m.text"></span>
+                        </div>
+                    </div>
+                </template>
+                <div x-show="loading" class="text-sm text-gray-500">Consultando...</div>
+            </div>
+            <div class="px-4 py-3 border-t border-gray-100 bg-gray-50/50 sticky bottom-0">
+                <form @submit.prevent="send()" class="flex items-end gap-2">
+                    <textarea
+                        x-model="input"
+                        rows="2"
+                        class="w-full rounded-xl border border-gray-200 shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="Digite sua pergunta…"
+                        @keydown.enter.prevent="if(!$event.shiftKey) send(); else input += '\\n';"
+                    ></textarea>
+                    <button type="submit" :disabled="loading" class="shrink-0 inline-flex items-center justify-center rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </form>
+                <div class="mt-1 text-[11px] text-gray-500" x-show="!input.trim() && !loading">Digite uma pergunta para enviar.</div>
+                <div class="mt-1 text-[11px] text-gray-500">Enter envia, Shift+Enter quebra linha.</div>
+            </div>
+        </div>
+
+        <button
+            type="button"
+            class="w-14 h-14 rounded-full shadow-xl bg-primary-600 text-white inline-flex items-center justify-center border border-primary-700 hover:bg-primary-700"
+            @click="toggle()"
+            x-show="!open"
+            x-cloak
+            title="Abrir chatbot"
+        >
+            <i class="fa-solid fa-comment-dots text-lg"></i>
+        </button>
+    </div>
+    @endif
+
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
     @stack('scripts')

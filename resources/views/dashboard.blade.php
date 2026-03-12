@@ -4,7 +4,7 @@
 @section('page_title', '')
 
 @section('content')
-<div x-data="{ tab: (function(){ const t = (new URLSearchParams(window.location.search).get('tab') || 'visao'); return t === 'analise' ? 'relatorios' : t; })(), toastOpen: false, toastMessage: '', toastType: 'success' }"
+<div x-data="{ tab: (function(){ const t = (new URLSearchParams(window.location.search).get('tab') || 'visao'); return ['visao','lancamentos','analise','relatorios'].includes(t) ? t : 'visao'; })(), toastOpen: false, toastMessage: '', toastType: 'success' }"
      x-init="
         window.addEventListener('toast', (e) => { toastMessage = e.detail.message; toastType = e.detail.type || 'success'; toastOpen = true; setTimeout(() => toastOpen = false, 4000); });
      "
@@ -55,6 +55,9 @@
             </button>
             <button type="button" @click="tab = 'lancamentos'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors" :class="tab === 'lancamentos' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
                 Lançamentos
+            </button>
+            <button type="button" @click="tab = 'analise'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors" :class="tab === 'analise' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
+                Análise
             </button>
             <button type="button" @click="tab = 'relatorios'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors" :class="tab === 'relatorios' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
                 Relatórios
@@ -259,6 +262,8 @@
         vendasFemeas: [],
         racas: [],
         fornecedores: [],
+        utilLocalizacoes: [],
+        utilBaias: [],
         racaId: '',
         fornecedorId: '',
         idPrimaria: '',
@@ -279,6 +284,7 @@
         machosMode: '',
         racasLoaded: false,
         fornecedoresLoaded: false,
+        utilitariosLoaded: false,
         dataDescarte: '',
         causaDescarteId: '',
         dataVenda: '',
@@ -293,6 +299,12 @@
         baia: '',
         openNovaRaca: false,
         novaRacaNome: '',
+        openNovoFornecedor: false,
+        novoFornecedorNome: '',
+        openNovaLocalizacao: false,
+        novaLocalizacaoNome: '',
+        openNovaBaia: false,
+        novaBaiaNome: '',
         saving: false,
         normalizeDateInput(value) {
             const digits = String(value || '').replace(/\D/g, '').slice(0, 8);
@@ -414,6 +426,16 @@
             fetch('/api/fornecedores')
                 .then(r => r.json())
                 .then(data => this.fornecedores = data);
+        },
+        ensureUtilitarios() {
+            if (this.utilitariosLoaded) return;
+            this.utilitariosLoaded = true;
+            fetch('/api/utilitarios')
+                .then(r => r.json())
+                .then(data => {
+                    this.utilLocalizacoes = Array.isArray(data.localizacoes) ? data.localizacoes : [];
+                    this.utilBaias = Array.isArray(data.baias) ? data.baias : [];
+                });
         },
         ensureFemeasAtivas() {
             if (this.femeasAtivas.length > 0 && this.femeasMode === 'ativas') return;
@@ -678,6 +700,7 @@
             if (this.mov === 'compra') {
                 this.ensureRacas();
                 this.ensureFornecedores();
+                this.ensureUtilitarios();
             }
             this.openNovo = true;
         },
@@ -754,6 +777,110 @@
                 window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao cadastrar raça', type: 'error' } }));
             })
             .finally(() => { this.saving = false; });
+        },
+        saveFornecedor() {
+            if (!this.novoFornecedorNome.trim()) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe o nome do fornecedor', type: 'error' } }));
+                return;
+            }
+
+            this.saving = true;
+
+            fetch('{{ route('admin.fornecedores.store', [], false) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                },
+                body: JSON.stringify({ nome: this.novoFornecedorNome })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            let msg = err.message;
+                            if (err.errors && err.errors.nome) msg = err.errors.nome[0];
+                            throw new Error(msg);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    this.fornecedores.push(data);
+                    this.fornecedorId = String(data.id);
+                    this.novoFornecedorNome = '';
+                    this.openNovoFornecedor = false;
+                })
+                .catch(e => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao cadastrar fornecedor', type: 'error' } }));
+                })
+                .finally(() => { this.saving = false; });
+        },
+        saveLocalizacao() {
+            if (!this.novaLocalizacaoNome.trim()) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe a localização', type: 'error' } }));
+                return;
+            }
+
+            this.saving = true;
+
+            fetch('/api/utilitarios/localizacoes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                },
+                body: JSON.stringify({ nome: this.novaLocalizacaoNome })
+            })
+                .then(async (r) => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(data?.message || 'Erro ao salvar localização');
+                    return data;
+                })
+                .then(data => {
+                    this.utilLocalizacoes = Array.isArray(data.localizacoes) ? data.localizacoes : this.utilLocalizacoes;
+                    this.localizacao = this.novaLocalizacaoNome.trim();
+                    this.novaLocalizacaoNome = '';
+                    this.openNovaLocalizacao = false;
+                })
+                .catch(e => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar localização', type: 'error' } }));
+                })
+                .finally(() => { this.saving = false; });
+        },
+        saveBaia() {
+            if (!this.novaBaiaNome.trim()) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe a baia', type: 'error' } }));
+                return;
+            }
+
+            this.saving = true;
+
+            fetch('/api/utilitarios/baias', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                },
+                body: JSON.stringify({ nome: this.novaBaiaNome })
+            })
+                .then(async (r) => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(data?.message || 'Erro ao salvar baia');
+                    return data;
+                })
+                .then(data => {
+                    this.utilBaias = Array.isArray(data.baias) ? data.baias : this.utilBaias;
+                    this.baia = this.novaBaiaNome.trim();
+                    this.novaBaiaNome = '';
+                    this.openNovaBaia = false;
+                })
+                .catch(e => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar baia', type: 'error' } }));
+                })
+                .finally(() => { this.saving = false; });
         },
         saveCompraFemea() {
             this.saving = true;
@@ -1863,12 +1990,17 @@
                                                 </div>
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700">Fornecedor</label>
-                                                    <select x-model="fornecedorId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
-                                                        <option value="">Selecione...</option>
-                                                        <template x-for="f in fornecedores" :key="f.id">
-                                                            <option :value="String(f.id)" x-text="f.nome"></option>
-                                                        </template>
-                                                    </select>
+                                                    <div class="mt-1 flex items-center space-x-2">
+                                                        <select x-model="fornecedorId" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                                            <option value="">Selecione...</option>
+                                                            <template x-for="f in fornecedores" :key="f.id">
+                                                                <option :value="String(f.id)" x-text="f.nome"></option>
+                                                            </template>
+                                                        </select>
+                                                        <button type="button" @click="openNovoFornecedor = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 rounded-xl shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar fornecedor">
+                                                            <i class="fa-solid fa-plus"></i>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1899,11 +2031,21 @@
                                             </div>
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700">Localização</label>
-                                                <input type="text" x-model="localizacao" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Galpão A">
+                                                <div class="mt-1 flex items-center space-x-2">
+                                                    <input type="text" x-model="localizacao" list="util-localizacoes" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Galpão A">
+                                                    <button type="button" @click="openNovaLocalizacao = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 rounded-xl shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar localização">
+                                                        <i class="fa-solid fa-plus"></i>
+                                                    </button>
+                                                </div>
                                             </div>
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700">Baia</label>
-                                                <input type="text" x-model="baia" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 12">
+                                                <div class="mt-1 flex items-center space-x-2">
+                                                    <input type="text" x-model="baia" list="util-baias" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 12">
+                                                    <button type="button" @click="openNovaBaia = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 rounded-xl shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar baia">
+                                                        <i class="fa-solid fa-plus"></i>
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1970,12 +2112,17 @@
                                             </div>
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700">Fornecedor</label>
-                                                <select x-model="fornecedorId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
-                                                    <option value="">Selecione...</option>
-                                                    <template x-for="f in fornecedores" :key="f.id">
-                                                        <option :value="String(f.id)" x-text="f.nome"></option>
-                                                    </template>
-                                                </select>
+                                                <div class="mt-1 flex items-center space-x-2">
+                                                    <select x-model="fornecedorId" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                                        <option value="">Selecione...</option>
+                                                        <template x-for="f in fornecedores" :key="f.id">
+                                                            <option :value="String(f.id)" x-text="f.nome"></option>
+                                                        </template>
+                                                    </select>
+                                                    <button type="button" @click="openNovoFornecedor = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 rounded-xl shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar fornecedor">
+                                                        <i class="fa-solid fa-plus"></i>
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -2006,11 +2153,21 @@
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700">Localização</label>
-                                            <input type="text" x-model="localizacao" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Galpão A">
+                                            <div class="mt-1 flex items-center space-x-2">
+                                                <input type="text" x-model="localizacao" list="util-localizacoes" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Galpão A">
+                                                <button type="button" @click="openNovaLocalizacao = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 rounded-xl shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar localização">
+                                                    <i class="fa-solid fa-plus"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                         <div>
                                             <label class="block text-sm font-medium text-gray-700">Baia</label>
-                                            <input type="text" x-model="baia" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 12">
+                                            <div class="mt-1 flex items-center space-x-2">
+                                                <input type="text" x-model="baia" list="util-baias" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 12">
+                                                <button type="button" @click="openNovaBaia = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 rounded-xl shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar baia">
+                                                    <i class="fa-solid fa-plus"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2100,6 +2257,618 @@
                         <button type="button" @click="openNovaRaca = false" :disabled="saving" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 shadow-sm px-5 py-2.5 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto disabled:opacity-50">
                             Cancelar
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="openNovoFornecedor" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" x-cloak>
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div x-show="openNovoFornecedor" @click="openNovoFornecedor = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div x-show="openNovoFornecedor" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100">
+                    <div class="bg-white px-6 pt-6 pb-4">
+                        <div class="flex items-start justify-between">
+                            <h3 class="text-lg leading-6 font-semibold text-gray-900">Cadastrar fornecedor</h3>
+                            <button type="button" @click="openNovoFornecedor = false" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Fechar">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700">Nome</label>
+                            <input type="text" x-model="novoFornecedorNome" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Fornecedor X">
+                        </div>
+                    </div>
+                    <div class="bg-white border-t border-gray-100 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3">
+                        <button type="button" @click="saveFornecedor()" :disabled="saving" class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
+                            <template x-if="!saving"><span>Salvar</span></template>
+                            <template x-if="saving"><span>Gravando...</span></template>
+                        </button>
+                        <button type="button" @click="openNovoFornecedor = false" :disabled="saving" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 shadow-sm px-5 py-2.5 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto disabled:opacity-50">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="openNovaLocalizacao" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" x-cloak>
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div x-show="openNovaLocalizacao" @click="openNovaLocalizacao = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div x-show="openNovaLocalizacao" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100">
+                    <div class="bg-white px-6 pt-6 pb-4">
+                        <div class="flex items-start justify-between">
+                            <h3 class="text-lg leading-6 font-semibold text-gray-900">Cadastrar localização</h3>
+                            <button type="button" @click="openNovaLocalizacao = false" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Fechar">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700">Nome</label>
+                            <input type="text" x-model="novaLocalizacaoNome" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Galpão A">
+                        </div>
+                    </div>
+                    <div class="bg-white border-t border-gray-100 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3">
+                        <button type="button" @click="saveLocalizacao()" :disabled="saving" class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
+                            <template x-if="!saving"><span>Salvar</span></template>
+                            <template x-if="saving"><span>Gravando...</span></template>
+                        </button>
+                        <button type="button" @click="openNovaLocalizacao = false" :disabled="saving" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 shadow-sm px-5 py-2.5 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto disabled:opacity-50">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="openNovaBaia" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" x-cloak>
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div x-show="openNovaBaia" @click="openNovaBaia = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div x-show="openNovaBaia" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100">
+                    <div class="bg-white px-6 pt-6 pb-4">
+                        <div class="flex items-start justify-between">
+                            <h3 class="text-lg leading-6 font-semibold text-gray-900">Cadastrar baia</h3>
+                            <button type="button" @click="openNovaBaia = false" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Fechar">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700">Nome</label>
+                            <input type="text" x-model="novaBaiaNome" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 12">
+                        </div>
+                    </div>
+                    <div class="bg-white border-t border-gray-100 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3">
+                        <button type="button" @click="saveBaia()" :disabled="saving" class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
+                            <template x-if="!saving"><span>Salvar</span></template>
+                            <template x-if="saving"><span>Gravando...</span></template>
+                        </button>
+                        <button type="button" @click="openNovaBaia = false" :disabled="saving" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 shadow-sm px-5 py-2.5 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto disabled:opacity-50">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <datalist id="util-localizacoes">
+            <template x-for="n in utilLocalizacoes" :key="`loc-${n}`">
+                <option :value="n"></option>
+            </template>
+        </datalist>
+        <datalist id="util-baias">
+            <template x-for="n in utilBaias" :key="`baia-${n}`">
+                <option :value="n"></option>
+            </template>
+        </datalist>
+    </div>
+</div>
+
+<div x-show="tab === 'analise'" x-cloak>
+    <div x-data="{
+        loading: false,
+        loaded: false,
+        error: '',
+        femeas: { compra: [], morte: [], descarte: [], venda: [] },
+        machos: { compra: [], morte: [], descarte: [], venda: [] },
+        top: {
+            femeas: { morte: [], descarte: [], venda: [] },
+            machos: { morte: [], descarte: [], venda: [] },
+        },
+        totals: {
+            femeas: { compra: 0, morte: 0, descarte: 0, venda: 0 },
+            machos: { compra: 0, morte: 0, descarte: 0, venda: 0 },
+        },
+        rangeDays: 365,
+        datesRange: [],
+        metas: {},
+        series: {
+            compra: { leitoa: [], matriz: [], leitao: [] },
+            morte: { leitoa: [], matriz: [], leitao: [] },
+            descarte: { leitoa: [], matriz: [], leitao: [] },
+            venda: { leitoa: [], matriz: [], leitao: [] },
+        },
+        countByCausa(items) {
+            const map = {};
+            (items || []).forEach((row) => {
+                const key = (row && row.causa) ? String(row.causa) : '-';
+                map[key] = (map[key] || 0) + 1;
+            });
+            return Object.entries(map)
+                .map(([causa, total]) => ({ causa, total }))
+                .sort((a, b) => b.total - a.total);
+        },
+        sliceTop(list, n = 6) {
+            return (list || []).slice(0, n);
+        },
+        parseDateBr(dateStr) {
+            const parts = String(dateStr || '').split('/');
+            if (parts.length !== 3) return null;
+            const d = Number(parts[0]);
+            const m = Number(parts[1]);
+            const y = Number(parts[2]);
+            if (!d || !m || !y) return null;
+            return new Date(y, m - 1, d);
+        },
+        sortDatesAsc(a, b) {
+            const da = this.parseDateBr(a);
+            const db = this.parseDateBr(b);
+            if (!da && !db) return 0;
+            if (!da) return -1;
+            if (!db) return 1;
+            return da.getTime() - db.getTime();
+        },
+        limitDates(dates, max = 90) {
+            const list = Array.isArray(dates) ? dates : [];
+            if (list.length <= max) return list;
+            return list.slice(list.length - max);
+        },
+        formatDateBr(date) {
+            const d = date instanceof Date ? date : new Date(date);
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const yyyy = String(d.getFullYear());
+            return `${dd}/${mm}/${yyyy}`;
+        },
+        buildDatesRangeFrom(startDate, endDate) {
+            const start = startDate instanceof Date ? new Date(startDate) : new Date(startDate);
+            const end = endDate instanceof Date ? new Date(endDate) : new Date(endDate);
+            start.setHours(0, 0, 0, 0);
+            end.setHours(0, 0, 0, 0);
+
+            const dates = [];
+            const cursor = new Date(start);
+            while (cursor.getTime() <= end.getTime()) {
+                dates.push(this.formatDateBr(cursor));
+                cursor.setDate(cursor.getDate() + 1);
+            }
+
+            return dates;
+        },
+        shortDate(dateStr) {
+            const s = String(dateStr || '');
+            return s.length >= 5 ? s.slice(0, 5) : s;
+        },
+        chartPad() {
+            return 24;
+        },
+        chartStep() {
+            return 18;
+        },
+        chartPlotTop() {
+            return 24;
+        },
+        chartPlotBottom() {
+            return 136;
+        },
+        chartHeight() {
+            return 220;
+        },
+        chartInnerHeight() {
+            return this.chartPlotBottom() - this.chartPlotTop();
+        },
+        chartWidth(n) {
+            const p = this.chartPad();
+            const step = this.chartStep();
+            const count = Number(n || 0);
+            if (count <= 1) return 600;
+            return p * 2 + (count - 1) * step;
+        },
+        rightX() {
+            return this.chartWidth(this.datesRange.length) - this.chartPad();
+        },
+        xAt(i) {
+            return this.chartPad() + Number(i || 0) * this.chartStep();
+        },
+        categoriaFromTipo(tipo) {
+            const t = String(tipo || '').trim().toLowerCase();
+            if (t === 'leitoa') return 'leitoa';
+            if (t === 'leitao' || t === 'leitão') return 'leitao';
+            if (t === 'matriz_vazia' || t === 'matriz_gestante' || t === 'matriz') return 'matriz';
+            return null;
+        },
+        normalizeMetaPercent(raw) {
+            const n = Number(raw);
+            if (!Number.isFinite(n) || n <= 0) return null;
+            if (n <= 1) return n * 100;
+            if (n > 100) return 100;
+            return n;
+        },
+        metaPercent(acao, categoria) {
+            const map = {
+                compra: {
+                    matriz: 'meta_manutencao_reposicao',
+                },
+                morte: {
+                    matriz: 'meta_manutencao_mortalidade_matrizes',
+                    leitoa: 'meta_manutencao_perdas_leitoas_pre_cobertura',
+                },
+                descarte: {
+                    matriz: 'meta_manutencao_descarte_matrizes',
+                },
+                venda: {},
+            };
+
+            const key = map?.[acao]?.[categoria];
+            if (!key) return null;
+            return this.normalizeMetaPercent(this.metas?.[key]);
+        },
+        metaY(percent) {
+            const h = this.chartPlotBottom();
+            const innerH = this.chartInnerHeight();
+            const value = Number(percent || 0);
+            return h - (value / 100) * innerH;
+        },
+        formatMeta(acao, categoria) {
+            const p = this.metaPercent(acao, categoria);
+            if (p === null) return '';
+            return `${p.toFixed(1)}%`;
+        },
+        linePoints(items) {
+            const series = Array.isArray(items) ? items : [];
+            const n = series.length;
+            if (n === 0) return '';
+
+            const h = this.chartPlotBottom();
+            const innerH = this.chartInnerHeight();
+
+            return series
+                .map((row, i) => {
+                    const x = this.xAt(i);
+                    const y = h - (Number(row.value || 0) / 100) * innerH;
+                    return `${x},${y}`;
+                })
+                .join(' ');
+        },
+        firstDate() {
+            return this.datesRange?.[0] || '-';
+        },
+        lastDate() {
+            return this.datesRange?.[this.datesRange.length - 1] || '-';
+        },
+        tooltip: {
+            open: false,
+            locked: false,
+            chart: '',
+            index: 0,
+            left: 0,
+            top: 0,
+        },
+        formatPercent(value) {
+            const n = Number(value);
+            if (!Number.isFinite(n)) return '0.0%';
+            return `${n.toFixed(1)}%`;
+        },
+        categoriaLabel(categoria) {
+            const c = String(categoria || '');
+            if (c === 'leitoa') return 'Leitoa';
+            if (c === 'matriz') return 'Matriz';
+            if (c === 'leitao') return 'Leitão';
+            return c;
+        },
+        yAt(value) {
+            return this.metaY(value);
+        },
+        tooltipItems() {
+            const chart = this.tooltip.chart;
+            const i = Number(this.tooltip.index || 0);
+            const cats = ['leitoa', 'matriz', 'leitao'];
+            return cats.map((c) => {
+                const val = this.series?.[chart]?.[c]?.[i]?.value ?? 0;
+                const meta = this.metaPercent(chart, c);
+                return { categoria: c, value: val, meta };
+            });
+        },
+        setTooltip(chart, index, event, lock = false) {
+            if (this.tooltip.locked && !lock) return;
+            this.tooltip.chart = String(chart);
+            this.tooltip.index = Number(index || 0);
+            this.tooltip.open = true;
+
+            const clientX = event?.clientX ?? 0;
+            const clientY = event?.clientY ?? 0;
+
+            const margin = 12;
+            const maxLeft = Math.max(0, (window.innerWidth || 0) - 260);
+            const maxTop = Math.max(0, (window.innerHeight || 0) - 160);
+            this.tooltip.left = Math.min(Math.max(clientX + margin, margin), maxLeft);
+            this.tooltip.top = Math.min(Math.max(clientY + margin, margin), maxTop);
+        },
+        clearTooltip(chart) {
+            if (this.tooltip.locked) return;
+            if (this.tooltip.chart === String(chart)) {
+                this.tooltip.open = false;
+            }
+        },
+        toggleTooltipLock(chart, index, event) {
+            const same = this.tooltip.locked && this.tooltip.chart === String(chart) && Number(this.tooltip.index) === Number(index);
+            if (same) {
+                this.tooltip.locked = false;
+                this.tooltip.open = false;
+                return;
+            }
+
+            this.tooltip.locked = true;
+            this.setTooltip(chart, index, event, true);
+        },
+        async loadAll() {
+            this.loading = true;
+            this.error = '';
+            try {
+                const endpoints = [
+                    ['/api/plantel/femeas/compras', 'femeas', 'compra'],
+                    ['/api/plantel/femeas/mortes', 'femeas', 'morte'],
+                    ['/api/plantel/femeas/descartes', 'femeas', 'descarte'],
+                    ['/api/plantel/femeas/vendas', 'femeas', 'venda'],
+                    ['/api/plantel/machos/compras', 'machos', 'compra'],
+                    ['/api/plantel/machos/mortes', 'machos', 'morte'],
+                    ['/api/plantel/machos/descartes', 'machos', 'descarte'],
+                    ['/api/plantel/machos/vendas', 'machos', 'venda'],
+                ];
+
+                const results = await Promise.all(
+                    endpoints.map(async ([url, grupo, acao]) => {
+                        const r = await fetch(url, { headers: { Accept: 'application/json' } });
+                        const data = await r.json().catch(() => ({}));
+                        return { grupo, acao, data };
+                    })
+                );
+
+                results.forEach(({ grupo, acao, data }) => {
+                    const items = Array.isArray(data?.items) ? data.items : [];
+                    this[grupo][acao] = items;
+                    this.totals[grupo][acao] = items.length;
+                    if (acao !== 'compra') {
+                        this.top[grupo][acao] = this.sliceTop(this.countByCausa(items), 6);
+                    }
+                    if (data?.message && !this.error) this.error = String(data.message);
+                });
+
+                const actions = ['compra', 'morte', 'descarte', 'venda'];
+                const categorias = ['leitoa', 'matriz', 'leitao'];
+
+                const metasResp = await fetch('/api/metas', { headers: { Accept: 'application/json' } });
+                const metasData = await metasResp.json().catch(() => ({}));
+                this.metas = metasData?.items && typeof metasData.items === 'object' ? metasData.items : {};
+                if (metasData?.message && !this.error) this.error = String(metasData.message);
+
+                const byCategoriaDate = {
+                    leitoa: {},
+                    matriz: {},
+                    leitao: {},
+                };
+
+                actions.forEach((acao) => {
+                    (this.femeas[acao] || []).forEach((row) => {
+                        const date = row?.data ? String(row.data) : '';
+                        if (!date) return;
+
+                        const categoria = this.categoriaFromTipo(row?.tipo);
+                        if (!categoria) return;
+
+                        if (!byCategoriaDate[categoria][date]) {
+                            byCategoriaDate[categoria][date] = { compra: 0, morte: 0, descarte: 0, venda: 0, total: 0 };
+                        }
+
+                        byCategoriaDate[categoria][date][acao] += 1;
+                        byCategoriaDate[categoria][date].total += 1;
+                    });
+                });
+
+                const allDates = [];
+                categorias.forEach((categoria) => {
+                    allDates.push(...Object.keys(byCategoriaDate[categoria]));
+                });
+
+                const parsed = allDates
+                    .map((d) => this.parseDateBr(d))
+                    .filter((d) => d instanceof Date && !Number.isNaN(d.getTime()));
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                let endDate = today;
+                let minDate = today;
+
+                if (parsed.length > 0) {
+                    parsed.sort((a, b) => a.getTime() - b.getTime());
+                    minDate = parsed[0];
+                    endDate = parsed[parsed.length - 1];
+                }
+
+                const days = Math.max(1, Number(this.rangeDays || 365));
+                const startDate = new Date(endDate);
+                startDate.setDate(endDate.getDate() - (days - 1));
+
+                if (startDate.getTime() < minDate.getTime()) {
+                    startDate.setTime(minDate.getTime());
+                }
+
+                this.datesRange = this.buildDatesRangeFrom(startDate, endDate);
+
+                actions.forEach((acao) => {
+                    categorias.forEach((categoria) => {
+                        this.series[acao][categoria] = this.datesRange.map((date) => {
+                            const row = byCategoriaDate[categoria][date];
+                            const total = Number(row?.total || 0);
+                            const count = Number(row?.[acao] || 0);
+                            const value = total > 0 ? (count / total) * 100 : 0;
+                            return { date, value };
+                        });
+                    });
+                });
+
+                this.loaded = true;
+            } catch (e) {
+                this.error = 'Não foi possível carregar as análises.';
+            } finally {
+                this.loading = false;
+            }
+        },
+    }" x-init="loadAll()" class="space-y-6">
+        <div class="mb-4 bg-gray-50 border border-gray-100 text-gray-700 rounded-xl px-4 py-3 text-sm flex items-center justify-between gap-3">
+            <div class="min-w-0">
+                <div class="font-semibold text-gray-900">Análise do Plantel</div>
+                <div class="text-xs text-gray-500">Taxas por data e resumo de eventos (compras, mortes, descartes e vendas).</div>
+            </div>
+            <button type="button" @click="loadAll()" :disabled="loading" class="shrink-0 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50">
+                <template x-if="!loading"><span>Atualizar</span></template>
+                <template x-if="loading"><span>Carregando...</span></template>
+            </button>
+        </div>
+
+        <div x-show="error" class="bg-amber-50 border border-amber-100 text-amber-800 rounded-xl px-4 py-3 text-sm" x-text="error" x-cloak></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                    <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Fêmeas</h6>
+                    <div class="text-sm text-gray-500 mt-1">Ocorrências recentes por causa.</div>
+                </div>
+                <div class="p-4 sm:p-6 space-y-5">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <div class="text-[11px] font-bold text-gray-500 uppercase">Compras</div>
+                            <div class="text-xl font-bold text-gray-900 mt-1" x-text="totals.femeas.compra"></div>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <div class="text-[11px] font-bold text-gray-500 uppercase">Mortes</div>
+                            <div class="text-xl font-bold text-gray-900 mt-1" x-text="totals.femeas.morte"></div>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <div class="text-[11px] font-bold text-gray-500 uppercase">Descartes</div>
+                            <div class="text-xl font-bold text-gray-900 mt-1" x-text="totals.femeas.descarte"></div>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <div class="text-[11px] font-bold text-gray-500 uppercase">Vendas</div>
+                            <div class="text-xl font-bold text-gray-900 mt-1" x-text="totals.femeas.venda"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Top causas (morte)</div>
+                            <div class="mt-3 space-y-2">
+                                <template x-for="row in top.femeas.morte" :key="row.causa">
+                                    <div class="flex items-center justify-between gap-3 text-sm">
+                                        <div class="min-w-0 truncate text-gray-700" x-text="row.causa"></div>
+                                        <div class="font-semibold text-gray-900" x-text="row.total"></div>
+                                    </div>
+                                </template>
+                                <div x-show="top.femeas.morte.length === 0" class="text-sm text-gray-500">Sem registros.</div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Top causas (descarte)</div>
+                            <div class="mt-3 space-y-2">
+                                <template x-for="row in top.femeas.descarte" :key="row.causa">
+                                    <div class="flex items-center justify-between gap-3 text-sm">
+                                        <div class="min-w-0 truncate text-gray-700" x-text="row.causa"></div>
+                                        <div class="font-semibold text-gray-900" x-text="row.total"></div>
+                                    </div>
+                                </template>
+                                <div x-show="top.femeas.descarte.length === 0" class="text-sm text-gray-500">Sem registros.</div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Top causas (venda)</div>
+                            <div class="mt-3 space-y-2">
+                                <template x-for="row in top.femeas.venda" :key="row.causa">
+                                    <div class="flex items-center justify-between gap-3 text-sm">
+                                        <div class="min-w-0 truncate text-gray-700" x-text="row.causa"></div>
+                                        <div class="font-semibold text-gray-900" x-text="row.total"></div>
+                                    </div>
+                                </template>
+                                <div x-show="top.femeas.venda.length === 0" class="text-sm text-gray-500">Sem registros.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                    <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Machos</h6>
+                    <div class="text-sm text-gray-500 mt-1">Ocorrências recentes por causa.</div>
+                </div>
+                <div class="p-4 sm:p-6 space-y-5">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <div class="text-[11px] font-bold text-gray-500 uppercase">Compras</div>
+                            <div class="text-xl font-bold text-gray-900 mt-1" x-text="totals.machos.compra"></div>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <div class="text-[11px] font-bold text-gray-500 uppercase">Mortes</div>
+                            <div class="text-xl font-bold text-gray-900 mt-1" x-text="totals.machos.morte"></div>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <div class="text-[11px] font-bold text-gray-500 uppercase">Descartes</div>
+                            <div class="text-xl font-bold text-gray-900 mt-1" x-text="totals.machos.descarte"></div>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <div class="text-[11px] font-bold text-gray-500 uppercase">Vendas</div>
+                            <div class="text-xl font-bold text-gray-900 mt-1" x-text="totals.machos.venda"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Top causas (morte)</div>
+                            <div class="mt-3 space-y-2">
+                                <template x-for="row in top.machos.morte" :key="row.causa">
+                                    <div class="flex items-center justify-between gap-3 text-sm">
+                                        <div class="min-w-0 truncate text-gray-700" x-text="row.causa"></div>
+                                        <div class="font-semibold text-gray-900" x-text="row.total"></div>
+                                    </div>
+                                </template>
+                                <div x-show="top.machos.morte.length === 0" class="text-sm text-gray-500">Sem registros.</div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Top causas (descarte)</div>
+                            <div class="mt-3 space-y-2">
+                                <template x-for="row in top.machos.descarte" :key="row.causa">
+                                    <div class="flex items-center justify-between gap-3 text-sm">
+                                        <div class="min-w-0 truncate text-gray-700" x-text="row.causa"></div>
+                                        <div class="font-semibold text-gray-900" x-text="row.total"></div>
+                                    </div>
+                                </template>
+                                <div x-show="top.machos.descarte.length === 0" class="text-sm text-gray-500">Sem registros.</div>
+                            </div>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Top causas (venda)</div>
+                            <div class="mt-3 space-y-2">
+                                <template x-for="row in top.machos.venda" :key="row.causa">
+                                    <div class="flex items-center justify-between gap-3 text-sm">
+                                        <div class="min-w-0 truncate text-gray-700" x-text="row.causa"></div>
+                                        <div class="font-semibold text-gray-900" x-text="row.total"></div>
+                                    </div>
+                                </template>
+                                <div x-show="top.machos.venda.length === 0" class="text-sm text-gray-500">Sem registros.</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

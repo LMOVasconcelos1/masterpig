@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CausaController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FemeaCompraController;
 use App\Http\Controllers\FemeaController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\RacaController;
 use App\Http\Controllers\RacaoController;
 use App\Http\Controllers\TipoRacaoController;
 use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\UtilitariosController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -95,5 +97,13 @@ Route::get('/api/plantel/machos/mortes', [MachoMovimentoController::class, 'mort
 Route::get('/api/plantel/machos/descartes', [MachoMovimentoController::class, 'descartes']);
 Route::get('/api/plantel/machos/vendas', [MachoMovimentoController::class, 'vendas']);
 Route::get('/api/metas', [MetasController::class, 'index']);
+if ((bool) config('masterpig.chatbot_enabled', false)) {
+    Route::middleware('auth')
+        ->post('/api/chatbot', [ChatbotController::class, 'ask'])
+        ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
+}
+Route::middleware('auth')->get('/api/utilitarios', [UtilitariosController::class, 'index']);
+Route::middleware('auth')->post('/api/utilitarios/localizacoes', [UtilitariosController::class, 'storeLocalizacao']);
+Route::middleware('auth')->post('/api/utilitarios/baias', [UtilitariosController::class, 'storeBaia']);
 
 require __DIR__.'/auth.php';

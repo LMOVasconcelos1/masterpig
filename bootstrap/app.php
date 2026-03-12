@@ -16,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\CheckAdmin::class,
         ]);
 
+        $middleware->web(prepend: [
+            \App\Http\Middleware\EnsureLocalSessionCookie::class,
+        ]);
+
         $middleware->prependToPriorityList(
             AuthenticatesRequests::class,
             \App\Http\Middleware\EnsureTenantSelected::class

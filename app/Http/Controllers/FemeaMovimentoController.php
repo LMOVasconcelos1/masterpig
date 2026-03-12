@@ -25,7 +25,7 @@ class FemeaMovimentoController extends Controller
 
     private function listarPorAcao(string $acao)
     {
-        if (!Schema::hasTable('femea') || !Schema::hasTable('femea_movimento')) {
+        if (! Schema::hasTable('femea') || ! Schema::hasTable('femea_movimento')) {
             return response()->json([
                 'items' => [],
                 'message' => 'Tabelas do plantel ainda não foram criadas no banco.',
@@ -43,6 +43,7 @@ class FemeaMovimentoController extends Controller
                 'fm.data',
                 'f.id as femea_id',
                 'f.id_primaria',
+                'f.tipo_compra',
                 'f.ciclos_ate_compra',
                 'fm.observacoes',
             ]);
@@ -56,7 +57,9 @@ class FemeaMovimentoController extends Controller
 
         $items = $rows->map(function ($row) use ($hasCausaId, $acao) {
             $causa = $hasCausaId ? ($row->causa_nome ?? null) : null;
-            if (!$causa) $causa = $row->observacoes ?? '-';
+            if (! $causa) {
+                $causa = $row->observacoes ?? '-';
+            }
 
             return [
                 'id' => $row->id,
@@ -64,6 +67,7 @@ class FemeaMovimentoController extends Controller
                 'data' => Carbon::parse($row->data)->format('d/m/Y'),
                 'femea_id' => $row->femea_id,
                 'id_primaria' => $row->id_primaria,
+                'tipo' => $row->tipo_compra,
                 'ciclo' => $row->ciclos_ate_compra,
                 'causa' => $causa,
             ];
