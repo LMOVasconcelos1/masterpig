@@ -55,10 +55,6 @@
                 <div class="text-sm text-gray-500 mt-1">Atualize suas informações de perfil e e-mail.</div>
             </div>
             <div class="p-6">
-                <form id="send-verification" method="POST" action="{{ route('verification.send', [], false) }}">
-                    @csrf
-                </form>
-
                 <form method="POST" action="{{ route('profile.update', [], false) }}" class="space-y-5" enctype="multipart/form-data">
                     @csrf
                     @method('patch')
@@ -77,20 +73,6 @@
                             <label for="email" class="block text-sm font-medium text-gray-700">E-mail</label>
                             <input id="email" name="email" type="email" value="{{ old('email', $user->email) }}" required autocomplete="email" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                             <x-input-error :messages="$errors->get('email')" class="mt-2" />
-
-                            @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
-                                <div class="mt-3 bg-amber-50 border border-amber-100 text-amber-900 rounded-xl px-4 py-3 text-sm">
-                                    <div class="font-semibold">Seu e-mail ainda não foi verificado.</div>
-                                    <div class="mt-1 flex flex-wrap items-center gap-2">
-                                        <button form="send-verification" type="submit" class="inline-flex items-center rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-50">
-                                            Reenviar e-mail de verificação
-                                        </button>
-                                        @if (session('status') === 'verification-link-sent')
-                                            <span class="text-sm text-emerald-700 font-semibold">Link enviado.</span>
-                                        @endif
-                                    </div>
-                                </div>
-                            @endif
                         </div>
 
                         <div>

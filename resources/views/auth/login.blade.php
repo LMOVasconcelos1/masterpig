@@ -25,11 +25,8 @@
                 </div>
 
                 <div>
-                    <label for="identificador" class="block text-sm font-medium text-gray-700">E-mail, CPF ou Usuário</label>
-                    <input id="identificador" name="identificador" type="text" value="{{ old('identificador') }}" required autofocus class="mt-1 block w-full rounded-2xl border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-200 hover:border-primary-400">
-                    <x-input-error :messages="$errors->get('identificador')" class="mt-2" />
-                    <x-input-error :messages="$errors->get('email')" class="mt-2" />
-                    <x-input-error :messages="$errors->get('cpf')" class="mt-2" />
+                    <label for="usuario" class="block text-sm font-medium text-gray-700">Usuário</label>
+                    <input id="usuario" name="usuario" type="text" value="{{ old('usuario') }}" required autofocus class="mt-1 block w-full rounded-2xl border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 transition-all duration-200 hover:border-primary-400">
                     <x-input-error :messages="$errors->get('usuario')" class="mt-2" />
                 </div>
 
@@ -44,11 +41,6 @@
                         <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-primary-600 shadow-sm focus:ring-primary-500" name="remember">
                         <span class="ms-2 text-sm text-gray-600">Lembrar-me</span>
                     </label>
-                    @if (Route::has('password.request'))
-                        <a class="text-sm text-primary-600 hover:text-primary-700 font-semibold" href="{{ route('password.request') }}">
-                            Esqueci minha senha
-                        </a>
-                    @endif
                 </div>
 
                 <div class="pt-2">
@@ -58,12 +50,6 @@
                     </button>
                 </div>
 
-                <div class="pt-3 text-center">
-                    <a href="{{ route('register') }}" class="inline-flex items-center justify-center w-full rounded-2xl border border-primary-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-primary-700 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-transform duration-200 hover:scale-[1.02]">
-                        <i class="fa-solid fa-user-plus mr-2"></i>
-                        Se inscrever
-                    </a>
-                </div>
             </form>
         </div>
     </div>

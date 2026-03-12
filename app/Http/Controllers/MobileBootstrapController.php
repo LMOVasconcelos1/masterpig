@@ -18,7 +18,7 @@ class MobileBootstrapController extends Controller
 
     private function funcionarios(): array
     {
-        if (!Schema::hasTable('funcionario')) {
+        if (! Schema::hasTable('usuario')) {
             return [];
         }
 
@@ -27,25 +27,19 @@ class MobileBootstrapController extends Controller
             'nome',
         ];
 
-        if (Schema::hasColumn('funcionario', 'perfil')) {
+        if (Schema::hasColumn('usuario', 'perfil')) {
             $select[] = 'perfil';
         } else {
             $select[] = DB::raw('NULL as perfil');
         }
 
-        if (Schema::hasColumn('funcionario', 'ativo')) {
-            $select[] = 'ativo';
-        } else {
-            $select[] = DB::raw('1 as ativo');
-        }
-
-        if (Schema::hasColumn('funcionario', 'atualizado_em')) {
+        if (Schema::hasColumn('usuario', 'atualizado_em')) {
             $select[] = 'atualizado_em';
         } else {
             $select[] = DB::raw('NULL as atualizado_em');
         }
 
-        return DB::table('funcionario')
+        return DB::table('usuario')
             ->select($select)
             ->orderBy('id')
             ->get()
@@ -54,7 +48,7 @@ class MobileBootstrapController extends Controller
                     'id' => (int) $row->id,
                     'nome' => (string) $row->nome,
                     'perfil' => $row->perfil === null ? null : (string) $row->perfil,
-                    'ativo' => (int) ($row->ativo ?? 0),
+                    'ativo' => 1,
                     'atualizado_em' => $row->atualizado_em === null ? null : (string) $row->atualizado_em,
                 ];
             })
@@ -64,7 +58,7 @@ class MobileBootstrapController extends Controller
 
     private function causas(): array
     {
-        if (!Schema::hasTable('causa')) {
+        if (! Schema::hasTable('causa')) {
             return [];
         }
 
@@ -76,7 +70,7 @@ class MobileBootstrapController extends Controller
 
         $joinGrupo = false;
 
-        if (Schema::hasColumn('causa', 'grupo_causa') && !Schema::hasColumn('causa', 'grupo_causa_id')) {
+        if (Schema::hasColumn('causa', 'grupo_causa') && ! Schema::hasColumn('causa', 'grupo_causa_id')) {
             $select[] = 'c.grupo_causa';
         } elseif (Schema::hasColumn('causa', 'grupo_causa_id') && Schema::hasTable('grupo_causa') && Schema::hasColumn('grupo_causa', 'nome')) {
             $joinGrupo = true;
@@ -122,7 +116,7 @@ class MobileBootstrapController extends Controller
 
     private function itens(): array
     {
-        if (!Schema::hasTable('item') || !Schema::hasColumn('item', 'tipo')) {
+        if (! Schema::hasTable('item') || ! Schema::hasColumn('item', 'tipo')) {
             return [];
         }
 
@@ -151,7 +145,7 @@ class MobileBootstrapController extends Controller
 
         $joinRaca = false;
 
-        if (Schema::hasColumn('item', 'raca') && !Schema::hasColumn('item', 'raca_id')) {
+        if (Schema::hasColumn('item', 'raca') && ! Schema::hasColumn('item', 'raca_id')) {
             $select[] = 'i.raca';
         } elseif (Schema::hasColumn('item', 'raca_id') && Schema::hasTable('raca') && Schema::hasColumn('raca', 'nome')) {
             $joinRaca = true;
@@ -199,4 +193,3 @@ class MobileBootstrapController extends Controller
             ->all();
     }
 }
-

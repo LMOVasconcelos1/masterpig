@@ -20,8 +20,15 @@ class EnsureTenantSelected
         $guard = Auth::guard('web');
         $authKey = $guard instanceof SessionGuard ? $guard->getName() : ('login_web_'.sha1(SessionGuard::class));
         $hasAuthSession = $request->session()->has($authKey);
+        $hasRememberCookie = $guard instanceof SessionGuard
+            ? $request->cookies->has($guard->getRecallerName())
+            : false;
+        $requiresTenant = $hasAuthSession || $hasRememberCookie;
 
-        if ($hasAuthSession && (! is_string($db) || $db === '' || ! is_string($user) || $user === '')) {
+        if ($requiresTenant && (! is_string($db) || $db === '' || ! is_string($user) || $user === '')) {
+            if ($guard instanceof SessionGuard) {
+                $guard->logout();
+            }
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
@@ -30,12 +37,15 @@ class EnsureTenantSelected
             ]);
         }
 
-        if ($hasAuthSession) {
+        if ($requiresTenant) {
             try {
                 TenantDatabase::applyDatabase($db, $user);
             } catch (Throwable $e) {
                 report($e);
 
+                if ($guard instanceof SessionGuard) {
+                    $guard->logout();
+                }
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 

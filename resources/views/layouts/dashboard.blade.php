@@ -97,7 +97,7 @@
                         
                         <div x-show="open && sidebarOpen" x-cloak class="mt-1 ml-4 pl-4 border-l border-primary-600 space-y-1">
                             <!-- Cadastros Sub-dropdown -->
-                            <div x-data="{ subOpen: {{ request()->is('admin/causas*') || request()->is('admin/racoes*') || request()->is('admin/metas*') || request()->is('admin/funcionarios*') ? 'true' : 'false' }} }">
+                            <div x-data="{ subOpen: {{ request()->is('admin/causas*') || request()->is('admin/racoes*') || request()->is('admin/metas*') || request()->is('admin/usuarios*') ? 'true' : 'false' }} }">
                                 <button @click="subOpen = !subOpen" class="flex items-center justify-between w-full px-4 py-2 text-sm text-primary-200 transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                                     <span class="font-medium">Cadastros</span>
                                     <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="subOpen ? 'rotate-180' : ''"></i>
@@ -113,9 +113,9 @@
                                         <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                         Rações
                                     </a>
-                                    <a href="{{ route('admin.funcionarios.index') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.funcionarios.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                    <a href="{{ route('admin.usuarios.index') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.usuarios.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                                         <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
-                                        Funcionários
+                                        Usuários
                                     </a>
                                     <a href="{{ route('admin.metas.index') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.metas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                                         <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
@@ -262,7 +262,7 @@
     </div>
 
     <!-- Alpine.js -->
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
     @stack('scripts')
 </body>
 </html>

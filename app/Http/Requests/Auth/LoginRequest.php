@@ -29,7 +29,7 @@ class LoginRequest extends FormRequest
     {
         return [
             'cnpj' => ['required', 'string'],
-            'identificador' => ['required', 'string'],
+            'usuario' => ['required', 'string'],
             'senha' => ['required', 'string'],
         ];
     }
@@ -59,14 +59,11 @@ class LoginRequest extends FormRequest
         $this->session()->put('tenant_db', $tenantDb);
         $this->session()->put('tenant_user', $tenantUser);
 
-        $identificador = $this->input('identificador');
+        $usuario = $this->input('usuario');
         $senha = $this->input('senha');
 
-        // Determina o campo de login (email, cpf ou usuario)
-        $loginField = filter_var($identificador, FILTER_VALIDATE_EMAIL) ? 'email' : (is_numeric($identificador) ? 'cpf' : 'usuario');
-
         $credentials = [
-            $loginField => $identificador,
+            'usuario' => $usuario,
             'password' => $senha,
         ];
 
@@ -74,7 +71,7 @@ class LoginRequest extends FormRequest
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'identificador' => trans('auth.failed'),
+                'usuario' => trans('auth.failed'),
             ]);
         }
 
@@ -111,6 +108,6 @@ class LoginRequest extends FormRequest
     {
         $cnpj = TenantDatabase::normalizeCnpj($this->input('cnpj'));
 
-        return Str::transliterate(Str::lower($cnpj.'|'.$this->input('identificador')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($cnpj.'|'.$this->input('usuario')).'|'.$this->ip());
     }
 }

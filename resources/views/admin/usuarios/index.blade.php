@@ -1,7 +1,7 @@
 @extends('layouts.dashboard')
 
-@section('title', 'Funcionários')
-@section('page_title', 'Funcionários')
+@section('title', 'Usuários')
+@section('page_title', 'Usuários')
 
 @section('content')
 <div x-data="{
@@ -13,18 +13,18 @@
     deleteSubmitting: false,
     edit: {
         id: '{{ old('user_id') }}',
-        nome: @js(old('nome')),
         usuario: @js(old('usuario')),
+        perfil: @js(old('perfil', 'operador')),
         senha: '',
     },
-    deleting: { id: '', nome: '', usuario: '' },
+    deleting: { id: '', usuario: '' },
     openEditModal(user) {
-        this.edit = { id: String(user.id), nome: user.nome, usuario: user.usuario, senha: '' };
+        this.edit = { id: String(user.id), usuario: user.usuario, perfil: user.perfil, senha: '' };
         this.openEdit = true;
         this.$nextTick(() => { this.editSubmitting = false; });
     },
     openDeleteModal(user) {
-        this.deleting = { id: String(user.id), nome: user.nome, usuario: user.usuario };
+        this.deleting = { id: String(user.id), usuario: user.usuario };
         this.openDelete = true;
         this.$nextTick(() => { this.deleteSubmitting = false; });
     },
@@ -36,14 +36,14 @@
     @endif
 
     <div class="flex items-center justify-end">
-        <button type="button" @click="openCreate = true" class="group relative inline-flex items-center justify-center w-12 h-12 bg-primary-600 text-white rounded-xl shadow-lg hover:bg-primary-700 hover:scale-110 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2" title="Adicionar Funcionário">
+        <button type="button" @click="openCreate = true" class="group relative inline-flex items-center justify-center w-12 h-12 bg-primary-600 text-white rounded-xl shadow-lg hover:bg-primary-700 hover:scale-110 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2" title="Adicionar Usuário">
             <i class="fa-solid fa-user-plus text-xl"></i>
         </button>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-            <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Lista de Funcionários</h6>
+            <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Lista de Usuários</h6>
         </div>
         <div class="p-6">
             <table class="min-w-full divide-y divide-gray-200">
@@ -51,29 +51,31 @@
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuário</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Perfil</th>
                         <th scope="col" class="relative px-6 py-3"><span class="sr-only">Ações</span></th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($funcionarios as $f)
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $f->nome }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $f->usuario }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div class="flex items-center justify-end space-x-3">
-                                <button type="button" @click="openEditModal({ id: {{ $f->id }}, nome: @js($f->nome), usuario: @js($f->usuario) })" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Editar">
-                                    <i class="fa-solid fa-pen-to-square text-lg"></i>
-                                </button>
-                                <button type="button" @click="openDeleteModal({ id: {{ $f->id }}, nome: @js($f->nome), usuario: @js($f->usuario) })" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Excluir">
-                                    <i class="fa-solid fa-trash-can text-lg"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                    @forelse($usuarios as $u)
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $u->nome }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $u->usuario }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $u->perfil }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex items-center justify-end space-x-3">
+                                    <button type="button" @click="openEditModal({ id: {{ $u->id }}, usuario: @js($u->usuario), perfil: @js($u->perfil) })" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Editar">
+                                        <i class="fa-solid fa-pen-to-square text-lg"></i>
+                                    </button>
+                                    <button type="button" @click="openDeleteModal({ id: {{ $u->id }}, usuario: @js($u->usuario) })" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Excluir">
+                                        <i class="fa-solid fa-trash-can text-lg"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                     @empty
-                    <tr>
-                        <td colspan="3" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center italic">Nenhum funcionário cadastrado.</td>
-                    </tr>
+                        <tr>
+                            <td colspan="4" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center italic">Nenhum usuário cadastrado.</td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>
@@ -85,20 +87,24 @@
             <div x-show="openCreate" @click="openCreate = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div x-show="openCreate" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <form action="{{ route('admin.funcionarios.store') }}" method="POST" @submit="createSubmitting = true">
+                <form action="{{ route('admin.usuarios.store') }}" method="POST" @submit="createSubmitting = true">
                     @csrf
                     <input type="hidden" name="_form" value="create">
                     <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Adicionar Funcionário</h3>
-                        <div class="mt-4">
-                            <label class="block text-sm font-medium text-gray-700">Nome</label>
-                            <input type="text" name="nome" value="{{ old('nome') }}" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
-                            @if(old('_form') === 'create') @error('nome') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror @endif
-                        </div>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Adicionar Usuário</h3>
                         <div class="mt-4">
                             <label class="block text-sm font-medium text-gray-700">Usuário</label>
                             <input type="text" name="usuario" value="{{ old('usuario') }}" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
                             @if(old('_form') === 'create') @error('usuario') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror @endif
+                        </div>
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700">Perfil</label>
+                            <select name="perfil" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <option value="operador" {{ old('perfil', 'operador') === 'operador' ? 'selected' : '' }}>operador</option>
+                                <option value="consultor" {{ old('perfil') === 'consultor' ? 'selected' : '' }}>consultor</option>
+                                <option value="administrador" {{ old('perfil') === 'administrador' ? 'selected' : '' }}>administrador</option>
+                            </select>
+                            @if(old('_form') === 'create') @error('perfil') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror @endif
                         </div>
                         <div class="mt-4">
                             <label class="block text-sm font-medium text-gray-700">Senha</label>
@@ -124,22 +130,25 @@
             <div x-show="openEdit" @click="openEdit = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div x-show="openEdit" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <form :action="`/admin/funcionarios/${edit.id}`" method="POST" @submit="editSubmitting = true">
+                <form :action="`/admin/usuarios/${edit.id}`" method="POST" @submit="editSubmitting = true">
                     @csrf
                     @method('PATCH')
                     <input type="hidden" name="_form" value="edit">
                     <input type="hidden" name="user_id" :value="edit.id">
                     <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Editar Funcionário</h3>
-                        <div class="mt-4">
-                            <label class="block text-sm font-medium text-gray-700">Nome</label>
-                            <input type="text" name="nome" x-model="edit.nome" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
-                            @if(old('_form') === 'edit') @error('nome') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror @endif
-                        </div>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Editar Usuário</h3>
                         <div class="mt-4">
                             <label class="block text-sm font-medium text-gray-700">Usuário</label>
-                            <input type="text" name="usuario" x-model="edit.usuario" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
-                            @if(old('_form') === 'edit') @error('usuario') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror @endif
+                            <input type="text" x-model="edit.usuario" disabled class="mt-1 block w-full shadow-sm sm:text-sm border-gray-200 rounded-md bg-gray-50 text-gray-600">
+                        </div>
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700">Perfil</label>
+                            <select name="perfil" x-model="edit.perfil" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                <option value="operador">operador</option>
+                                <option value="consultor">consultor</option>
+                                <option value="administrador">administrador</option>
+                            </select>
+                            @if(old('_form') === 'edit') @error('perfil') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror @endif
                         </div>
                         <div class="mt-4">
                             <label class="block text-sm font-medium text-gray-700">Nova senha (opcional)</label>
@@ -165,13 +174,13 @@
             <div x-show="openDelete" @click="openDelete = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div x-show="openDelete" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
-                <form :action="`/admin/funcionarios/${deleting.id}`" method="POST" @submit="deleteSubmitting = true">
+                <form :action="`/admin/usuarios/${deleting.id}`" method="POST" @submit="deleteSubmitting = true">
                     @csrf
                     @method('DELETE')
                     <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Excluir Funcionário</h3>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">Excluir Usuário</h3>
                         <div class="mt-3 text-sm text-gray-600">
-                            Tem certeza que deseja excluir o funcionário <span class="font-semibold text-gray-900" x-text="deleting.nome"></span> (<span class="font-semibold text-gray-900" x-text="deleting.usuario"></span>)?
+                            Tem certeza que deseja excluir o usuário <span class="font-semibold text-gray-900" x-text="deleting.usuario"></span>?
                         </div>
                     </div>
                     <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
@@ -188,3 +197,4 @@
     </div>
 </div>
 @endsection
+

@@ -9,7 +9,6 @@ use App\Http\Controllers\FemeaMorteController;
 use App\Http\Controllers\FemeaMovimentoController;
 use App\Http\Controllers\FemeaVendaController;
 use App\Http\Controllers\FornecedorController;
-use App\Http\Controllers\FuncionarioController;
 use App\Http\Controllers\GrupoCausaController;
 use App\Http\Controllers\MachoCompraController;
 use App\Http\Controllers\MachoDescarteController;
@@ -23,13 +22,14 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RacaController;
 use App\Http\Controllers\RacaoController;
 use App\Http\Controllers\TipoRacaoController;
+use App\Http\Controllers\UsuarioController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect('/login');
 });
 
-Route::get('/dashboard', DashboardController::class)->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', DashboardController::class)->middleware(['auth'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -39,11 +39,11 @@ Route::middleware('auth')->group(function () {
 });
 
 // Rotas de Administração
-Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/funcionarios', [FuncionarioController::class, 'index'])->name('funcionarios.index');
-    Route::post('/funcionarios', [FuncionarioController::class, 'store'])->name('funcionarios.store');
-    Route::patch('/funcionarios/{funcionario}', [FuncionarioController::class, 'update'])->name('funcionarios.update');
-    Route::delete('/funcionarios/{funcionario}', [FuncionarioController::class, 'destroy'])->name('funcionarios.destroy');
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/usuarios', [UsuarioController::class, 'index'])->name('usuarios.index');
+    Route::post('/usuarios', [UsuarioController::class, 'store'])->name('usuarios.store');
+    Route::patch('/usuarios/{user}', [UsuarioController::class, 'update'])->name('usuarios.update');
+    Route::delete('/usuarios/{user}', [UsuarioController::class, 'destroy'])->name('usuarios.destroy');
 
     Route::get('/causas', [CausaController::class, 'index'])->name('causas.index');
     Route::post('/causas', [CausaController::class, 'store'])->name('causas.store');

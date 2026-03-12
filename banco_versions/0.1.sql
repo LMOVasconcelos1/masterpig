@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.45, for Win64 (x86_64)
 --
--- Host: 108.181.92.77    Database: mastersui
+-- Host: 108.181.92.77    Database: mp00155232000119
 -- ------------------------------------------------------
 -- Server version	8.0.45-cll-lve
 
@@ -36,6 +36,15 @@ CREATE TABLE `causa` (
   CONSTRAINT `fk_causa_grupo` FOREIGN KEY (`grupo_causa_id`) REFERENCES `grupo_causa` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `causa`
+--
+
+LOCK TABLES `causa` WRITE;
+/*!40000 ALTER TABLE `causa` DISABLE KEYS */;
+/*!40000 ALTER TABLE `causa` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `femea`
@@ -75,6 +84,15 @@ CREATE TABLE `femea` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `femea`
+--
+
+LOCK TABLES `femea` WRITE;
+/*!40000 ALTER TABLE `femea` DISABLE KEYS */;
+/*!40000 ALTER TABLE `femea` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `femea_movimento`
 --
 
@@ -105,6 +123,15 @@ CREATE TABLE `femea_movimento` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `femea_movimento`
+--
+
+LOCK TABLES `femea_movimento` WRITE;
+/*!40000 ALTER TABLE `femea_movimento` DISABLE KEYS */;
+/*!40000 ALTER TABLE `femea_movimento` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `fornecedor`
 --
 
@@ -122,23 +149,13 @@ CREATE TABLE `fornecedor` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `funcionario`
+-- Dumping data for table `fornecedor`
 --
 
-DROP TABLE IF EXISTS `funcionario`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `funcionario` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-  `nome` varchar(255) NOT NULL,
-  `usuario` varchar(255) NOT NULL,
-  `senha` varchar(255) NOT NULL,
-  `criado_em` timestamp NULL DEFAULT NULL,
-  `atualizado_em` timestamp NULL DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uq_funcionario_usuario` (`usuario`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+LOCK TABLES `fornecedor` WRITE;
+/*!40000 ALTER TABLE `fornecedor` DISABLE KEYS */;
+/*!40000 ALTER TABLE `fornecedor` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `grupo_causa`
@@ -156,6 +173,15 @@ CREATE TABLE `grupo_causa` (
   UNIQUE KEY `nome` (`nome`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `grupo_causa`
+--
+
+LOCK TABLES `grupo_causa` WRITE;
+/*!40000 ALTER TABLE `grupo_causa` DISABLE KEYS */;
+/*!40000 ALTER TABLE `grupo_causa` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `macho`
@@ -191,6 +217,15 @@ CREATE TABLE `macho` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `macho`
+--
+
+LOCK TABLES `macho` WRITE;
+/*!40000 ALTER TABLE `macho` DISABLE KEYS */;
+/*!40000 ALTER TABLE `macho` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `macho_movimento`
 --
 
@@ -222,6 +257,15 @@ CREATE TABLE `macho_movimento` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `macho_movimento`
+--
+
+LOCK TABLES `macho_movimento` WRITE;
+/*!40000 ALTER TABLE `macho_movimento` DISABLE KEYS */;
+/*!40000 ALTER TABLE `macho_movimento` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `meta`
 --
 
@@ -240,6 +284,15 @@ CREATE TABLE `meta` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `meta`
+--
+
+LOCK TABLES `meta` WRITE;
+/*!40000 ALTER TABLE `meta` DISABLE KEYS */;
+/*!40000 ALTER TABLE `meta` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `raca`
 --
 
@@ -255,6 +308,15 @@ CREATE TABLE `raca` (
   UNIQUE KEY `nome` (`nome`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `raca`
+--
+
+LOCK TABLES `raca` WRITE;
+/*!40000 ALTER TABLE `raca` DISABLE KEYS */;
+/*!40000 ALTER TABLE `raca` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `racao`
@@ -294,6 +356,15 @@ CREATE TABLE `racao` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `racao`
+--
+
+LOCK TABLES `racao` WRITE;
+/*!40000 ALTER TABLE `racao` DISABLE KEYS */;
+/*!40000 ALTER TABLE `racao` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `tipo_racao`
 --
 
@@ -309,6 +380,15 @@ CREATE TABLE `tipo_racao` (
   UNIQUE KEY `nome` (`nome`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `tipo_racao`
+--
+
+LOCK TABLES `tipo_racao` WRITE;
+/*!40000 ALTER TABLE `tipo_racao` DISABLE KEYS */;
+/*!40000 ALTER TABLE `tipo_racao` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `usuario`
@@ -334,8 +414,18 @@ CREATE TABLE `usuario` (
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `cpf` (`cpf`),
   UNIQUE KEY `usuario` (`usuario`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `usuario`
+--
+
+LOCK TABLES `usuario` WRITE;
+/*!40000 ALTER TABLE `usuario` DISABLE KEYS */;
+INSERT INTO `usuario` VALUES (1,'Administrador','admin@mastersui.com.br',NULL,'$2y$12$wZkKaRiQjUqme24lyopEDO8YUEKSF0uQWhBBWggQ361b0j9ot49IG','00000000000000','admin','administrador','T0vGamDZwWfqyDVBxgMAHCTkzrWzeQa0QQfW2KtVS7aAbcWVkh2X1Bggait4','2026-03-12 00:29:47','2026-03-12 00:29:47',NULL);
+/*!40000 ALTER TABLE `usuario` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -346,4 +436,4 @@ CREATE TABLE `usuario` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-03-11 18:29:46
+-- Dump completed on 2026-03-11 21:54:41

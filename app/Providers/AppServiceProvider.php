@@ -2,16 +2,12 @@
 
 namespace App\Providers;
 
-use Illuminate\Auth\Notifications\VerifyEmail;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
-use Symfony\Component\Mime\Part\DataPart;
-use Symfony\Component\Mime\Part\File;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -34,67 +30,6 @@ class AppServiceProvider extends ServiceProvider
         if (is_string($scheme) && $scheme !== '') {
             URL::forceScheme($scheme);
         }
-
-        VerifyEmail::createUrlUsing(function ($notifiable) {
-            $appUrl = (string) (config('masterpig.app_url') ?: config('app.url'));
-            $publicUrl = rtrim((string) (config('masterpig.public_url') ?: $appUrl), '/');
-            $publicScheme = parse_url($publicUrl, PHP_URL_SCHEME);
-            if (! is_string($publicScheme) || $publicScheme === '') {
-                $publicScheme = 'http';
-            }
-
-            $cnpj = '';
-            try {
-                $cnpj = (string) request()->session()->get('tenant_cnpj', '');
-            } catch (\Throwable) {
-                $cnpj = '';
-            }
-
-            URL::forceRootUrl($publicUrl);
-            URL::forceScheme($publicScheme);
-            $signedUrl = URL::temporarySignedRoute(
-                'verification.verify',
-                now()->addMinutes(60),
-                [
-                    'id' => $notifiable->getKey(),
-                    'hash' => sha1($notifiable->getEmailForVerification()),
-                    'cnpj' => $cnpj,
-                ]
-            );
-
-            URL::forceRootUrl($appUrl);
-            $appScheme = parse_url($appUrl, PHP_URL_SCHEME);
-            if (is_string($appScheme) && $appScheme !== '') {
-                URL::forceScheme($appScheme);
-            }
-
-            return $signedUrl;
-        });
-
-        VerifyEmail::toMailUsing(function ($notifiable, string $url) {
-            $logoPath = file_exists(public_path('logoSemPalavra.png'))
-                ? public_path('logoSemPalavra.png')
-                : (file_exists(public_path('logo.png')) ? public_path('logo.png') : null);
-
-            $mailMessage = (new MailMessage)
-                ->subject('Verifique seu e-mail')
-                ->line('Clique no botão abaixo para verificar seu endereço de e-mail.')
-                ->action('Verificar e-mail', $url)
-                ->line('Se você não criou uma conta, basta ignorar este e-mail.');
-
-            if ($logoPath && file_exists($logoPath)) {
-                $contentId = 'masterpig-logo@masterpig.local';
-                $mailMessage->viewData['logoCid'] = 'cid:'.$contentId;
-                $mailMessage->withSymfonyMessage(function ($symfonyMessage) use ($logoPath) {
-                    $path = realpath($logoPath) ?: $logoPath;
-                    $part = (new DataPart(new File($path), basename($path)))->asInline();
-                    $part->setContentId('masterpig-logo@masterpig.local');
-                    $symfonyMessage->addPart($part);
-                });
-            }
-
-            return $mailMessage;
-        });
 
         View::composer('layouts.dashboard', function ($view) {
             $notificacoes = [];
