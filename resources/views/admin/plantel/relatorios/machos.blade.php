@@ -30,8 +30,8 @@
     <div class="actions">
         <div class="actions-left">Escolha o formato para exportação.</div>
         <div class="actions-right">
-            <a class="btn btn-primary" href="{{ route('admin.relatorios.plantel.machos', ['format' => 'pdf']) }}">Gerar PDF</a>
-            <a class="btn" href="{{ route('admin.relatorios.plantel.machos', ['format' => 'csv']) }}">Baixar CSV</a>
+            <a class="btn btn-primary" href="{{ route('admin.relatorios.plantel.machos', ['format' => 'pdf'], false) }}">Gerar PDF</a>
+            <a class="btn" href="{{ route('admin.relatorios.plantel.machos', ['format' => 'csv'], false) }}">Baixar CSV</a>
         </div>
     </div>
     @endif

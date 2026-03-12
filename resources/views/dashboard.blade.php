@@ -210,13 +210,13 @@
                             <tr class="hover:bg-gray-50">
                                 <td class="px-4 py-3 text-sm text-gray-700">
                                     <div class="flex items-center gap-2">
-                                        <a href="{{ route('admin.plantel.femeas.show', $row['femea_id']) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" title="Abrir cadastro">
+                                        <a href="{{ route('admin.plantel.femeas.show', $row['femea_id'], false) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" title="Abrir cadastro">
                                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
                                         </a>
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 text-sm text-gray-700">
-                                    <a href="{{ route('admin.plantel.femeas.show', $row['femea_id']) }}" class="font-semibold text-primary-700 hover:underline">
+                                    <a href="{{ route('admin.plantel.femeas.show', $row['femea_id'], false) }}" class="font-semibold text-primary-700 hover:underline">
                                         {{ $row['id_primaria'] }}
                                     </a>
                                     <div class="text-xs text-gray-500">{{ $row['id_secundaria'] ?? '-' }}</div>
@@ -725,7 +725,7 @@
 
             this.saving = true;
 
-            fetch('{{ route('admin.racas.store') }}', {
+            fetch('{{ route('admin.racas.store', [], false) }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -775,7 +775,7 @@
                 baia: this.baia || null,
             };
 
-            fetch('{{ route('admin.plantel.femeas.compras.store') }}', {
+            fetch('{{ route('admin.plantel.femeas.compras.store', [], false) }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -816,7 +816,7 @@
                 causa_id: this.causaMorteId,
             };
 
-            fetch('{{ route('admin.plantel.femeas.mortes.store') }}', {
+            fetch('{{ route('admin.plantel.femeas.mortes.store', [], false) }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -857,7 +857,7 @@
                 causa_id: this.causaMorteId,
             };
 
-            fetch('{{ route('admin.plantel.machos.mortes.store') }}', {
+            fetch('{{ route('admin.plantel.machos.mortes.store', [], false) }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -898,7 +898,7 @@
                 causa_id: this.causaDescarteId,
             };
 
-            fetch('{{ route('admin.plantel.femeas.descarte.store') }}', {
+            fetch('{{ route('admin.plantel.femeas.descarte.store', [], false) }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -939,7 +939,7 @@
                 causa_id: this.causaDescarteId,
             };
 
-            fetch('{{ route('admin.plantel.machos.descarte.store') }}', {
+            fetch('{{ route('admin.plantel.machos.descarte.store', [], false) }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -983,7 +983,7 @@
                 comprador: this.comprador || null,
             };
 
-            fetch('{{ route('admin.plantel.femeas.venda.store') }}', {
+            fetch('{{ route('admin.plantel.femeas.venda.store', [], false) }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1032,7 +1032,7 @@
                 baia: this.baia || null,
             };
 
-            fetch('{{ route('admin.plantel.machos.compras.store') }}', {
+            fetch('{{ route('admin.plantel.machos.compras.store', [], false) }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1076,7 +1076,7 @@
                 comprador: this.comprador || null,
             };
 
-            fetch('{{ route('admin.plantel.machos.venda.store') }}', {
+            fetch('{{ route('admin.plantel.machos.venda.store', [], false) }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2118,7 +2118,7 @@
                 <div class="text-sm text-gray-500 mt-1">Lista completa do plantel de fêmeas com status e última operação.</div>
             </div>
             <div class="p-6">
-                <a href="{{ route('admin.relatorios.plantel.femeas') }}" target="_blank" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                <a href="{{ route('admin.relatorios.plantel.femeas', [], false) }}" target="_blank" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                     <i class="fa-solid fa-eye mr-2"></i>
                     Pré-visualizar
                 </a>
@@ -2131,7 +2131,7 @@
                 <div class="text-sm text-gray-500 mt-1">Lista completa do plantel de machos com status e última operação.</div>
             </div>
             <div class="p-6">
-                <a href="{{ route('admin.relatorios.plantel.machos') }}" target="_blank" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                <a href="{{ route('admin.relatorios.plantel.machos', [], false) }}" target="_blank" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                     <i class="fa-solid fa-eye mr-2"></i>
                     Pré-visualizar
                 </a>

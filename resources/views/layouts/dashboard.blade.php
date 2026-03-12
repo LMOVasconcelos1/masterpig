@@ -231,16 +231,8 @@
                         <i class="fa-solid fa-bars text-xl"></i>
                     </button>
 
-                    <!-- Search -->
-                    <div class="hidden md:flex relative text-gray-400 focus-within:text-primary-500">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                            <i class="fa-solid fa-magnifying-glass"></i>
-                        </span>
-                        <input type="text" class="block w-64 pl-10 pr-3 py-2 text-sm text-gray-900 bg-gray-100 border-transparent rounded-lg focus:bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all" placeholder="Buscar informações...">
-                    </div>
-
                     <!-- Right Nav -->
-                    <div class="flex items-center space-x-4">
+                    <div class="ml-auto flex items-center space-x-4">
                         @if(($notificacoesCount ?? 0) > 0)
                             <div class="relative" x-data="{ open: false }">
                                 <button @click="open = !open" class="relative p-2 text-gray-500 hover:text-primary-600 transition-colors focus:outline-none">

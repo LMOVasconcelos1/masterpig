@@ -51,7 +51,7 @@
             payload[k] = raw === '' ? null : Number(raw);
         });
 
-        fetch('{{ route('admin.metas.store') }}', {
+        fetch('{{ route('admin.metas.store', [], false) }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

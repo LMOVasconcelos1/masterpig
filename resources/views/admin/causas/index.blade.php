@@ -61,7 +61,7 @@
         
         this.loadingGrupo = true;
         
-        fetch('{{ route('admin.grupo-causa.store') }}', {
+        fetch('{{ route('admin.grupo-causa.store', [], false) }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -194,7 +194,7 @@
 
     <div class="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
         <!-- Filtros -->
-        <form action="{{ route('admin.causas.index') }}" method="GET" class="flex flex-1 flex-wrap lg:flex-nowrap items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+        <form action="{{ route('admin.causas.index', [], false) }}" method="GET" class="flex flex-1 flex-wrap lg:flex-nowrap items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
             <div class="w-full lg:min-w-[220px] flex-1">
                 <select name="grupo_id" class="w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
                     <option value="">Todos os Grupos</option>
@@ -217,7 +217,7 @@
                 <i class="fa-solid fa-magnifying-glass"></i>
             </button>
             @if(request()->anyFilled(['grupo_id', 'nome', 'situacao']))
-                <a href="{{ route('admin.causas.index') }}" class="text-xs text-red-600 hover:underline font-medium whitespace-nowrap">Limpar</a>
+                <a href="{{ route('admin.causas.index', [], false) }}" class="text-xs text-red-600 hover:underline font-medium whitespace-nowrap">Limpar</a>
             @endif
         </form>
 
@@ -235,7 +235,7 @@
 
             <!-- Botão Relatório (Ícone) -->
             <a 
-                href="{{ route('admin.causas.export-pdf', request()->all()) }}" 
+                href="{{ route('admin.causas.export-pdf', request()->all(), false) }}" 
                 target="_blank"
                 class="group relative inline-flex items-center justify-center w-12 h-12 bg-white text-primary-600 border-2 border-primary-100 rounded-xl shadow-md hover:bg-primary-50 hover:border-primary-200 hover:scale-110 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                 title="Visualizar Relatório PDF"
@@ -361,7 +361,7 @@
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
             <div x-show="openModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <form action="{{ route('admin.causas.store') }}" method="POST" @submit="createSubmitting = true">
+                <form action="{{ route('admin.causas.store', [], false) }}" method="POST" @submit="createSubmitting = true">
                     @csrf
                     <input type="hidden" name="_form" value="create">
                     <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">

@@ -145,7 +145,7 @@
 
         this.loadingFornecedor = true;
 
-        fetch('{{ route('admin.fornecedores.store') }}', {
+        fetch('{{ route('admin.fornecedores.store', [], false) }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -191,7 +191,7 @@
 
         this.loadingTipo = true;
 
-        fetch('{{ route('admin.tipos-racao.store') }}', {
+        fetch('{{ route('admin.tipos-racao.store', [], false) }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -265,7 +265,7 @@
     </div>
 
     <div class="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
-        <form action="{{ route('admin.racoes.index') }}" method="GET" class="flex flex-1 flex-wrap lg:flex-nowrap items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+        <form action="{{ route('admin.racoes.index', [], false) }}" method="GET" class="flex flex-1 flex-wrap lg:flex-nowrap items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
             <div class="w-full lg:min-w-[220px] flex-1">
                 <input type="text" name="codigo" value="{{ request('codigo') }}" placeholder="Código..." class="w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
             </div>
@@ -276,7 +276,7 @@
                 <i class="fa-solid fa-magnifying-glass"></i>
             </button>
             @if(request()->anyFilled(['codigo', 'nome']))
-                <a href="{{ route('admin.racoes.index') }}" class="text-xs text-red-600 hover:underline font-medium whitespace-nowrap">Limpar</a>
+                <a href="{{ route('admin.racoes.index', [], false) }}" class="text-xs text-red-600 hover:underline font-medium whitespace-nowrap">Limpar</a>
             @endif
         </form>
 
@@ -291,7 +291,7 @@
                 <span class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Nova Ração</span>
             </button>
             <a 
-                href="{{ route('admin.racoes.export-pdf', request()->all()) }}"
+                href="{{ route('admin.racoes.export-pdf', request()->all(), false) }}"
                 target="_blank"
                 class="group relative inline-flex items-center justify-center w-12 h-12 bg-white text-primary-600 border-2 border-primary-100 rounded-xl shadow-md hover:bg-primary-50 hover:border-primary-200 hover:scale-110 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                 title="Visualizar Relatório PDF"
@@ -371,7 +371,7 @@
             <div x-show="openCreate" @click="openCreate = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div x-show="openCreate" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full border border-gray-100">
-                <form action="{{ route('admin.racoes.store') }}" method="POST">
+                <form action="{{ route('admin.racoes.store', [], false) }}" method="POST">
                     @csrf
                     <div class="bg-gradient-to-r from-primary-700 to-primary-600 px-6 py-5">
                         <div class="flex items-start justify-between">
