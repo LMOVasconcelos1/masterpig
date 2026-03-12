@@ -44,7 +44,7 @@
                         @forelse($fornecedores as $f)
                             <tr>
                                 <td class="py-3 pr-4">
-                                    <form method="POST" action="{{ route('admin.fornecedores.update', $f, false) }}" class="flex items-center gap-2">
+                                    <form method="POST" action="{{ url('/admin/fornecedores/'.$f->id) }}" class="flex items-center gap-2">
                                         @csrf
                                         @method('PATCH')
                                         <input name="nome" value="{{ old('nome', $f->nome) }}" class="w-full rounded-xl border border-gray-200 shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm px-3 py-2" />
@@ -54,7 +54,7 @@
                                     </form>
                                 </td>
                                 <td class="py-3">
-                                    <form method="POST" action="{{ route('admin.fornecedores.destroy', $f, false) }}" onsubmit="return confirm('Excluir este fornecedor?');">
+                                    <form method="POST" action="{{ url('/admin/fornecedores/'.$f->id) }}" onsubmit="return confirm('Excluir este fornecedor?');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100">
@@ -79,7 +79,7 @@
             <div x-show="openCreate" @click="openCreate = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div x-show="openCreate" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100">
-                <form method="POST" action="{{ route('admin.fornecedores.store', [], false) }}">
+                <form method="POST" action="{{ url('/admin/fornecedores') }}">
                     @csrf
                     <div class="bg-white px-6 pt-6 pb-4">
                         <div class="flex items-start justify-between">
@@ -110,4 +110,3 @@
     </div>
 </div>
 @endsection
-

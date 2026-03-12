@@ -786,7 +786,7 @@
 
             this.saving = true;
 
-            fetch('{{ route('admin.fornecedores.store', [], false) }}', {
+            fetch('{{ url('/admin/fornecedores') }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
