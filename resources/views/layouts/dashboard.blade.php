@@ -112,11 +112,11 @@
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Rações
                             </a>
-                            <a href="{{ route('admin.fornecedores.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.fornecedores.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                            <a href="{{ url('/admin/fornecedores') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/fornecedores*') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Fornecedor
                             </a>
-                            <a href="{{ route('admin.clientes.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.clientes.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                            <a href="{{ url('/admin/clientes') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/clientes*') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Cliente
                             </a>
@@ -139,7 +139,7 @@
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Metas
                             </a>
-                            <a href="{{ route('admin.alteracoes.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.alteracoes.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                            <a href="{{ url('/admin/alteracoes') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/alteracoes*') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Atualizações do sistema
                             </a>
@@ -202,11 +202,11 @@
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Rações
                             </a>
-                            <a href="{{ route('admin.fornecedores.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.fornecedores.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                            <a href="{{ url('/admin/fornecedores') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/fornecedores*') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Fornecedor
                             </a>
-                            <a href="{{ route('admin.clientes.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.clientes.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                            <a href="{{ url('/admin/clientes') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/clientes*') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Cliente
                             </a>
@@ -229,7 +229,7 @@
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Metas
                             </a>
-                            <a href="{{ route('admin.alteracoes.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.alteracoes.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                            <a href="{{ url('/admin/alteracoes') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/alteracoes*') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Atualizações do sistema
                             </a>

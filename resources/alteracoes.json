@@ -42,5 +42,12 @@
     "items": [
       "Menu reorganizado: criado grupo Cadastros (causas, rações, fornecedor, cliente) e Utilitários (usuários, metas, atualizações do sistema)"
     ]
+  },
+  {
+    "date": "2026-03-12",
+    "title": "Correção produção",
+    "items": [
+      "Links do sidebar para Fornecedor/Cliente/Atualizações do sistema passaram a usar URLs diretas para evitar erro 500 quando há cache de rotas em produção"
+    ]
   }
 ]
