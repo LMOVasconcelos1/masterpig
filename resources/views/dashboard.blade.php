@@ -44,22 +44,22 @@
     </div>
 </div>
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-        <div>
+    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="min-w-0">
             <div class="text-xs font-bold text-primary-700 uppercase tracking-wider">Plantel Reprodutivo</div>
             <div class="text-sm text-gray-500 mt-1">Visão geral, lançamentos e relatórios</div>
         </div>
-        <div class="flex items-center space-x-1">
-            <button type="button" @click="tab = 'visao'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors" :class="tab === 'visao' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
+        <div class="w-full sm:w-auto grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-1">
+            <button type="button" @click="tab = 'visao'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="tab === 'visao' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
                 Visão Geral
             </button>
-            <button type="button" @click="tab = 'lancamentos'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors" :class="tab === 'lancamentos' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
+            <button type="button" @click="tab = 'lancamentos'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="tab === 'lancamentos' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
                 Lançamentos
             </button>
-            <button type="button" @click="tab = 'analise'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors" :class="tab === 'analise' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
+            <button type="button" @click="tab = 'analise'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="tab === 'analise' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
                 Análise
             </button>
-            <button type="button" @click="tab = 'relatorios'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors" :class="tab === 'relatorios' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
+            <button type="button" @click="tab = 'relatorios'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="tab === 'relatorios' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
                 Relatórios
             </button>
         </div>
