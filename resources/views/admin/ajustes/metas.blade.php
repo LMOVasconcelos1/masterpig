@@ -91,17 +91,17 @@
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
                 <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Metas</h6>
                 <div class="text-sm text-gray-500 mt-1">Utilizadas para efeito comparativo em relatórios e notificações.</div>
             </div>
-            <button type="button" @click="saveMetas()" :disabled="saving" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50">
+            <button type="button" @click="saveMetas()" :disabled="saving" class="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50">
                 <template x-if="!saving"><span>Salvar</span></template>
                 <template x-if="saving"><span>Salvando...</span></template>
             </button>
         </div>
-        <div class="p-6 space-y-4">
+        <div class="p-4 sm:p-6 space-y-4">
             <div x-show="error" class="bg-amber-50 border border-amber-100 text-amber-800 rounded-xl px-4 py-3 text-sm" x-text="error" x-cloak></div>
 
             <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
@@ -186,4 +186,3 @@
     </div>
 </div>
 @endsection
-

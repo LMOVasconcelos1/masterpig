@@ -11,6 +11,10 @@ class CheckAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
+        if (! (bool) config('masterpig.enforce_perfil_permissions', false)) {
+            return $next($request);
+        }
+
         if (Auth::check() && Auth::user()->perfil === 'administrador') {
             return $next($request);
         }

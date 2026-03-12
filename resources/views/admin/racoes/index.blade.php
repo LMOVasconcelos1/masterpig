@@ -266,10 +266,10 @@
 
     <div class="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
         <form action="{{ route('admin.racoes.index') }}" method="GET" class="flex flex-1 flex-wrap lg:flex-nowrap items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
-            <div class="min-w-[220px] flex-1">
+            <div class="w-full lg:min-w-[220px] flex-1">
                 <input type="text" name="codigo" value="{{ request('codigo') }}" placeholder="Código..." class="w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
             </div>
-            <div class="min-w-[220px] flex-1">
+            <div class="w-full lg:min-w-[220px] flex-1">
                 <input type="text" name="nome" value="{{ request('nome') }}" placeholder="Nome..." class="w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
             </div>
             <button type="submit" class="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors" title="Filtrar">
@@ -306,7 +306,33 @@
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
             <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Lista de Rações</h6>
         </div>
-        <div class="p-6">
+        <div class="p-4 sm:p-6">
+            <div class="space-y-3 md:hidden">
+                @forelse($racoes as $racao)
+                    <button type="button" class="w-full text-left rounded-xl border border-gray-100 bg-white p-4 shadow-sm" @click="viewRacao({{ $racao->id }})">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <div class="text-sm font-bold text-gray-900 truncate">{{ $racao->codigo }}</div>
+                                <div class="text-xs text-gray-500 mt-1 truncate">{{ $racao->nome }}</div>
+                            </div>
+                            <div class="flex items-center gap-2 flex-shrink-0">
+                                <button type="button" @click.stop="openStockModal({{ $racao->id }})" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors" title="Atualizar estoque">
+                                    <i class="fa-solid fa-boxes-stacked"></i>
+                                </button>
+                                <div class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-400">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </button>
+                @empty
+                    <div class="rounded-xl border border-gray-100 bg-white p-4 text-sm text-gray-500 text-center italic">
+                        Nenhuma ração cadastrada.
+                    </div>
+                @endforelse
+            </div>
+
+            <div class="hidden md:block overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
@@ -336,6 +362,7 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 

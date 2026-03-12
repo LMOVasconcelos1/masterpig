@@ -50,7 +50,91 @@
     @stack('styles')
 </head>
 <body class="bg-gray-50 font-sans text-gray-900 antialiased">
-    <div class="flex h-screen overflow-hidden" x-data="{ sidebarOpen: true }">
+    <div class="flex h-screen overflow-hidden" x-data="{ sidebarOpen: true, mobileSidebarOpen: false }" x-effect="document.body.classList.toggle('overflow-hidden', mobileSidebarOpen)">
+        <div x-show="mobileSidebarOpen" x-transition.opacity class="fixed inset-0 z-30 bg-black/50 lg:hidden" @click="mobileSidebarOpen = false" x-cloak></div>
+
+        <aside
+            x-show="mobileSidebarOpen"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="-translate-x-full"
+            x-transition:enter-end="translate-x-0"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="translate-x-0"
+            x-transition:leave-end="-translate-x-full"
+            class="fixed inset-y-0 left-0 z-40 w-72 max-w-[85vw] overflow-y-auto bg-primary-800 text-white shadow-2xl lg:hidden"
+            x-cloak
+        >
+            <div class="flex flex-col h-full">
+                <div class="flex items-center justify-between h-16 px-4 bg-primary-900">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-piggy-bank text-2xl text-primary-300"></i>
+                        <span class="text-xl font-bold tracking-wider uppercase">MasterPig</span>
+                    </div>
+                    <button type="button" class="p-2 rounded-lg text-primary-100 hover:bg-primary-800" @click="mobileSidebarOpen = false">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                    <div x-data="{ open: {{ request()->routeIs('dashboard') ? 'true' : 'false' }} }">
+                        <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white group">
+                            <div class="flex items-center">
+                                <i class="fa-solid fa-leaf w-6 text-center"></i>
+                                <span class="ml-3 font-medium">Manejos</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
+                        </button>
+
+                        <div x-show="open" x-cloak class="mt-1 ml-4 pl-4 border-l border-primary-600 space-y-1">
+                            <a href="{{ route('dashboard', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('dashboard') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Plantel Reprodutivo
+                            </a>
+                        </div>
+                    </div>
+
+                    <div x-data="{ open: {{ request()->is('admin/*') ? 'true' : 'false' }} }">
+                        <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white group">
+                            <div class="flex items-center">
+                                <i class="fa-solid fa-screwdriver-wrench w-6 text-center"></i>
+                                <span class="ml-3 font-medium">Utilitários</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
+                        </button>
+
+                        <div x-show="open" x-cloak class="mt-1 ml-4 pl-4 border-l border-primary-600 space-y-1">
+                            <div x-data="{ subOpen: {{ request()->is('admin/causas*') || request()->is('admin/racoes*') || request()->is('admin/metas*') || request()->is('admin/usuarios*') ? 'true' : 'false' }} }">
+                                <button @click="subOpen = !subOpen" class="flex items-center justify-between w-full px-4 py-2 text-sm text-primary-200 transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                    <span class="font-medium">Cadastros</span>
+                                    <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="subOpen ? 'rotate-180' : ''"></i>
+                                </button>
+
+                                <div x-show="subOpen" x-cloak class="mt-1 ml-2 space-y-1">
+                                    @if(!config('masterpig.enforce_perfil_permissions', false) || Auth::user()->perfil === 'administrador')
+                                        <a href="{{ route('admin.causas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.causas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                            <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                            Causas
+                                        </a>
+                                        <a href="{{ route('admin.racoes.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.racoes.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                            <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                            Rações
+                                        </a>
+                                        <a href="{{ route('admin.usuarios.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.usuarios.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                            <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                            Usuários
+                                        </a>
+                                        <a href="{{ route('admin.metas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.metas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                            <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                            Metas
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+        </aside>
         
         <!-- Sidebar -->
         <aside 
@@ -78,7 +162,7 @@
                         </button>
 
                         <div x-show="open && sidebarOpen" x-cloak class="mt-1 ml-4 pl-4 border-l border-primary-600 space-y-1">
-                            <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('dashboard') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                            <a href="{{ route('dashboard', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('dashboard') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Plantel Reprodutivo
                             </a>
@@ -104,20 +188,20 @@
                                 </button>
                                 
                                 <div x-show="subOpen" x-cloak class="mt-1 ml-2 space-y-1">
-                                    @if(Auth::user()->perfil === 'administrador')
-                                    <a href="{{ route('admin.causas.index') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.causas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                    @if(!config('masterpig.enforce_perfil_permissions', false) || Auth::user()->perfil === 'administrador')
+                                    <a href="{{ route('admin.causas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.causas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                                         <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                         Causas
                                     </a>
-                                    <a href="{{ route('admin.racoes.index') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.racoes.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                    <a href="{{ route('admin.racoes.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.racoes.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                                         <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                         Rações
                                     </a>
-                                    <a href="{{ route('admin.usuarios.index') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.usuarios.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                    <a href="{{ route('admin.usuarios.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.usuarios.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                                         <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                         Usuários
                                     </a>
-                                    <a href="{{ route('admin.metas.index') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.metas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                    <a href="{{ route('admin.metas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.metas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                                         <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                         Metas
                                     </a>
@@ -126,7 +210,6 @@
                             </div>
                         </div>
                     </div>
-                </nav>
                 </nav>
 
                 <!-- Sidebar Footer -->
@@ -142,9 +225,9 @@
         <div class="flex flex-col flex-1 w-full overflow-hidden">
             <!-- Navbar -->
             <header class="z-10 flex-shrink-0 h-16 bg-white border-b border-gray-200 shadow-sm">
-                <div class="flex items-center justify-between h-full px-6">
+                <div class="flex items-center justify-between h-full px-4 sm:px-6">
                     <!-- Mobile Toggle -->
-                    <button class="p-1 -ml-1 mr-5 rounded-md lg:hidden focus:outline-none focus:shadow-outline-primary">
+                    <button type="button" @click="mobileSidebarOpen = true" class="p-2 -ml-2 mr-2 rounded-lg lg:hidden focus:outline-none hover:bg-gray-100">
                         <i class="fa-solid fa-bars text-xl"></i>
                     </button>
 
@@ -176,7 +259,7 @@
                                     x-transition:leave="transition ease-in duration-75"
                                     x-transition:leave-start="transform opacity-100 scale-100"
                                     x-transition:leave-end="transform opacity-0 scale-95"
-                                    class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg z-50 border border-gray-100 overflow-hidden"
+                                    class="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-sm sm:w-80 bg-white rounded-xl shadow-lg z-50 border border-gray-100 overflow-hidden"
                                     x-cloak
                                 >
                                     <div class="px-4 py-3 bg-gray-50 border-b border-gray-100">
@@ -208,7 +291,6 @@
                             <button @click="userMenuOpen = !userMenuOpen" class="flex items-center space-x-3 cursor-pointer group focus:outline-none">
                                 <div class="flex flex-col items-end">
                                     <span class="text-sm font-semibold text-gray-700 group-hover:text-primary-600 transition-colors">{{ Auth::user()->nome }}</span>
-                                    <span class="text-xs text-gray-500 uppercase">{{ Auth::user()->perfil }}</span>
                                 </div>
                                 <img class="w-10 h-10 rounded-full border-2 border-primary-100 group-hover:border-primary-300 transition-all shadow-sm object-cover" src="{{ Auth::user()->foto_perfil_url ?? ('https://ui-avatars.com/api/?name='.urlencode(Auth::user()->nome).'&background=3b82f6&color=fff') }}" alt="User Avatar">
                             </button>
@@ -245,7 +327,7 @@
             </header>
 
             <!-- Content Area -->
-            <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
+            <main class="flex-1 overflow-y-auto bg-gray-50 p-3 sm:p-6">
                 <div class="max-w-7xl mx-auto">
                     @php($pageTitle = trim($__env->yieldContent('page_title', '')))
                     @if($pageTitle !== '')

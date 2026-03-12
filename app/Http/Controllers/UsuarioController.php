@@ -7,7 +7,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class UsuarioController extends Controller
@@ -34,8 +33,7 @@ class UsuarioController extends Controller
 
         $validated = $request->validate([
             'usuario' => ['required', 'string', 'max:255', 'unique:usuario,usuario'],
-            'senha' => ['required', 'string', 'min:4'],
-            'perfil' => ['nullable', 'string', Rule::in(['consultor', 'operador', 'administrador'])],
+            'senha' => ['required', 'string'],
         ]);
 
         $usuario = trim((string) $validated['usuario']);
@@ -47,7 +45,7 @@ class UsuarioController extends Controller
             'email' => $email,
             'cpf' => $cpf,
             'usuario' => $usuario,
-            'perfil' => (string) ($validated['perfil'] ?? 'operador'),
+            'perfil' => 'operador',
             'senha' => Hash::make((string) $validated['senha']),
         ]);
 
@@ -61,13 +59,10 @@ class UsuarioController extends Controller
         }
 
         $validated = $request->validate([
-            'senha' => ['nullable', 'string', 'min:4'],
-            'perfil' => ['required', 'string', Rule::in(['consultor', 'operador', 'administrador'])],
+            'senha' => ['nullable', 'string'],
         ]);
 
-        $payload = [
-            'perfil' => (string) $validated['perfil'],
-        ];
+        $payload = [];
 
         if (! empty($validated['senha'])) {
             $payload['senha'] = Hash::make((string) $validated['senha']);

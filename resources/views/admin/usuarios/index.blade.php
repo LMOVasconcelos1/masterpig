@@ -14,12 +14,11 @@
     edit: {
         id: '{{ old('user_id') }}',
         usuario: @js(old('usuario')),
-        perfil: @js(old('perfil', 'operador')),
         senha: '',
     },
     deleting: { id: '', usuario: '' },
     openEditModal(user) {
-        this.edit = { id: String(user.id), usuario: user.usuario, perfil: user.perfil, senha: '' };
+        this.edit = { id: String(user.id), usuario: user.usuario, senha: '' };
         this.openEdit = true;
         this.$nextTick(() => { this.editSubmitting = false; });
     },
@@ -45,13 +44,38 @@
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
             <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Lista de Usuários</h6>
         </div>
-        <div class="p-6">
+        <div class="p-4 sm:p-6">
+            <div class="space-y-3 md:hidden">
+                @forelse($usuarios as $u)
+                    <div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <div class="text-sm font-bold text-gray-900 truncate">{{ $u->nome }}</div>
+                                <div class="text-xs text-gray-500 mt-1 truncate">Usuário: {{ $u->usuario }}</div>
+                            </div>
+                            <div class="flex items-center gap-2 flex-shrink-0">
+                                <button type="button" @click="openEditModal({ id: {{ $u->id }}, usuario: @js($u->usuario) })" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-primary-600 hover:bg-primary-50 transition-colors" title="Editar senha">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button type="button" @click="openDeleteModal({ id: {{ $u->id }}, usuario: @js($u->usuario) })" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-red-600 hover:bg-red-50 transition-colors" title="Excluir">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="rounded-xl border border-gray-100 bg-white p-4 text-sm text-gray-500 text-center italic">
+                        Nenhum usuário cadastrado.
+                    </div>
+                @endforelse
+            </div>
+
+            <div class="hidden md:block overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuário</th>
-                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Perfil</th>
                         <th scope="col" class="relative px-6 py-3"><span class="sr-only">Ações</span></th>
                     </tr>
                 </thead>
@@ -60,10 +84,9 @@
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $u->nome }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $u->usuario }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $u->perfil }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center justify-end space-x-3">
-                                    <button type="button" @click="openEditModal({ id: {{ $u->id }}, usuario: @js($u->usuario), perfil: @js($u->perfil) })" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Editar">
+                                    <button type="button" @click="openEditModal({ id: {{ $u->id }}, usuario: @js($u->usuario) })" class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Editar">
                                         <i class="fa-solid fa-pen-to-square text-lg"></i>
                                     </button>
                                     <button type="button" @click="openDeleteModal({ id: {{ $u->id }}, usuario: @js($u->usuario) })" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Excluir">
@@ -74,11 +97,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center italic">Nenhum usuário cadastrado.</td>
+                            <td colspan="3" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center italic">Nenhum usuário cadastrado.</td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 
@@ -98,22 +122,13 @@
                             @if(old('_form') === 'create') @error('usuario') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror @endif
                         </div>
                         <div class="mt-4">
-                            <label class="block text-sm font-medium text-gray-700">Perfil</label>
-                            <select name="perfil" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                <option value="operador" {{ old('perfil', 'operador') === 'operador' ? 'selected' : '' }}>operador</option>
-                                <option value="consultor" {{ old('perfil') === 'consultor' ? 'selected' : '' }}>consultor</option>
-                                <option value="administrador" {{ old('perfil') === 'administrador' ? 'selected' : '' }}>administrador</option>
-                            </select>
-                            @if(old('_form') === 'create') @error('perfil') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror @endif
-                        </div>
-                        <div class="mt-4">
                             <label class="block text-sm font-medium text-gray-700">Senha</label>
                             <input type="password" name="senha" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
                             @if(old('_form') === 'create') @error('senha') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror @endif
                         </div>
                     </div>
                     <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button type="submit" @click="createSubmitting = true" :disabled="createSubmitting" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button type="submit" :disabled="createSubmitting" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                             Salvar
                         </button>
                         <button type="button" @click="openCreate = false" :disabled="createSubmitting" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
@@ -142,22 +157,13 @@
                             <input type="text" x-model="edit.usuario" disabled class="mt-1 block w-full shadow-sm sm:text-sm border-gray-200 rounded-md bg-gray-50 text-gray-600">
                         </div>
                         <div class="mt-4">
-                            <label class="block text-sm font-medium text-gray-700">Perfil</label>
-                            <select name="perfil" x-model="edit.perfil" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                <option value="operador">operador</option>
-                                <option value="consultor">consultor</option>
-                                <option value="administrador">administrador</option>
-                            </select>
-                            @if(old('_form') === 'edit') @error('perfil') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror @endif
-                        </div>
-                        <div class="mt-4">
                             <label class="block text-sm font-medium text-gray-700">Nova senha (opcional)</label>
                             <input type="password" name="senha" x-model="edit.senha" class="mt-1 focus:ring-primary-500 focus:border-primary-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
                             @if(old('_form') === 'edit') @error('senha') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror @endif
                         </div>
                     </div>
                     <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button type="submit" @click="editSubmitting = true" :disabled="editSubmitting" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button type="submit" :disabled="editSubmitting" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                             Salvar
                         </button>
                         <button type="button" @click="openEdit = false" :disabled="editSubmitting" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
@@ -184,7 +190,7 @@
                         </div>
                     </div>
                     <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button type="submit" @click="deleteSubmitting = true" :disabled="deleteSubmitting" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button type="submit" :disabled="deleteSubmitting" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                             Excluir
                         </button>
                         <button type="button" @click="openDelete = false" :disabled="deleteSubmitting" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
@@ -197,4 +203,3 @@
     </div>
 </div>
 @endsection
-

@@ -7,6 +7,7 @@ use Closure;
 use Illuminate\Auth\SessionGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cookie;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
@@ -27,12 +28,12 @@ class EnsureTenantSelected
 
         if ($requiresTenant && (! is_string($db) || $db === '' || ! is_string($user) || $user === '')) {
             if ($guard instanceof SessionGuard) {
-                $guard->logout();
+                Cookie::queue(Cookie::forget($guard->getRecallerName()));
             }
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('login')->withErrors([
+            return redirect()->to(route('login', [], false))->withErrors([
                 'cnpj' => 'Selecione um CNPJ válido para acessar o sistema.',
             ]);
         }
@@ -44,12 +45,12 @@ class EnsureTenantSelected
                 report($e);
 
                 if ($guard instanceof SessionGuard) {
-                    $guard->logout();
+                    Cookie::queue(Cookie::forget($guard->getRecallerName()));
                 }
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 
-                return redirect()->route('login')->withErrors([
+                return redirect()->to(route('login', [], false))->withErrors([
                     'cnpj' => 'Não foi possível conectar ao banco deste CNPJ.',
                 ]);
             }

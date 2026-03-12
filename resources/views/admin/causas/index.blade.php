@@ -195,7 +195,7 @@
     <div class="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
         <!-- Filtros -->
         <form action="{{ route('admin.causas.index') }}" method="GET" class="flex flex-1 flex-wrap lg:flex-nowrap items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
-            <div class="min-w-[220px] flex-1">
+            <div class="w-full lg:min-w-[220px] flex-1">
                 <select name="grupo_id" class="w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
                     <option value="">Todos os Grupos</option>
                     @foreach($gruposCausa as $grupo)
@@ -203,10 +203,10 @@
                     @endforeach
                 </select>
             </div>
-            <div class="min-w-[220px] flex-1">
+            <div class="w-full lg:min-w-[220px] flex-1">
                 <input type="text" name="nome" value="{{ request('nome') }}" placeholder="Causa..." class="w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
             </div>
-            <div class="min-w-[170px]">
+            <div class="w-full sm:w-auto lg:min-w-[170px]">
                 <select name="situacao" class="w-full pl-3 pr-10 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
                     <option value="">Todas Situações</option>
                     <option value="1" {{ request('situacao') === '1' ? 'selected' : '' }}>Ativos</option>
@@ -251,7 +251,49 @@
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
             <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Lista de Causas</h6>
         </div>
-        <div class="p-6">
+        <div class="p-4 sm:p-6">
+            <div class="space-y-3 md:hidden">
+                @forelse($causas as $causa)
+                    <div class="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <div class="text-sm font-bold text-gray-900 truncate">{{ $causa->codigo }} - {{ $causa->nome }}</div>
+                                <div class="text-xs text-gray-500 mt-1 truncate">Grupo: {{ $causa->grupoCausa->nome }}</div>
+                            </div>
+                            <div class="flex items-center gap-2 flex-shrink-0">
+                                <button type="button" @click="openEdit({ id: {{ $causa->id }}, codigo: @js($causa->codigo), nome: @js($causa->nome), grupo_causa_id: {{ $causa->grupo_causa_id }}, situacao: {{ $causa->situacao ? 'true' : 'false' }} })" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-primary-600 hover:bg-primary-50 transition-colors" title="Editar">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button type="button" @click="openDelete({ id: {{ $causa->id }}, codigo: @js($causa->codigo), nome: @js($causa->nome) })" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-red-600 hover:bg-red-50 transition-colors" title="Excluir">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div x-data="{ active: {{ $causa->situacao ? 'true' : 'false' }} }" class="flex items-center justify-between">
+                                <div class="text-xs font-semibold" :class="active ? 'text-emerald-700' : 'text-gray-500'" x-text="active ? 'Ativo' : 'Inativo'"></div>
+                                <button
+                                    type="button"
+                                    @click="active = !active; toggleSituacao({{ $causa->id }}, active)"
+                                    class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2"
+                                    :class="active ? 'bg-primary-600' : 'bg-gray-200'"
+                                    role="switch"
+                                    aria-checked="false"
+                                >
+                                    <span class="sr-only">Alternar situação</span>
+                                    <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out" :class="active ? 'translate-x-5' : 'translate-x-0'"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="rounded-xl border border-gray-100 bg-white p-4 text-sm text-gray-500 text-center italic">
+                        Nenhuma causa cadastrada.
+                    </div>
+                @endforelse
+            </div>
+
+            <div class="hidden md:block overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
@@ -307,6 +349,7 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 
