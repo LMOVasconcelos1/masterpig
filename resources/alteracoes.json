@@ -1,0 +1,46 @@
+[
+  {
+    "date": "2026-03-12",
+    "title": "Cadastro de animais (compra)",
+    "items": [
+      "Campo Fornecedor ganhou bot\u00e3o \"+\" para cadastrar na hora",
+      "Campos Localiza\u00e7\u00e3o e Baia ganharam autocomplete e bot\u00e3o \"+\" para cadastrar na hora"
+    ]
+  },
+  {
+    "date": "2026-03-12",
+    "title": "Utilit\u00e1rios",
+    "items": [
+      "Criada API /api/utilitarios para carregar listas de Localiza\u00e7\u00f5es e Baias",
+      "Criados endpoints para cadastrar Localiza\u00e7\u00e3o e Baia e persistir na tabela meta"
+    ]
+  },
+  {
+    "date": "2026-03-12",
+    "title": "An\u00e1lise do plantel",
+    "items": [
+      "Removidos gr\u00e1ficos anal\u00edticos (implementa\u00e7\u00e3o ser\u00e1 retomada quando houver compara\u00e7\u00f5es suficientes)"
+    ]
+  },
+  {
+    "date": "2026-03-12",
+    "title": "Dashboard (responsivo)",
+    "items": [
+      "Header Plantel Reprodutivo e abas (Vis\u00e3o Geral/Lan\u00e7amentos/An\u00e1lise/Relat\u00f3rios) ajustados para mobile"
+    ]
+  },
+  {
+    "date": "2026-03-12",
+    "title": "Chatbot",
+    "items": [
+      "Funcionalidade desativada por padr\u00e3o via MASTERPIG_CHATBOT_ENABLED"
+    ]
+  },
+  {
+    "date": "2026-03-12",
+    "title": "Sidebar",
+    "items": [
+      "Menu reorganizado: criado grupo Cadastros (causas, rações, fornecedor, cliente) e Utilitários (usuários, metas, atualizações do sistema)"
+    ]
+  }
+]

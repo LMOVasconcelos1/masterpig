@@ -93,7 +93,36 @@
                         </div>
                     </div>
 
-                    <div x-data="{ open: {{ request()->is('admin/*') ? 'true' : 'false' }} }">
+                    @if(!config('masterpig.enforce_perfil_permissions', false) || Auth::user()->perfil === 'administrador')
+                    <div x-data="{ open: {{ (request()->is('admin/causas*') || request()->is('admin/racoes*') || request()->is('admin/fornecedores*') || request()->is('admin/clientes*')) ? 'true' : 'false' }} }">
+                        <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white group">
+                            <div class="flex items-center">
+                                <i class="fa-solid fa-folder-open w-6 text-center"></i>
+                                <span class="ml-3 font-medium">Cadastros</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
+                        </button>
+
+                        <div x-show="open" x-cloak class="mt-1 ml-4 pl-4 border-l border-primary-600 space-y-1">
+                            <a href="{{ route('admin.causas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.causas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Causas
+                            </a>
+                            <a href="{{ route('admin.racoes.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.racoes.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Rações
+                            </a>
+                            <a href="{{ route('admin.fornecedores.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.fornecedores.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Fornecedor
+                            </a>
+                            <a href="{{ route('admin.clientes.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.clientes.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Cliente
+                            </a>
+                        </div>
+                    </div>
+                    <div x-data="{ open: {{ (request()->is('admin/usuarios*') || request()->is('admin/metas*') || request()->is('admin/alteracoes*')) ? 'true' : 'false' }} }">
                         <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white group">
                             <div class="flex items-center">
                                 <i class="fa-solid fa-screwdriver-wrench w-6 text-center"></i>
@@ -101,37 +130,22 @@
                             </div>
                             <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
                         </button>
-
                         <div x-show="open" x-cloak class="mt-1 ml-4 pl-4 border-l border-primary-600 space-y-1">
-                            <div x-data="{ subOpen: {{ request()->is('admin/causas*') || request()->is('admin/racoes*') || request()->is('admin/metas*') || request()->is('admin/usuarios*') ? 'true' : 'false' }} }">
-                                <button @click="subOpen = !subOpen" class="flex items-center justify-between w-full px-4 py-2 text-sm text-primary-200 transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
-                                    <span class="font-medium">Cadastros</span>
-                                    <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="subOpen ? 'rotate-180' : ''"></i>
-                                </button>
-
-                                <div x-show="subOpen" x-cloak class="mt-1 ml-2 space-y-1">
-                                    @if(!config('masterpig.enforce_perfil_permissions', false) || Auth::user()->perfil === 'administrador')
-                                        <a href="{{ route('admin.causas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.causas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
-                                            <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
-                                            Causas
-                                        </a>
-                                        <a href="{{ route('admin.racoes.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.racoes.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
-                                            <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
-                                            Rações
-                                        </a>
-                                        <a href="{{ route('admin.usuarios.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.usuarios.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
-                                            <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
-                                            Usuários
-                                        </a>
-                                        <a href="{{ route('admin.metas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.metas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
-                                            <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
-                                            Metas
-                                        </a>
-                                    @endif
-                                </div>
-                            </div>
+                            <a href="{{ route('admin.usuarios.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.usuarios.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Usuários
+                            </a>
+                            <a href="{{ route('admin.metas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.metas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Metas
+                            </a>
+                            <a href="{{ route('admin.alteracoes.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.alteracoes.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Atualizações do sistema
+                            </a>
                         </div>
                     </div>
+                    @endif
                 </nav>
             </div>
         </aside>
@@ -169,8 +183,36 @@
                         </div>
                     </div>
 
-                    <!-- Utilitários Dropdown -->
-                    <div x-data="{ open: {{ request()->is('admin/*') ? 'true' : 'false' }} }">
+                    @if(!config('masterpig.enforce_perfil_permissions', false) || Auth::user()->perfil === 'administrador')
+                    <div x-data="{ open: {{ (request()->is('admin/causas*') || request()->is('admin/racoes*') || request()->is('admin/fornecedores*') || request()->is('admin/clientes*')) ? 'true' : 'false' }} }">
+                        <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white group">
+                            <div class="flex items-center">
+                                <i class="fa-solid fa-folder-open w-6 text-center"></i>
+                                <span x-show="sidebarOpen" class="ml-3 font-medium">Cadastros</span>
+                            </div>
+                            <i x-show="sidebarOpen" class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
+                        </button>
+                        
+                        <div x-show="open && sidebarOpen" x-cloak class="mt-1 ml-4 pl-4 border-l border-primary-600 space-y-1">
+                            <a href="{{ route('admin.causas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.causas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Causas
+                            </a>
+                            <a href="{{ route('admin.racoes.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.racoes.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Rações
+                            </a>
+                            <a href="{{ route('admin.fornecedores.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.fornecedores.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Fornecedor
+                            </a>
+                            <a href="{{ route('admin.clientes.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.clientes.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Cliente
+                            </a>
+                        </div>
+                    </div>
+                    <div x-data="{ open: {{ (request()->is('admin/usuarios*') || request()->is('admin/metas*') || request()->is('admin/alteracoes*')) ? 'true' : 'false' }} }">
                         <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white group">
                             <div class="flex items-center">
                                 <i class="fa-solid fa-screwdriver-wrench w-6 text-center"></i>
@@ -178,38 +220,22 @@
                             </div>
                             <i x-show="sidebarOpen" class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
                         </button>
-                        
                         <div x-show="open && sidebarOpen" x-cloak class="mt-1 ml-4 pl-4 border-l border-primary-600 space-y-1">
-                            <!-- Cadastros Sub-dropdown -->
-                            <div x-data="{ subOpen: {{ request()->is('admin/causas*') || request()->is('admin/racoes*') || request()->is('admin/metas*') || request()->is('admin/usuarios*') ? 'true' : 'false' }} }">
-                                <button @click="subOpen = !subOpen" class="flex items-center justify-between w-full px-4 py-2 text-sm text-primary-200 transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
-                                    <span class="font-medium">Cadastros</span>
-                                    <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="subOpen ? 'rotate-180' : ''"></i>
-                                </button>
-                                
-                                <div x-show="subOpen" x-cloak class="mt-1 ml-2 space-y-1">
-                                    @if(!config('masterpig.enforce_perfil_permissions', false) || Auth::user()->perfil === 'administrador')
-                                    <a href="{{ route('admin.causas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.causas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
-                                        <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
-                                        Causas
-                                    </a>
-                                    <a href="{{ route('admin.racoes.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.racoes.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
-                                        <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
-                                        Rações
-                                    </a>
-                                    <a href="{{ route('admin.usuarios.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.usuarios.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
-                                        <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
-                                        Usuários
-                                    </a>
-                                    <a href="{{ route('admin.metas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.metas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
-                                        <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
-                                        Metas
-                                    </a>
-                                    @endif
-                                </div>
-                            </div>
+                            <a href="{{ route('admin.usuarios.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.usuarios.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Usuários
+                            </a>
+                            <a href="{{ route('admin.metas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.metas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Metas
+                            </a>
+                            <a href="{{ route('admin.alteracoes.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.alteracoes.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Atualizações do sistema
+                            </a>
                         </div>
                     </div>
+                    @endif
                 </nav>
 
                 <!-- Sidebar Footer -->
