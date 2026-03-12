@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\AlteracoesController;
 use App\Http\Controllers\CausaController;
 use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FemeaCompraController;
 use App\Http\Controllers\FemeaController;
@@ -59,7 +61,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/racoes/{racao}/estoque', [RacaoController::class, 'updateEstoque'])->name('racoes.update-estoque');
     Route::get('/racoes/export/pdf', [RacaoController::class, 'exportPdf'])->name('racoes.export-pdf');
     Route::get('/racoes/{racao}/pdf', [RacaoController::class, 'fichaPdf'])->name('racoes.ficha-pdf');
+    Route::get('/fornecedores', [FornecedorController::class, 'page'])->name('fornecedores.index');
     Route::post('/fornecedores', [FornecedorController::class, 'store'])->name('fornecedores.store');
+    Route::patch('/fornecedores/{fornecedor}', [FornecedorController::class, 'update'])->name('fornecedores.update');
+    Route::delete('/fornecedores/{fornecedor}', [FornecedorController::class, 'destroy'])->name('fornecedores.destroy');
+    Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
     Route::post('/tipos-racao', [TipoRacaoController::class, 'store'])->name('tipos-racao.store');
     Route::post('/racas', [RacaController::class, 'store'])->name('racas.store');
     Route::post('/plantel/femeas/compras', [FemeaCompraController::class, 'store'])->name('plantel.femeas.compras.store');
@@ -76,6 +82,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/metas', [MetasController::class, 'page'])->name('metas.index');
     Route::post('/metas', [MetasController::class, 'store'])->name('metas.store');
     Route::post('/grupo-causa', [GrupoCausaController::class, 'store'])->name('grupo-causa.store');
+    Route::get('/alteracoes', [AlteracoesController::class, 'index'])->name('alteracoes.index');
 });
 
 // API Routes
