@@ -47,7 +47,8 @@
     "date": "2026-03-12",
     "title": "Correção produção",
     "items": [
-      "Links do sidebar para Fornecedor/Cliente/Atualizações do sistema passaram a usar URLs diretas para evitar erro 500 quando há cache de rotas em produção"
+      "Links do sidebar para Fornecedor/Cliente/Atualizações do sistema passaram a usar URLs diretas para evitar erro 500 quando há cache de rotas em produção",
+      "Tela de Fornecedores e cadastro rápido no Dashboard passaram a usar URLs diretas (sem route()) para reduzir risco de erro 500 com cache de rotas desatualizado"
     ]
   }
 ]
