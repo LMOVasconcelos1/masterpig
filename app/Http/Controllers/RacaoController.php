@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Racao;
-use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
 class RacaoController extends Controller
@@ -14,11 +14,11 @@ class RacaoController extends Controller
         $query = Racao::query();
 
         if ($request->filled('codigo')) {
-            $query->where('codigo', 'like', '%' . $request->codigo . '%');
+            $query->where('codigo', 'like', '%'.$request->codigo.'%');
         }
 
         if ($request->filled('nome')) {
-            $query->where('nome', 'like', '%' . $request->nome . '%');
+            $query->where('nome', 'like', '%'.$request->nome.'%');
         }
 
         $query->with(['fornecedor', 'tipoRacao']);
@@ -51,7 +51,7 @@ class RacaoController extends Controller
 
         Racao::create($validated);
 
-        return redirect()->route('admin.racoes.index')->with('success', 'Ração cadastrada com sucesso!');
+        return redirect()->to(route('admin.racoes.index', [], false))->with('success', 'Ração cadastrada com sucesso!');
     }
 
     public function show(Racao $racao)
@@ -61,7 +61,7 @@ class RacaoController extends Controller
 
     public function updateEstoque(Request $request, Racao $racao)
     {
-        if (!Schema::hasTable('racao') || !Schema::hasColumn('racao', 'estoque')) {
+        if (! Schema::hasTable('racao') || ! Schema::hasColumn('racao', 'estoque')) {
             return response()->json([
                 'success' => false,
                 'message' => 'A coluna de estoque ainda não foi criada no banco.',
@@ -88,11 +88,11 @@ class RacaoController extends Controller
         $query = Racao::query()->with(['fornecedor', 'tipoRacao']);
 
         if ($request->filled('codigo')) {
-            $query->where('codigo', 'like', '%' . $request->codigo . '%');
+            $query->where('codigo', 'like', '%'.$request->codigo.'%');
         }
 
         if ($request->filled('nome')) {
-            $query->where('nome', 'like', '%' . $request->nome . '%');
+            $query->where('nome', 'like', '%'.$request->nome.'%');
         }
 
         $racoes = $query->orderBy('codigo')->get();
@@ -104,7 +104,7 @@ class RacaoController extends Controller
 
         $pdf = Pdf::loadView('admin.racoes.report', $data);
 
-        return $pdf->stream('relatorio-racoes-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->stream('relatorio-racoes-'.now()->format('Y-m-d').'.pdf');
     }
 
     public function fichaPdf(Racao $racao)
@@ -118,6 +118,6 @@ class RacaoController extends Controller
 
         $pdf = Pdf::loadView('admin.racoes.ficha', $data);
 
-        return $pdf->stream('ficha-racao-' . $racao->codigo . '.pdf');
+        return $pdf->stream('ficha-racao-'.$racao->codigo.'.pdf');
     }
 }

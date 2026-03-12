@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Causa;
 use App\Models\GrupoCausa;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class CausaController extends Controller
 {
@@ -22,7 +22,7 @@ class CausaController extends Controller
         }
 
         if ($request->filled('nome')) {
-            $query->where('nome', 'like', '%' . $request->nome . '%');
+            $query->where('nome', 'like', '%'.$request->nome.'%');
         }
 
         if ($request->filled('situacao')) {
@@ -31,7 +31,7 @@ class CausaController extends Controller
 
         $causas = $query->get();
         $gruposCausa = GrupoCausa::all();
-        
+
         return view('admin.causas.index', compact('causas', 'gruposCausa'));
     }
 
@@ -51,7 +51,7 @@ class CausaController extends Controller
 
         Causa::create($validated);
 
-        return redirect()->route('admin.causas.index')->with('success', 'Causa cadastrada com sucesso!');
+        return redirect()->to(route('admin.causas.index', [], false))->with('success', 'Causa cadastrada com sucesso!');
     }
 
     public function update(Request $request, Causa $causa)
@@ -67,7 +67,7 @@ class CausaController extends Controller
 
         $causa->update($validated);
 
-        return redirect()->route('admin.causas.index')->with('success', 'Causa atualizada com sucesso!');
+        return redirect()->to(route('admin.causas.index', [], false))->with('success', 'Causa atualizada com sucesso!');
     }
 
     public function destroy(Causa $causa)
@@ -75,10 +75,10 @@ class CausaController extends Controller
         try {
             $causa->delete();
         } catch (\Throwable $e) {
-            return redirect()->route('admin.causas.index')->with('error', 'Não foi possível excluir a causa. Verifique se ela está sendo utilizada.');
+            return redirect()->to(route('admin.causas.index', [], false))->with('error', 'Não foi possível excluir a causa. Verifique se ela está sendo utilizada.');
         }
 
-        return redirect()->route('admin.causas.index')->with('success', 'Causa excluída com sucesso!');
+        return redirect()->to(route('admin.causas.index', [], false))->with('success', 'Causa excluída com sucesso!');
     }
 
     /**
@@ -86,13 +86,13 @@ class CausaController extends Controller
      */
     public function toggleSituacao(Causa $causa)
     {
-        $causa->situacao = !$causa->situacao;
+        $causa->situacao = ! $causa->situacao;
         $causa->save();
 
         return response()->json([
             'success' => true,
             'situacao' => $causa->situacao,
-            'message' => 'Situação atualizada com sucesso!'
+            'message' => 'Situação atualizada com sucesso!',
         ]);
     }
 
@@ -108,7 +108,7 @@ class CausaController extends Controller
         }
 
         if ($request->filled('nome')) {
-            $query->where('nome', 'like', '%' . $request->nome . '%');
+            $query->where('nome', 'like', '%'.$request->nome.'%');
         }
 
         if ($request->filled('situacao')) {
@@ -116,14 +116,14 @@ class CausaController extends Controller
         }
 
         $causas = $query->get();
-        
+
         $data = [
             'causas' => $causas,
             'data_emissao' => now()->format('d/m/Y H:i'),
         ];
 
         $pdf = Pdf::loadView('admin.causas.report', $data);
-        
-        return $pdf->stream('relatorio-causas-' . now()->format('Y-m-d') . '.pdf');
+
+        return $pdf->stream('relatorio-causas-'.now()->format('Y-m-d').'.pdf');
     }
 }

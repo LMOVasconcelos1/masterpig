@@ -28,7 +28,7 @@ class UsuarioController extends Controller
     public function store(Request $request): RedirectResponse
     {
         if (! Schema::hasTable('usuario')) {
-            return redirect()->route('admin.usuarios.index')->with('error', 'Tabela usuario não existe no banco.');
+            return redirect()->to(route('admin.usuarios.index', [], false))->with('error', 'Tabela usuario não existe no banco.');
         }
 
         $validated = $request->validate([
@@ -49,13 +49,13 @@ class UsuarioController extends Controller
             'senha' => Hash::make((string) $validated['senha']),
         ]);
 
-        return redirect()->route('admin.usuarios.index')->with('success', 'Usuário cadastrado com sucesso!');
+        return redirect()->to(route('admin.usuarios.index', [], false))->with('success', 'Usuário cadastrado com sucesso!');
     }
 
     public function update(Request $request, User $user): RedirectResponse
     {
         if (! Schema::hasTable('usuario')) {
-            return redirect()->route('admin.usuarios.index')->with('error', 'Tabela usuario não existe no banco.');
+            return redirect()->to(route('admin.usuarios.index', [], false))->with('error', 'Tabela usuario não existe no banco.');
         }
 
         $validated = $request->validate([
@@ -70,26 +70,26 @@ class UsuarioController extends Controller
 
         $user->update($payload);
 
-        return redirect()->route('admin.usuarios.index')->with('success', 'Usuário atualizado com sucesso!');
+        return redirect()->to(route('admin.usuarios.index', [], false))->with('success', 'Usuário atualizado com sucesso!');
     }
 
     public function destroy(Request $request, User $user): RedirectResponse
     {
         if (! Schema::hasTable('usuario')) {
-            return redirect()->route('admin.usuarios.index')->with('error', 'Tabela usuario não existe no banco.');
+            return redirect()->to(route('admin.usuarios.index', [], false))->with('error', 'Tabela usuario não existe no banco.');
         }
 
         if ($request->user()?->getKey() === $user->getKey()) {
-            return redirect()->route('admin.usuarios.index')->with('error', 'Você não pode excluir seu próprio usuário.');
+            return redirect()->to(route('admin.usuarios.index', [], false))->with('error', 'Você não pode excluir seu próprio usuário.');
         }
 
         try {
             $user->delete();
         } catch (\Throwable) {
-            return redirect()->route('admin.usuarios.index')->with('error', 'Não foi possível excluir o usuário.');
+            return redirect()->to(route('admin.usuarios.index', [], false))->with('error', 'Não foi possível excluir o usuário.');
         }
 
-        return redirect()->route('admin.usuarios.index')->with('success', 'Usuário excluído com sucesso!');
+        return redirect()->to(route('admin.usuarios.index', [], false))->with('success', 'Usuário excluído com sucesso!');
     }
 
     private function uniqueEmailForUsuario(string $usuario): string
