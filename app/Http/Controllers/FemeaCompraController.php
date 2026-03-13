@@ -12,12 +12,14 @@ class FemeaCompraController extends Controller
 {
     public function index(Request $request)
     {
-        if (!Schema::hasTable('femea') || !Schema::hasTable('femea_movimento')) {
+        if (! Schema::hasTable('femea') || ! Schema::hasTable('femea_movimento')) {
             return response()->json([
                 'items' => [],
                 'message' => 'Tabelas do plantel ainda não foram criadas no banco.',
             ]);
         }
+
+        $limit = max(1, min(5000, (int) $request->query('limit', 200)));
 
         $query = DB::table('femea_movimento as fm')
             ->join('femea as f', 'f.id', '=', 'fm.femea_id')
@@ -43,13 +45,14 @@ class FemeaCompraController extends Controller
             $query->where('f.tipo_compra', $request->tipo_compra);
         }
 
-        $rows = $query->limit(5000)->get();
+        $rows = $query->limit($limit)->get();
 
         $items = $rows->map(function ($row) {
             $idadeDias = null;
-            if (!empty($row->data_nascimento)) {
+            if (! empty($row->data_nascimento)) {
                 $idadeDias = Carbon::parse($row->data_nascimento)->diffInDays(Carbon::parse($row->data));
             }
+
             return [
                 'id' => $row->id,
                 'acao' => 'compra',
@@ -73,7 +76,7 @@ class FemeaCompraController extends Controller
 
     public function store(Request $request)
     {
-        if (!Schema::hasTable('femea') || !Schema::hasTable('femea_movimento')) {
+        if (! Schema::hasTable('femea') || ! Schema::hasTable('femea_movimento')) {
             return response()->json([
                 'message' => 'Tabelas do plantel ainda não foram criadas no banco.',
             ], 422);

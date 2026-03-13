@@ -50,5 +50,28 @@
       "Links do sidebar para Fornecedor/Cliente/Atualizações do sistema passaram a usar URLs diretas para evitar erro 500 quando há cache de rotas em produção",
       "Tela de Fornecedores e cadastro rápido no Dashboard passaram a usar URLs diretas (sem route()) para reduzir risco de erro 500 com cache de rotas desatualizado"
     ]
+  },
+  {
+    "date": "2026-03-12",
+    "title": "Manejo - Gestação (início)",
+    "items": [
+      "Criada tela /gestacao (Visão Geral, Lançamentos e Configurações)",
+      "Criados lançamentos: Cobertura e Perdas Reprodutivas (aborto, repetição de cio, falsa prenhez)",
+      "Criadas metas de gestação (taxa de parição e perdas reprodutivas) via tabela meta",
+      "Criado script de banco banco_versions/0.2.sql com tabelas gestacao_cobertura e gestacao_perda",
+      "Header da tela de Gestação ajustado para seguir o mesmo padrão visual do Dashboard",
+      "Correção do JS do CSRF na tela de Gestação (evita quebrar HTML/abas por aspas no x-data)",
+      "Aba Lançamentos da Gestação separada em sub-abas: Coberturas e Perdas",
+      "Cobertura ganhou aba de dados complementares (onde foi descoberta, baia, peso, características e observação)",
+      "Usuário do lançamento passou a ser selecionado a partir do cadastro de usuários",
+      "Criada tela de Critérios em Utilitários (flag liga/desliga e critérios de cobertura: idade, peso e presença de cio)",
+      "Registro de Cobertura passou a avisar quando não estiver conforme critérios (quando habilitados)",
+      "Criada tela de logs de critérios (quando o lançamento é salvo com divergência)",
+      "Metas de gestação movidas da tela de Gestação para Utilitários → Metas",
+      "Criado lançamento de Salta cio na Gestação (fêmea e data)",
+      "Critérios: campos de cobertura temporariamente desativados e criado campo dias até o cio (padrão 21)",
+      "Plantel Reprodutivo: criada aba Acompanhamento de fêmeas (fase atual e calendário de previsões)",
+      "Utilitários: criada opção Começar do zero (remove todos os animais e lançamentos com confirmação de CNPJ)"
+    ]
   }
 ]

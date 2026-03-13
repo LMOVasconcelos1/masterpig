@@ -6,11 +6,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-class MetasController extends Controller
+class GestacaoMetasController extends Controller
 {
-    public function page()
+    private function rules(): array
     {
-        return view('admin.ajustes.metas');
+        return [
+            'gestacao_meta_taxa_paricao' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'gestacao_meta_perdas_reprodutivas' => ['nullable', 'numeric', 'min:0', 'max:100'],
+        ];
     }
 
     public function index()
@@ -22,11 +25,12 @@ class MetasController extends Controller
             ]);
         }
 
-        $rows = DB::table('meta')->select(['chave', 'valor'])->get();
+        $keys = array_keys($this->rules());
+        $rows = DB::table('meta')->whereIn('chave', $keys)->pluck('valor', 'chave');
 
         $items = [];
-        foreach ($rows as $row) {
-            $items[$row->chave] = $row->valor;
+        foreach ($keys as $k) {
+            $items[$k] = $rows[$k] ?? null;
         }
 
         return response()->json([
@@ -52,6 +56,7 @@ class MetasController extends Controller
                     continue;
                 }
                 $value = $validated[$key];
+                $value = $value === null ? null : (string) $value;
 
                 $exists = DB::table('meta')->where('chave', $key)->exists();
                 if ($exists) {
@@ -71,32 +76,7 @@ class MetasController extends Controller
         });
 
         return response()->json([
-            'message' => 'Metas salvas com sucesso!',
+            'message' => 'Metas de gestação salvas com sucesso!',
         ]);
-    }
-
-    private function rules(): array
-    {
-        return [
-            'meta_plantel_estoque_matrizes' => ['nullable', 'numeric', 'min:0'],
-            'meta_plantel_estoque_leitoas' => ['nullable', 'numeric', 'min:0'],
-
-            'meta_entrada_peso_leitoa' => ['nullable', 'numeric', 'min:0'],
-            'meta_entrada_peso_matriz' => ['nullable', 'numeric', 'min:0'],
-            'meta_entrada_peso_macho' => ['nullable', 'numeric', 'min:0'],
-
-            'gestacao_meta_taxa_paricao' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'gestacao_meta_perdas_reprodutivas' => ['nullable', 'numeric', 'min:0', 'max:100'],
-
-            'meta_manutencao_reposicao' => ['nullable', 'numeric', 'min:0'],
-            'meta_manutencao_descarte_matrizes' => ['nullable', 'numeric', 'min:0'],
-            'meta_manutencao_mortalidade_matrizes' => ['nullable', 'numeric', 'min:0'],
-            'meta_manutencao_perdas_leitoas_pre_cobertura' => ['nullable', 'numeric', 'min:0'],
-
-            'meta_selecao_idade_selecao' => ['nullable', 'numeric', 'min:0'],
-            'meta_selecao_idade_cobertura' => ['nullable', 'numeric', 'min:0'],
-
-            'meta_produtividade_dias_nao_produtivos' => ['nullable', 'numeric', 'min:0'],
-        ];
     }
 }

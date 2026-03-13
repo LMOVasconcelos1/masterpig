@@ -37,6 +37,8 @@
         input[type="text"],
         input[type="password"],
         input[type="email"],
+        input[type="date"],
+        input[type="time"],
         input[type="number"],
         select,
         textarea {
@@ -51,6 +53,52 @@
 </head>
 <body class="bg-gray-50 font-sans text-gray-900 antialiased">
     <div class="flex h-screen overflow-hidden" x-data="{ sidebarOpen: true, mobileSidebarOpen: false }" x-effect="document.body.classList.toggle('overflow-hidden', mobileSidebarOpen)">
+        <div
+            x-data="{ open: false, message: '', type: 'success' }"
+            x-init="
+                window.addEventListener('toast', (e) => {
+                    message = e.detail.message;
+                    type = e.detail.type || 'success';
+                    open = true;
+                    setTimeout(() => open = false, 4000);
+                });
+            "
+        >
+            <div
+                x-show="open"
+                x-transition:enter="transform ease-out duration-500 transition"
+                x-transition:enter-start="translate-y-[-100%] opacity-0"
+                x-transition:enter-end="translate-y-0 opacity-100"
+                x-transition:leave="transition ease-in duration-300"
+                x-transition:leave-start="opacity-100 scale-100"
+                x-transition:leave-end="opacity-0 scale-90"
+                class="fixed top-5 right-5 z-[100] max-w-sm w-full bg-white shadow-2xl rounded-xl pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden border-l-4"
+                :class="type === 'success' ? 'border-green-500' : 'border-red-500'"
+                x-cloak
+            >
+                <div class="p-4">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <template x-if="type === 'success'">
+                                <i class="fa-solid fa-circle-check text-green-400 text-xl"></i>
+                            </template>
+                            <template x-if="type === 'error'">
+                                <i class="fa-solid fa-circle-xmark text-red-400 text-xl"></i>
+                            </template>
+                        </div>
+                        <div class="ml-3 w-0 flex-1 pt-0.5">
+                            <p class="text-sm font-medium text-gray-900" x-text="message"></p>
+                        </div>
+                        <div class="ml-4 flex-shrink-0 flex">
+                            <button @click="open = false" class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                <span class="sr-only">Fechar</span>
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div x-show="mobileSidebarOpen" x-transition.opacity class="fixed inset-0 z-30 bg-black/50 lg:hidden" @click="mobileSidebarOpen = false" x-cloak></div>
 
         <aside
@@ -76,7 +124,7 @@
                 </div>
 
                 <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                    <div x-data="{ open: {{ request()->routeIs('dashboard') ? 'true' : 'false' }} }">
+                    <div x-data="{ open: {{ (request()->routeIs('dashboard') || request()->routeIs('gestacao')) ? 'true' : 'false' }} }">
                         <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white group">
                             <div class="flex items-center">
                                 <i class="fa-solid fa-leaf w-6 text-center"></i>
@@ -89,6 +137,10 @@
                             <a href="{{ route('dashboard', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('dashboard') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Plantel Reprodutivo
+                            </a>
+                            <a href="{{ url('/gestacao') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('gestacao') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Gestação
                             </a>
                         </div>
                     </div>
@@ -122,7 +174,7 @@
                             </a>
                         </div>
                     </div>
-                    <div x-data="{ open: {{ (request()->is('admin/usuarios*') || request()->is('admin/metas*') || request()->is('admin/alteracoes*')) ? 'true' : 'false' }} }">
+                    <div x-data="{ open: {{ (request()->is('admin/usuarios*') || request()->is('admin/metas*') || request()->is('admin/criterios*') || request()->is('admin/criterios/logs*') || request()->is('admin/alteracoes*')) ? 'true' : 'false' }} }">
                         <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white group">
                             <div class="flex items-center">
                                 <i class="fa-solid fa-screwdriver-wrench w-6 text-center"></i>
@@ -138,6 +190,14 @@
                             <a href="{{ route('admin.metas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.metas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Metas
+                            </a>
+                            <a href="{{ url('/admin/criterios') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/criterios*') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Critérios
+                            </a>
+                            <a href="{{ url('/admin/criterios/logs') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/criterios/logs*') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Logs de critérios
                             </a>
                             <a href="{{ url('/admin/alteracoes') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/alteracoes*') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
@@ -166,7 +226,7 @@
 
                 <!-- Nav Items -->
                 <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                    <div x-data="{ open: {{ request()->routeIs('dashboard') ? 'true' : 'false' }} }">
+                    <div x-data="{ open: {{ (request()->routeIs('dashboard') || request()->routeIs('gestacao')) ? 'true' : 'false' }} }">
                         <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white group">
                             <div class="flex items-center">
                                 <i class="fa-solid fa-leaf w-6 text-center"></i>
@@ -179,6 +239,10 @@
                             <a href="{{ route('dashboard', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('dashboard') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Plantel Reprodutivo
+                            </a>
+                            <a href="{{ url('/gestacao') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('gestacao') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Gestação
                             </a>
                         </div>
                     </div>
@@ -212,7 +276,7 @@
                             </a>
                         </div>
                     </div>
-                    <div x-data="{ open: {{ (request()->is('admin/usuarios*') || request()->is('admin/metas*') || request()->is('admin/alteracoes*')) ? 'true' : 'false' }} }">
+                    <div x-data="{ open: {{ (request()->is('admin/usuarios*') || request()->is('admin/metas*') || request()->is('admin/criterios*') || request()->is('admin/criterios/logs*') || request()->is('admin/alteracoes*') || request()->is('admin/zerar*')) ? 'true' : 'false' }} }">
                         <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white group">
                             <div class="flex items-center">
                                 <i class="fa-solid fa-screwdriver-wrench w-6 text-center"></i>
@@ -228,6 +292,18 @@
                             <a href="{{ route('admin.metas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.metas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Metas
+                            </a>
+                            <a href="{{ url('/admin/criterios') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/criterios*') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Critérios
+                            </a>
+                            <a href="{{ url('/admin/criterios/logs') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/criterios/logs*') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Logs de critérios
+                            </a>
+                            <a href="{{ route('admin.zerar.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.zerar.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Começar do zero
                             </a>
                             <a href="{{ url('/admin/alteracoes') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/alteracoes*') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>

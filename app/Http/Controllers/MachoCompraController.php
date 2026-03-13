@@ -10,14 +10,16 @@ use Illuminate\Support\Facades\Schema;
 
 class MachoCompraController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        if (!Schema::hasTable('macho') || !Schema::hasTable('macho_movimento')) {
+        if (! Schema::hasTable('macho') || ! Schema::hasTable('macho_movimento')) {
             return response()->json([
                 'items' => [],
                 'message' => 'Tabelas de machos ainda não foram criadas no banco.',
             ]);
         }
+
+        $limit = max(1, min(5000, (int) $request->query('limit', 200)));
 
         $rows = DB::table('macho_movimento as mm')
             ->join('macho as m', 'm.id', '=', 'mm.macho_id')
@@ -36,13 +38,13 @@ class MachoCompraController extends Controller
                 'm.peso_compra',
                 'm.valor_compra',
             ])
-            ->limit(5000)
+            ->limit($limit)
             ->get();
 
         $items = $rows->map(function ($row) {
             $idadeDias = null;
 
-            if (!empty($row->data_nascimento)) {
+            if (! empty($row->data_nascimento)) {
                 $idadeDias = Carbon::parse($row->data_nascimento)->diffInDays(Carbon::parse($row->data));
             }
 
@@ -67,7 +69,7 @@ class MachoCompraController extends Controller
 
     public function store(Request $request)
     {
-        if (!Schema::hasTable('macho') || !Schema::hasTable('macho_movimento')) {
+        if (! Schema::hasTable('macho') || ! Schema::hasTable('macho_movimento')) {
             return response()->json([
                 'message' => 'Tabelas de machos ainda não foram criadas no banco.',
             ], 422);

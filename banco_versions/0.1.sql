@@ -275,7 +275,7 @@ DROP TABLE IF EXISTS `meta`;
 CREATE TABLE `meta` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `chave` varchar(120) NOT NULL,
-  `valor` decimal(10,2) DEFAULT NULL,
+  `valor` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `criado_em` timestamp NULL DEFAULT NULL,
   `atualizado_em` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
