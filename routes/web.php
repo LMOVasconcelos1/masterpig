@@ -1,9 +1,12 @@
 <?php
 
+use App\Http\Controllers\AcompanhamentoFemeasController;
 use App\Http\Controllers\AlteracoesController;
 use App\Http\Controllers\CausaController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\CriteriosController;
+use App\Http\Controllers\CriteriosLogsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FemeaCompraController;
 use App\Http\Controllers\FemeaController;
@@ -12,6 +15,12 @@ use App\Http\Controllers\FemeaMorteController;
 use App\Http\Controllers\FemeaMovimentoController;
 use App\Http\Controllers\FemeaVendaController;
 use App\Http\Controllers\FornecedorController;
+use App\Http\Controllers\GestacaoCioController;
+use App\Http\Controllers\GestacaoCoberturaController;
+use App\Http\Controllers\GestacaoController;
+use App\Http\Controllers\GestacaoMetasController;
+use App\Http\Controllers\GestacaoPerdaController;
+use App\Http\Controllers\GestacaoSaltaCioController;
 use App\Http\Controllers\GrupoCausaController;
 use App\Http\Controllers\MachoCompraController;
 use App\Http\Controllers\MachoDescarteController;
@@ -27,6 +36,7 @@ use App\Http\Controllers\RacaoController;
 use App\Http\Controllers\TipoRacaoController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\UtilitariosController;
+use App\Http\Controllers\ZerarSistemaController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -34,6 +44,7 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', DashboardController::class)->middleware(['auth'])->name('dashboard');
+Route::get('/gestacao', GestacaoController::class)->middleware(['auth'])->name('gestacao');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -81,6 +92,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/relatorios/plantel/machos', [PlantelRelatorioController::class, 'machos'])->name('relatorios.plantel.machos');
     Route::get('/metas', [MetasController::class, 'page'])->name('metas.index');
     Route::post('/metas', [MetasController::class, 'store'])->name('metas.store');
+    Route::get('/criterios', [CriteriosController::class, 'page'])->name('criterios.index');
+    Route::post('/criterios', [CriteriosController::class, 'store'])->name('criterios.store');
+    Route::get('/criterios/logs', [CriteriosLogsController::class, 'page'])->name('criterios.logs');
+    Route::get('/zerar', [ZerarSistemaController::class, 'page'])->name('zerar.index');
+    Route::post('/zerar', [ZerarSistemaController::class, 'store'])->name('zerar.store');
     Route::post('/grupo-causa', [GrupoCausaController::class, 'store'])->name('grupo-causa.store');
     Route::get('/alteracoes', [AlteracoesController::class, 'index'])->name('alteracoes.index');
 });
@@ -98,12 +114,15 @@ Route::get('/api/plantel/causas-descarte', [PlantelApiController::class, 'causas
 Route::get('/api/plantel/femeas/mortes', [FemeaMovimentoController::class, 'mortes']);
 Route::get('/api/plantel/femeas/descartes', [FemeaMovimentoController::class, 'descartes']);
 Route::get('/api/plantel/femeas/vendas', [FemeaMovimentoController::class, 'vendas']);
+Route::middleware('auth')->get('/api/plantel/femeas/acompanhamento', [AcompanhamentoFemeasController::class, 'index']);
+Route::middleware('auth')->get('/api/plantel/femeas/acompanhamento/{id}', [AcompanhamentoFemeasController::class, 'show'])->whereNumber('id');
 Route::get('/api/plantel/machos/compras', [MachoCompraController::class, 'index']);
 Route::get('/api/plantel/machos', [PlantelApiController::class, 'machos']);
 Route::get('/api/plantel/machos/mortes', [MachoMovimentoController::class, 'mortes']);
 Route::get('/api/plantel/machos/descartes', [MachoMovimentoController::class, 'descartes']);
 Route::get('/api/plantel/machos/vendas', [MachoMovimentoController::class, 'vendas']);
 Route::get('/api/metas', [MetasController::class, 'index']);
+Route::middleware('auth')->get('/api/usuarios', [UsuarioController::class, 'apiIndex']);
 if ((bool) config('masterpig.chatbot_enabled', false)) {
     Route::middleware('auth')
         ->post('/api/chatbot', [ChatbotController::class, 'ask'])
@@ -112,5 +131,17 @@ if ((bool) config('masterpig.chatbot_enabled', false)) {
 Route::middleware('auth')->get('/api/utilitarios', [UtilitariosController::class, 'index']);
 Route::middleware('auth')->post('/api/utilitarios/localizacoes', [UtilitariosController::class, 'storeLocalizacao']);
 Route::middleware('auth')->post('/api/utilitarios/baias', [UtilitariosController::class, 'storeBaia']);
+Route::middleware('auth')->get('/api/criterios', [CriteriosController::class, 'index']);
+Route::middleware(['auth', 'admin'])->get('/api/criterios/logs', [CriteriosLogsController::class, 'index']);
+Route::middleware('auth')->get('/api/gestacao/coberturas', [GestacaoCoberturaController::class, 'index']);
+Route::middleware('auth')->post('/api/gestacao/coberturas', [GestacaoCoberturaController::class, 'store']);
+Route::middleware('auth')->get('/api/gestacao/cio', [GestacaoCioController::class, 'index']);
+Route::middleware('auth')->post('/api/gestacao/cio', [GestacaoCioController::class, 'store']);
+Route::middleware('auth')->get('/api/gestacao/perdas', [GestacaoPerdaController::class, 'index']);
+Route::middleware('auth')->post('/api/gestacao/perdas', [GestacaoPerdaController::class, 'store']);
+Route::middleware('auth')->get('/api/gestacao/salta-cio', [GestacaoSaltaCioController::class, 'index']);
+Route::middleware('auth')->post('/api/gestacao/salta-cio', [GestacaoSaltaCioController::class, 'store']);
+Route::middleware('auth')->get('/api/gestacao/metas', [GestacaoMetasController::class, 'index']);
+Route::middleware('auth')->post('/api/gestacao/metas', [GestacaoMetasController::class, 'store']);
 
 require __DIR__.'/auth.php';

@@ -11,6 +11,31 @@ use Illuminate\View\View;
 
 class UsuarioController extends Controller
 {
+    public function apiIndex()
+    {
+        if (! Schema::hasTable('usuario')) {
+            return response()->json([
+                'items' => [],
+                'message' => 'Tabela usuario não existe no banco.',
+            ]);
+        }
+
+        $items = User::query()
+            ->select(['id', 'nome', 'perfil'])
+            ->orderBy('nome')
+            ->limit(5000)
+            ->get()
+            ->map(fn (User $u) => [
+                'id' => (int) $u->id,
+                'nome' => (string) $u->nome,
+                'perfil' => $u->perfil === null ? null : (string) $u->perfil,
+            ])->values();
+
+        return response()->json([
+            'items' => $items,
+        ]);
+    }
+
     public function index(): View
     {
         if (! Schema::hasTable('usuario')) {

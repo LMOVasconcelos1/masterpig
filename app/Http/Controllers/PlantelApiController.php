@@ -10,22 +10,30 @@ class PlantelApiController extends Controller
 {
     public function femeas()
     {
-        if (!Schema::hasTable('femea')) {
+        if (! Schema::hasTable('femea')) {
             return response()->json([]);
         }
 
         $includeTodas = request()->boolean('all');
 
-        $query = DB::table('femea')->orderBy('id_primaria')->select([
+        $select = [
             'id',
             'id_primaria',
             'id_secundaria',
             'localizacao',
             'baia',
             'tipo_compra as tipo',
-        ]);
+        ];
 
-        if (!$includeTodas && Schema::hasTable('femea_movimento')) {
+        if (Schema::hasColumn('femea', 'data_nascimento')) {
+            $select[] = 'data_nascimento';
+        } else {
+            $select[] = DB::raw('NULL as data_nascimento');
+        }
+
+        $query = DB::table('femea')->orderBy('id_primaria')->select($select);
+
+        if (! $includeTodas && Schema::hasTable('femea_movimento')) {
             $query->whereNotExists(function ($q) {
                 $q->select(DB::raw(1))
                     ->from('femea_movimento as fm')
@@ -39,7 +47,7 @@ class PlantelApiController extends Controller
 
     public function machos()
     {
-        if (!Schema::hasTable('macho')) {
+        if (! Schema::hasTable('macho')) {
             return response()->json([]);
         }
 
@@ -53,7 +61,7 @@ class PlantelApiController extends Controller
             'baia',
         ]);
 
-        if (!$includeTodos && Schema::hasTable('macho_movimento')) {
+        if (! $includeTodos && Schema::hasTable('macho_movimento')) {
             $query->whereNotExists(function ($q) {
                 $q->select(DB::raw(1))
                     ->from('macho_movimento as mm')
@@ -82,7 +90,7 @@ class PlantelApiController extends Controller
 
     private function causasPorTipo(string $tipo)
     {
-        if (!Schema::hasTable('causa') || !Schema::hasTable('grupo_causa')) {
+        if (! Schema::hasTable('causa') || ! Schema::hasTable('grupo_causa')) {
             return response()->json([]);
         }
 
@@ -92,7 +100,7 @@ class PlantelApiController extends Controller
             ->with('grupoCausa')
             ->where('situacao', true)
             ->whereHas('grupoCausa', function ($q) use ($tipo) {
-                $q->whereRaw('LOWER(nome) LIKE ?', ['%' . $tipo . '%']);
+                $q->whereRaw('LOWER(nome) LIKE ?', ['%'.$tipo.'%']);
             })
             ->orderBy('nome')
             ->get()

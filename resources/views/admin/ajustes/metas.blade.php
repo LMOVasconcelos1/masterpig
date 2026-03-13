@@ -15,6 +15,8 @@
         meta_entrada_peso_leitoa: '',
         meta_entrada_peso_matriz: '',
         meta_entrada_peso_macho: '',
+        gestacao_meta_taxa_paricao: '',
+        gestacao_meta_perdas_reprodutivas: '',
         meta_manutencao_reposicao: '',
         meta_manutencao_descarte_matrizes: '',
         meta_manutencao_mortalidade_matrizes: '',
@@ -109,10 +111,12 @@
                 <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Estoque de matrizes</label>
+                            <div class="text-xs text-gray-500 mt-1">Quantidade mínima de matrizes (vazias + gestantes) desejada no plantel. Gera alerta quando o estoque ativo fica abaixo.</div>
                         <input type="number" min="0" step="1" x-model="metas.meta_plantel_estoque_matrizes" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Estoque de leitoas</label>
+                            <div class="text-xs text-gray-500 mt-1">Quantidade mínima de leitoas desejada no plantel. Gera alerta quando o estoque ativo fica abaixo.</div>
                         <input type="number" min="0" step="1" x-model="metas.meta_plantel_estoque_leitoas" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                     </div>
                 </div>
@@ -123,15 +127,35 @@
                 <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Peso leitoa (kg)</label>
+                        <div class="text-xs text-gray-500 mt-1">Peso alvo esperado na entrada (compra) de leitoas. Gera alerta quando a média de entradas dos últimos 30 dias fica abaixo.</div>
                         <input type="number" min="0" step="0.01" x-model="metas.meta_entrada_peso_leitoa" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Peso matriz (kg)</label>
+                        <div class="text-xs text-gray-500 mt-1">Peso alvo esperado na entrada (compra) de matrizes (vazias/gestantes). Gera alerta quando a média de entradas dos últimos 30 dias fica abaixo.</div>
                         <input type="number" min="0" step="0.01" x-model="metas.meta_entrada_peso_matriz" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Peso do macho (kg)</label>
+                        <div class="text-xs text-gray-500 mt-1">Peso alvo esperado na entrada (compra) de machos. Gera alerta quando a média de entradas dos últimos 30 dias fica abaixo.</div>
                         <input type="number" min="0" step="0.01" x-model="metas.meta_entrada_peso_macho" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Metas de Gestação</div>
+                <div class="mt-2 text-sm text-gray-500">Usadas para acompanhamento de resultados do manejo de gestação.</div>
+                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Meta taxa de parição (%)</label>
+                        <div class="text-xs text-gray-500 mt-1">Percentual alvo de partos em relação às coberturas. Valor de 0 a 100.</div>
+                        <input type="number" min="0" max="100" step="0.01" x-model="metas.gestacao_meta_taxa_paricao" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Meta perdas reprodutivas (%)</label>
+                        <div class="text-xs text-gray-500 mt-1">Percentual máximo desejado de perdas reprodutivas. Valor de 0 a 100.</div>
+                        <input type="number" min="0" max="100" step="0.01" x-model="metas.gestacao_meta_perdas_reprodutivas" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                     </div>
                 </div>
             </div>
@@ -141,18 +165,22 @@
                 <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Reposição</label>
+                        <div class="text-xs text-gray-500 mt-1">Percentual/valor alvo para reposição planejada de fêmeas no período. Usado para comparativos em relatórios.</div>
                         <input type="number" min="0" step="0.01" x-model="metas.meta_manutencao_reposicao" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Descarte de matrizes</label>
+                        <div class="text-xs text-gray-500 mt-1">Percentual/valor alvo de descartes de matrizes no período. Usado para comparativos em relatórios.</div>
                         <input type="number" min="0" step="0.01" x-model="metas.meta_manutencao_descarte_matrizes" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Mortalidade de matrizes</label>
+                        <div class="text-xs text-gray-500 mt-1">Percentual/valor alvo de mortalidade de matrizes no período. Usado para comparativos em relatórios.</div>
                         <input type="number" min="0" step="0.01" x-model="metas.meta_manutencao_mortalidade_matrizes" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Perdas leitoas pré coberturas</label>
+                        <div class="text-xs text-gray-500 mt-1">Percentual/valor alvo de perdas de leitoas antes da primeira cobertura. Usado para comparativos em relatórios.</div>
                         <input type="number" min="0" step="0.01" x-model="metas.meta_manutencao_perdas_leitoas_pre_cobertura" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                     </div>
                 </div>
@@ -163,10 +191,12 @@
                 <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Idade de seleção (dias)</label>
+                        <div class="text-xs text-gray-500 mt-1">Idade alvo (em dias) para selecionar leitoas no manejo. Usado para comparativos e regras internas.</div>
                         <input type="number" min="0" step="1" x-model="metas.meta_selecao_idade_selecao" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Idade de cobertura (dias)</label>
+                        <div class="text-xs text-gray-500 mt-1">Idade alvo (em dias) para primeira cobertura. Usado para comparativos e regras internas.</div>
                         <input type="number" min="0" step="1" x-model="metas.meta_selecao_idade_cobertura" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                     </div>
                 </div>
@@ -177,6 +207,7 @@
                 <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Dias não produtivos</label>
+                        <div class="text-xs text-gray-500 mt-1">Limite/meta de dias não produtivos no plantel reprodutivo. Usado em relatórios e acompanhamento.</div>
                         <input type="number" min="0" step="1" x-model="metas.meta_produtividade_dias_nao_produtivos" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                     </div>
                 </div>

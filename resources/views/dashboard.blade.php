@@ -4,7 +4,7 @@
 @section('page_title', '')
 
 @section('content')
-<div x-data="{ tab: (function(){ const t = (new URLSearchParams(window.location.search).get('tab') || 'visao'); return ['visao','lancamentos','analise','relatorios'].includes(t) ? t : 'visao'; })(), toastOpen: false, toastMessage: '', toastType: 'success' }"
+<div x-data="{ tab: (function(){ const t = (new URLSearchParams(window.location.search).get('tab') || 'visao'); return ['visao','lancamentos','acompanhamento','analise','relatorios'].includes(t) ? t : 'visao'; })(), toastOpen: false, toastMessage: '', toastType: 'success' }"
      x-init="
         window.addEventListener('toast', (e) => { toastMessage = e.detail.message; toastType = e.detail.type || 'success'; toastOpen = true; setTimeout(() => toastOpen = false, 4000); });
      "
@@ -55,6 +55,9 @@
             </button>
             <button type="button" @click="tab = 'lancamentos'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="tab === 'lancamentos' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
                 Lançamentos
+            </button>
+            <button type="button" @click="tab = 'acompanhamento'; $dispatch('acompanhamento-open')" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="tab === 'acompanhamento' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
+                Acompanhamento
             </button>
             <button type="button" @click="tab = 'analise'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="tab === 'analise' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
                 Análise
@@ -257,6 +260,8 @@
         lancamentosError: '',
         comprasFemeas: [],
         comprasMachos: [],
+        comprasFemeasLoaded: false,
+        comprasMachosLoaded: false,
         mortesFemeas: [],
         descartesFemeas: [],
         vendasFemeas: [],
@@ -474,8 +479,14 @@
                 });
         },
         afterSaveReload() {
-            if (this.item === 'femeas' && this.mov === 'compra') this.loadComprasFemeas();
-            if (this.item === 'machos' && this.mov === 'compra') this.loadComprasMachos();
+            if (this.item === 'femeas' && this.mov === 'compra') {
+                this.comprasFemeasLoaded = false;
+                this.loadComprasFemeas(true);
+            }
+            if (this.item === 'machos' && this.mov === 'compra') {
+                this.comprasMachosLoaded = false;
+                this.loadComprasMachos(true);
+            }
             if (this.item === 'femeas' && this.mov === 'morte') this.loadMortesFemeas();
             if (this.item === 'machos' && this.mov === 'morte') this.loadMortesMachos();
             if (this.item === 'femeas' && this.mov === 'descarte') this.loadDescartesFemeas();
@@ -501,39 +512,47 @@
                 .then(r => r.json())
                 .then(data => this.causasVenda = data);
         },
-        loadComprasFemeas() {
-            if (!(this.item === 'femeas' && this.mov === 'compra')) return;
+        loadComprasFemeas(force = false) {
+            if (!force && !(this.item === 'femeas' && this.mov === 'compra')) return;
+            if (this.comprasFemeasLoaded && !force) return;
 
             this.lancamentosLoading = true;
             this.lancamentosError = '';
 
-            fetch('/api/plantel/femeas/compras', { headers: { 'Accept': 'application/json' } })
+            const cacheBust = force ? `&_=${Date.now()}` : '';
+            fetch(`/api/plantel/femeas/compras?limit=200${cacheBust}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' })
                 .then(r => r.json())
                 .then(data => {
                     this.comprasFemeas = data.items ?? [];
-                    if (data.message) this.lancamentosError = data.message;
+                    this.comprasFemeasLoaded = true;
+                    if (!force && data.message) this.lancamentosError = data.message;
                 })
                 .catch(() => {
-                    this.lancamentosError = 'Não foi possível carregar a listagem.';
                     this.comprasFemeas = [];
+                    this.comprasFemeasLoaded = true;
+                    if (!force) this.lancamentosError = 'Não foi possível carregar a listagem.';
                 })
                 .finally(() => { this.lancamentosLoading = false; });
         },
-        loadComprasMachos() {
-            if (!(this.item === 'machos' && this.mov === 'compra')) return;
+        loadComprasMachos(force = false) {
+            if (!force && !(this.item === 'machos' && this.mov === 'compra')) return;
+            if (this.comprasMachosLoaded && !force) return;
 
             this.lancamentosLoading = true;
             this.lancamentosError = '';
 
-            fetch('/api/plantel/machos/compras', { headers: { 'Accept': 'application/json' } })
+            const cacheBust = force ? `&_=${Date.now()}` : '';
+            fetch(`/api/plantel/machos/compras?limit=200${cacheBust}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' })
                 .then(r => r.json())
                 .then(data => {
                     this.comprasMachos = data.items ?? [];
-                    if (data.message) this.lancamentosError = data.message;
+                    this.comprasMachosLoaded = true;
+                    if (!force && data.message) this.lancamentosError = data.message;
                 })
                 .catch(() => {
-                    this.lancamentosError = 'Não foi possível carregar a listagem.';
                     this.comprasMachos = [];
+                    this.comprasMachosLoaded = true;
+                    if (!force) this.lancamentosError = 'Não foi possível carregar a listagem.';
                 })
                 .finally(() => { this.lancamentosLoading = false; });
         },
@@ -927,7 +946,10 @@
             .then(data => {
                 window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Compra registrada com sucesso!', type: 'success' } }));
                 this.openNovo = false;
-                this.afterSaveReload();
+                this.comprasFemeasLoaded = false;
+                this.femeasAtivas = [];
+                this.femeasMode = '';
+                this.loadComprasFemeas(true);
             })
             .catch(e => {
                 window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar', type: 'error' } }));
@@ -1184,7 +1206,10 @@
             .then(data => {
                 window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Compra registrada com sucesso!', type: 'success' } }));
                 this.openNovo = false;
-                this.afterSaveReload();
+                this.comprasMachosLoaded = false;
+                this.machosAtivos = [];
+                this.machosMode = '';
+                this.loadComprasMachos(true);
             })
             .catch(e => {
                 window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar', type: 'error' } }));
@@ -1235,7 +1260,7 @@
             })
             .finally(() => { this.saving = false; });
         },
-    }" class="space-y-6">
+    }" x-init="loadComprasFemeas(); loadComprasMachos(true)" class="space-y-6">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
@@ -2362,6 +2387,142 @@
                 <option :value="n"></option>
             </template>
         </datalist>
+    </div>
+</div>
+
+<div x-show="tab === 'acompanhamento'" x-cloak>
+    <div x-data="{
+        loaded: false,
+        loading: false,
+        error: '',
+        items: [],
+        selected: null,
+        modalOpen: false,
+        load() {
+            if (this.loading || this.loaded) return;
+            this.loading = true;
+            this.error = '';
+            fetch('/api/plantel/femeas/acompanhamento?limit=1000', { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => {
+                    this.items = Array.isArray(data.items) ? data.items : [];
+                    if (data.message) this.error = data.message;
+                    this.loaded = true;
+                })
+                .catch(() => { this.error = 'Não foi possível carregar a listagem.'; })
+                .finally(() => { this.loading = false; });
+        },
+        open(id) {
+            this.modalOpen = true;
+            this.selected = null;
+            fetch('/api/plantel/femeas/acompanhamento/' + id, { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => { this.selected = data.item || null; })
+                .catch(() => { this.selected = null; });
+        },
+    }" x-init="if ($root.tab === 'acompanhamento') load()" @acompanhamento-open.window="load()" class="space-y-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                    <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Acompanhamento de fêmeas</h6>
+                    <div class="text-sm text-gray-500 mt-1">Fase atual e previsões (baseadas em critérios e últimos lançamentos).</div>
+                </div>
+                <button type="button" @click="loaded=false; load()" :disabled="loading" class="w-full sm:w-auto inline-flex items-center justify-center rounded-xl border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                    <template x-if="!loading"><span>Atualizar</span></template>
+                    <template x-if="loading"><span>Carregando...</span></template>
+                </button>
+            </div>
+            <div class="p-6">
+                <div x-show="error" x-text="error" class="bg-amber-50 border border-amber-100 text-amber-800 rounded-xl px-4 py-3 text-sm mb-4" x-cloak></div>
+
+                <div class="text-xs text-gray-500 mb-3" x-show="loading">Carregando...</div>
+
+                <div class="overflow-x-auto border border-gray-100 rounded-xl">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <th class="px-4 py-3">ID</th>
+                                <th class="px-4 py-3">Tipo</th>
+                                <th class="px-4 py-3">Fase</th>
+                                <th class="px-4 py-3">Próxima</th>
+                                <th class="px-4 py-3">Prevista em</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-100">
+                            <template x-for="row in items" :key="row.id">
+                                <tr class="text-sm text-gray-700 hover:bg-gray-50 cursor-pointer" @click="open(row.id)">
+                                    <td class="px-4 py-3 font-semibold text-primary-700" x-text="row.id_primaria"></td>
+                                    <td class="px-4 py-3" x-text="row.tipo"></td>
+                                    <td class="px-4 py-3" x-text="row.fase"></td>
+                                    <td class="px-4 py-3" x-text="row.proxima_fase"></td>
+                                    <td class="px-4 py-3" x-text="row.prevista_em"></td>
+                                </tr>
+                            </template>
+                            <tr x-show="!loading && loaded && items.length === 0" x-cloak>
+                                <td colspan="5" class="px-4 py-8 text-sm text-gray-500 text-center italic">Sem registros.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="modalOpen" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div x-show="modalOpen" @click="modalOpen = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div x-show="modalOpen" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-flex flex-col align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-100 max-h-[85vh]">
+                    <div class="bg-white px-6 pt-6 pb-4">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <h3 class="text-lg leading-6 font-semibold text-gray-900">Cadastro da fêmea</h3>
+                                <div class="text-sm text-gray-500 mt-1" x-text="selected ? (selected.id_primaria + (selected.id_secundaria ? ' / ' + selected.id_secundaria : '')) : 'Carregando...'"></div>
+                            </div>
+                            <button type="button" @click="modalOpen = false" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50" title="Fechar">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4" x-show="selected" x-cloak>
+                            <div>
+                                <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Fase</div>
+                                <div class="mt-1 text-sm text-gray-900" x-text="selected.fase"></div>
+                                <div class="mt-1 text-xs text-gray-500" x-text="'Próxima: ' + selected.proxima_fase + ' | Prevista em: ' + selected.prevista_em"></div>
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Dados</div>
+                                <div class="mt-1 text-sm text-gray-700" x-text="'Tipo: ' + selected.tipo"></div>
+                                <div class="mt-1 text-sm text-gray-700" x-text="'Nascimento: ' + (selected.data_nascimento || '-')"></div>
+                                <div class="mt-1 text-sm text-gray-700" x-text="'Compra: ' + (selected.data_compra || '-')"></div>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Calendário (previsões)</div>
+                                <div class="mt-2 bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                                    <template x-if="Array.isArray(selected.calendario) && selected.calendario.length > 0">
+                                        <ul class="space-y-2">
+                                            <template x-for="(e, i) in selected.calendario" :key="'cal-' + i">
+                                                <li class="flex items-start justify-between gap-4 text-sm">
+                                                    <span class="text-gray-700" x-text="e.fase"></span>
+                                                    <span class="font-semibold text-gray-900 whitespace-nowrap" x-text="e.data"></span>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </template>
+                                    <template x-if="!Array.isArray(selected.calendario) || selected.calendario.length === 0">
+                                        <div class="text-sm text-gray-500">Sem previsões (sem cobertura registrada).</div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white border-t border-gray-100 px-6 py-4 flex justify-end">
+                        <button type="button" @click="modalOpen = false" class="inline-flex items-center rounded-xl border border-gray-200 shadow-sm px-5 py-2.5 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                            Fechar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
