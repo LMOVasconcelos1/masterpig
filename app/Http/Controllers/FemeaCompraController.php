@@ -96,9 +96,11 @@ class FemeaCompraController extends Controller
             'id_secundaria' => ['nullable', 'string', 'max:50', 'unique:femea,id_secundaria'],
             'data_compra' => ['required', 'date'],
             'data_nascimento' => ['nullable', 'date', 'required_if:tipo_compra,leitoa'],
+            'data_ultimo_cio' => ['nullable', 'date'],
+            'houve_cio' => ['nullable', 'string', 'in:sim,nao'],
             'ciclos_ate_compra' => ['nullable', 'integer', 'min:0'],
             'data_cobertura' => ['nullable', 'date'],
-            'raca_id' => ['required', 'exists:raca,id'],
+            'raca_id' => ['nullable', 'exists:raca,id'],
             'valor_compra' => ['nullable', 'numeric', 'min:0'],
             'peso_compra' => ['nullable', 'numeric', 'min:0'],
             'fornecedor_id' => ['nullable', 'exists:fornecedor,id'],
@@ -166,6 +168,7 @@ class FemeaCompraController extends Controller
 
             DB::table('femea_movimento')->insert([
                 'femea_id' => $femea->id,
+                'femea_id_primaria' => $femea->id_primaria,
                 'acao' => 'compra',
                 'data' => $femea->data_compra,
                 'valor' => $femea->valor_compra,
@@ -174,6 +177,19 @@ class FemeaCompraController extends Controller
                 'criado_em' => now(),
                 'atualizado_em' => now(),
             ]);
+
+            // Se informou que houve cio, registra na tabela gestacao_cio
+            if (($validated['houve_cio'] ?? 'nao') === 'sim' && ! empty($validated['data_ultimo_cio'])) {
+                if (Schema::hasTable('gestacao_cio')) {
+                    DB::table('gestacao_cio')->insert([
+                        'femea_id' => $femea->id,
+                        'data' => $validated['data_ultimo_cio'],
+                        'observacao' => 'Registrado no ato da compra',
+                        'criado_em' => now(),
+                        'atualizado_em' => now(),
+                    ]);
+                }
+            }
 
             return $femea;
         });

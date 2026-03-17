@@ -49,6 +49,7 @@ class FemeaMorteController extends Controller
 
         $payload = [
             'femea_id' => $femea->id,
+            'femea_id_primaria' => $femea->id_primaria,
             'acao' => 'morte',
             'data' => Carbon::parse($validated['data_morte'])->format('Y-m-d'),
             'valor' => null,

@@ -437,3 +437,13 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2026-03-11 21:54:41
+
+source 0.2.sql;
+source 0.3.sql;
+source 0.4.sql;
+source 0.5.sql;
+source 0.6.sql;
+source 0.7.sql;
+source 0.8.sql;
+source 0.9.sql;
+source 0.10.sql;

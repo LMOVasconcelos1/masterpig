@@ -27,6 +27,7 @@ use App\Http\Controllers\MachoDescarteController;
 use App\Http\Controllers\MachoMorteController;
 use App\Http\Controllers\MachoMovimentoController;
 use App\Http\Controllers\MachoVendaController;
+use App\Http\Controllers\MaternidadeController;
 use App\Http\Controllers\MetasController;
 use App\Http\Controllers\PlantelApiController;
 use App\Http\Controllers\PlantelRelatorioController;
@@ -45,6 +46,9 @@ Route::get('/', function () {
 
 Route::get('/dashboard', DashboardController::class)->middleware(['auth'])->name('dashboard');
 Route::get('/gestacao', GestacaoController::class)->middleware(['auth'])->name('gestacao');
+Route::get('/maternidade', [MaternidadeController::class, 'index'])->middleware(['auth'])->name('maternidade');
+Route::post('/maternidade/partos', [MaternidadeController::class, 'storeParto'])->middleware(['auth'])->name('maternidade.partos.store');
+Route::post('/maternidade/desmames', [MaternidadeController::class, 'storeDesmame'])->middleware(['auth'])->name('maternidade.desmames.store');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -124,7 +124,7 @@
                 </div>
 
                 <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                    <div x-data="{ open: {{ (request()->routeIs('dashboard') || request()->routeIs('gestacao')) ? 'true' : 'false' }} }">
+                    <div x-data="{ open: {{ (request()->routeIs('dashboard') || request()->routeIs('gestacao') || request()->routeIs('maternidade')) ? 'true' : 'false' }} }">
                         <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white group">
                             <div class="flex items-center">
                                 <i class="fa-solid fa-leaf w-6 text-center"></i>
@@ -141,6 +141,10 @@
                             <a href="{{ url('/gestacao') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('gestacao') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Gestação
+                            </a>
+                            <a href="{{ route('maternidade', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('maternidade') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Maternidade
                             </a>
                         </div>
                     </div>
@@ -226,7 +230,7 @@
 
                 <!-- Nav Items -->
                 <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                    <div x-data="{ open: {{ (request()->routeIs('dashboard') || request()->routeIs('gestacao')) ? 'true' : 'false' }} }">
+                    <div x-data="{ open: {{ (request()->routeIs('dashboard') || request()->routeIs('gestacao') || request()->routeIs('maternidade')) ? 'true' : 'false' }} }">
                         <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white group">
                             <div class="flex items-center">
                                 <i class="fa-solid fa-leaf w-6 text-center"></i>
@@ -243,6 +247,10 @@
                             <a href="{{ url('/gestacao') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('gestacao') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Gestação
+                            </a>
+                            <a href="{{ route('maternidade', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('maternidade') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Maternidade
                             </a>
                         </div>
                     </div>

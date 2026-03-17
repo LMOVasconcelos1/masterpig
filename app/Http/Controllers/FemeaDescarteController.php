@@ -49,6 +49,7 @@ class FemeaDescarteController extends Controller
 
         $payload = [
             'femea_id' => $femea->id,
+            'femea_id_primaria' => $femea->id_primaria,
             'acao' => 'descarte',
             'data' => Carbon::parse($validated['data_descarte'])->format('Y-m-d'),
             'valor' => null,

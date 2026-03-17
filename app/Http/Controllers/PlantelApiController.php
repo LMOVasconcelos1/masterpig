@@ -3,11 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Models\Causa;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class PlantelApiController extends Controller
 {
+    private function metaInt(string $key, int $default): int
+    {
+        if (! Schema::hasTable('meta')) {
+            return $default;
+        }
+
+        $raw = DB::table('meta')->where('chave', $key)->value('valor');
+        if ($raw === null || trim((string) $raw) === '') {
+            return $default;
+        }
+
+        $n = (int) $raw;
+
+        return $n < 0 ? $default : $n;
+    }
+
     public function femeas()
     {
         if (! Schema::hasTable('femea')) {
@@ -15,6 +32,7 @@ class PlantelApiController extends Controller
         }
 
         $includeTodas = request()->boolean('all');
+        $includePrevisao = request()->boolean('previsao_cio');
 
         $select = [
             'id',
@@ -42,7 +60,68 @@ class PlantelApiController extends Controller
             });
         }
 
-        return response()->json($query->limit(5000)->get());
+        $rows = $query->limit(5000)->get();
+
+        if ($includePrevisao) {
+            $cfg = [
+                'dias_ate_cio' => $this->metaInt('criterio_dias_ate_cio', 21),
+                'cio_dias' => $this->metaInt('criterio_dias_cio', 3),
+                'gestacao_dias' => $this->metaInt('criterio_dias_gestacao', 114),
+                'lactacao_min_dias' => $this->metaInt('criterio_dias_lactacao_min', 21),
+                'intervalo_desmame_cio_dias' => $this->metaInt('criterio_dias_intervalo_desmame_cio', 5),
+                'maturidade_min_dias' => $this->metaInt('criterio_maturidade_idade_min_dias', 151),
+            ];
+
+            $ids = $rows->pluck('id')->toArray();
+
+            $lastCoberturas = Schema::hasTable('gestacao_cobertura')
+                ? DB::table('gestacao_cobertura')->whereIn('femea_id', $ids)->selectRaw('femea_id, MAX(data) as last_data')->groupBy('femea_id')->pluck('last_data', 'femea_id')->toArray()
+                : [];
+
+            $lastCios = Schema::hasTable('gestacao_cio')
+                ? DB::table('gestacao_cio')->whereIn('femea_id', $ids)->selectRaw('femea_id, MAX(data) as last_data')->groupBy('femea_id')->pluck('last_data', 'femea_id')->toArray()
+                : [];
+
+            $lastSaltas = Schema::hasTable('gestacao_salta_cio')
+                ? DB::table('gestacao_salta_cio')->whereIn('femea_id', $ids)->selectRaw('femea_id, MAX(data) as last_data')->groupBy('femea_id')->pluck('last_data', 'femea_id')->toArray()
+                : [];
+
+            foreach ($rows as $row) {
+                $fId = $row->id;
+                $lastCob = isset($lastCoberturas[$fId]) ? Carbon::parse($lastCoberturas[$fId]) : null;
+                $lastC = isset($lastCios[$fId]) ? Carbon::parse($lastCios[$fId]) : null;
+                $lastS = isset($lastSaltas[$fId]) ? Carbon::parse($lastSaltas[$fId]) : null;
+
+                $prevCio = null;
+                if ($lastCob) {
+                    $prevCio = (clone $lastCob)->addDays($cfg['gestacao_dias'] + $cfg['lactacao_min_dias'] + $cfg['intervalo_desmame_cio_dias']);
+                } else {
+                    $lastEvento = $lastC;
+                    if ($lastEvento === null || ($lastS !== null && $lastS->gt($lastEvento))) {
+                        $lastEvento = $lastS;
+                    }
+                    if ($lastEvento) {
+                        $prevCio = (clone $lastEvento)->addDays(max(1, $cfg['dias_ate_cio']));
+                    }
+                }
+
+                if (! $prevCio && $row->tipo === 'leitoa' && ! empty($row->data_nascimento)) {
+                    $nasc = Carbon::parse($row->data_nascimento);
+                    $maturityStart = (clone $nasc)->addDays(max(0, $cfg['maturidade_min_dias']));
+                    $prevCio = (clone $maturityStart)->addDays(max(1, $cfg['dias_ate_cio']));
+                }
+
+                if ($prevCio) {
+                    $row->previsao_cio_inicio = $prevCio->toDateString();
+                    $row->previsao_cio_fim = (clone $prevCio)->addDays($cfg['cio_dias'])->toDateString();
+                } else {
+                    $row->previsao_cio_inicio = null;
+                    $row->previsao_cio_fim = null;
+                }
+            }
+        }
+
+        return response()->json($rows);
     }
 
     public function machos()

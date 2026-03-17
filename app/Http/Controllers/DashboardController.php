@@ -227,6 +227,12 @@ class DashboardController extends Controller
                 continue;
             }
 
+            // A fêmea só aparece como inconsistência se JÁ ESTIVER na janela de cio ou se o prazo expirou
+            // Se hoje ainda não chegou na data de início do cio (prevCio), ignoramos (previsão futura)
+            if ($today->lt($prevCio)) {
+                continue;
+            }
+
             $tipoLabel = $this->tipoLabel($row->tipo_compra);
             $prevBr = $prevCio->format('d/m/Y');
             $fimBr = $janelaFim->format('d/m/Y');
@@ -235,6 +241,7 @@ class DashboardController extends Controller
                 $diff = max(0, (int) $today->diffInDays($prevCio));
                 $problema = "Fêmea sem registro de cio há {$diff} dias ({$tipoLabel}).";
             } else {
+                // Se não está na janela e já passou o início (verificado pelo if anterior), então está em atraso
                 $problema = "Fêmea com cio previsto em {$prevBr} (janela até {$fimBr}) sem registro de Cio/Salta cio ({$tipoLabel}).";
             }
 
@@ -369,6 +376,7 @@ class DashboardController extends Controller
         }
 
         $estoqueTotalAnimais = $leitoasAtivas + $matrizesAtivas + $machosAtivos;
+        $criterioMaturidadeMin = $this->metaInt('criterio_maturidade_idade_min_dias', 151);
 
         return view('dashboard', [
             'estoqueRacoes' => $estoqueRacoes,
@@ -381,6 +389,7 @@ class DashboardController extends Controller
             'saidasLeitoas' => $saidasLeitoas,
             'saidasMatrizes' => $saidasMatrizes,
             'saidasMachos' => $saidasMachos,
+            'criterioMaturidadeMin' => $criterioMaturidadeMin,
         ]);
     }
 }

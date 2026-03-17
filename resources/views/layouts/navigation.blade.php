@@ -16,6 +16,14 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
 
+                    <x-nav-link :href="route('gestacao', [], false)" :active="request()->routeIs('gestacao')">
+                        {{ __('Gestação') }}
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('maternidade', [], false)" :active="request()->routeIs('maternidade')">
+                        {{ __('Maternidade') }}
+                    </x-nav-link>
+
                     @if(!config('masterpig.enforce_perfil_permissions', false) || Auth::user()->perfil === 'administrador')
                     <x-nav-link :href="route('admin.causas.index', [], false)" :active="request()->routeIs('admin.causas.index')">
                         {{ __('Causas') }}

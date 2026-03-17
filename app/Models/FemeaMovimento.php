@@ -17,6 +17,7 @@ class FemeaMovimento extends Model
 
     protected $fillable = [
         'femea_id',
+        'femea_id_primaria',
         'acao',
         'data',
         'valor',

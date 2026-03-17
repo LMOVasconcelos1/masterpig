@@ -52,6 +52,7 @@ class FemeaVendaController extends Controller
 
         $payload = [
             'femea_id' => $femea->id,
+            'femea_id_primaria' => $femea->id_primaria,
             'acao' => 'venda',
             'data' => Carbon::parse($validated['data_venda'])->format('Y-m-d'),
             'valor' => $validated['valor_venda'] ?? null,

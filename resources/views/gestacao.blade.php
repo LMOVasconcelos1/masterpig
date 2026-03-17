@@ -125,7 +125,7 @@
             this.cio.data = `${dd}/${mm}/${yyyy}`;
             this.cobertura.hora = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
-            fetch('/api/plantel/femeas')
+            fetch('/api/plantel/femeas?previsao_cio=1')
                 .then(r => r.json())
                 .then(data => {
                     const items = Array.isArray(data) ? data : [];
@@ -319,12 +319,30 @@
             return Math.floor(ms / 86400000);
         },
         isCioElegivel(f) {
-            if (!f || String(f.tipo || '') !== 'leitoa') return false;
-            const idade = this.cioIdadeDias(f);
-            if (idade === null || idade < 0) return false;
-            return idade >= this.cioMinDias() && idade <= this.cioMaxDias();
+            if (!f) return false;
+            
+            const selectedDate = this.cioDateObj();
+            if (!selectedDate) return false;
+
+            // Se a API retornou previsão, usamos ela como critério principal
+            if (f.previsao_cio_inicio && f.previsao_cio_fim) {
+                const inicio = new Date(f.previsao_cio_inicio + 'T00:00:00');
+                const fim = new Date(f.previsao_cio_fim + 'T00:00:00');
+                return selectedDate >= inicio && selectedDate <= fim;
+            }
+
+            // Fallback para leitoas sem histórico (primeiro cio)
+            if (String(f.tipo || '') === 'leitoa') {
+                const idade = this.cioIdadeDias(f);
+                if (idade === null || idade < 0) return false;
+                return idade >= this.cioMinDias() && idade <= this.cioMaxDias();
+            }
+
+            return false;
         },
         cioOptions() {
+            // Retorna todas as matrizes (leitoa/vazia) que estão na janela de previsão
+            // ou leitoas na janela de idade
             return (this.matrizes || []).filter((f) => this.isCioElegivel(f));
         },
         cioSelected() {
@@ -338,6 +356,13 @@
         cioStatusText() {
             const f = this.cioSelected();
             if (!f) return '';
+
+            if (f.previsao_cio_inicio && f.previsao_cio_fim) {
+                const inicio = this.isoToBr(f.previsao_cio_inicio);
+                const fim = this.isoToBr(f.previsao_cio_fim);
+                return `Cio previsto para o período de ${inicio} a ${fim}.`;
+            }
+
             const idade = this.cioIdadeDias(f);
             if (idade === null) return 'Não foi possível calcular a idade (verifique a data de nascimento).';
             const min = this.cioMinDias();

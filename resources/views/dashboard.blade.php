@@ -314,6 +314,23 @@
         openNovaBaia: false,
         novaBaiaNome: '',
         saving: false,
+        houveCio: 'nao',
+        dataUltimoCio: '',
+        criterioMaturidadeMin: {{ $criterioMaturidadeMin ?? 151 }},
+        idadeCompraDias() {
+            if (!this.dataCompra || !this.dataNascimento) return 0;
+            const compra = this.parseBrDate(this.dataCompra);
+            const nascimento = this.parseBrDate(this.dataNascimento);
+            if (!compra || !nascimento) return 0;
+            const diff = new Date(compra).getTime() - new Date(nascimento).getTime();
+            return Math.floor(diff / (1000 * 60 * 60 * 24));
+        },
+        showHouveCio() {
+            return this.item === 'femeas' && 
+                   this.mov === 'compra' && 
+                   this.compraFemeasTipo === 'leitoa' && 
+                   this.idadeCompraDias() >= this.criterioMaturidadeMin;
+        },
         normalizeDateInput(value) {
             const digits = String(value || '').replace(/\D/g, '').slice(0, 8);
             const d = digits.slice(0, 2);
@@ -965,6 +982,8 @@
                 caracteristicas: this.caracteristicas || null,
                 localizacao: this.localizacao || null,
                 baia: this.baia || null,
+                houve_cio: this.houveCio,
+                data_ultimo_cio: this.parseBrDate(this.dataUltimoCio) || null,
             };
 
             fetch('{{ route('admin.plantel.femeas.compras.store', [], false) }}', {
@@ -2178,11 +2197,22 @@
                                                 <label class="block text-sm font-medium text-gray-700">Data de compra</label>
                                                 <input type="text" x-model="dataCompra" @input="dataCompra = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
                                             </div>
-                                            <div x-show="ciclosObrigatorio" x-cloak>
-                                                <label class="block text-sm font-medium text-gray-700">Ciclos até a compra</label>
-                                                <input type="number" min="0" step="1" x-model="ciclosAteCompra" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 3">
-                                                <div class="mt-1 text-xs text-gray-500">Usado para sugerir a data de nascimento.</div>
-                                            </div>
+                                                <div x-show="showHouveCio()" x-cloak>
+                                                    <label class="block text-sm font-medium text-gray-700">Já houve cio?</label>
+                                                    <select x-model="houveCio" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                                        <option value="nao">Não</option>
+                                                        <option value="sim">Sim</option>
+                                                    </select>
+                                                </div>
+                                                <div x-show="showHouveCio() && houveCio === 'sim'" x-cloak>
+                                                    <label class="block text-sm font-medium text-gray-700">Data do último cio</label>
+                                                    <input type="text" x-model="dataUltimoCio" @input="dataUltimoCio = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
+                                                </div>
+                                                <div x-show="ciclosObrigatorio" x-cloak>
+                                                    <label class="block text-sm font-medium text-gray-700">Ciclos até a compra</label>
+                                                    <input type="number" min="0" step="1" x-model="ciclosAteCompra" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 3">
+                                                    <div class="mt-1 text-xs text-gray-500">Usado para sugerir a data de nascimento.</div>
+                                                </div>
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700">Data de nascimento</label>
                                                 <input type="text" x-model="dataNascimento" @input="nascimentoAuto = false; dataNascimento = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
