@@ -10,7 +10,7 @@ class RacaController extends Controller
 {
     public function index()
     {
-        if (!Schema::hasTable('raca')) {
+        if (! Schema::hasTable('raca')) {
             return response()->json([]);
         }
 
@@ -19,7 +19,7 @@ class RacaController extends Controller
 
     public function store(Request $request)
     {
-        if (!Schema::hasTable('raca')) {
+        if (! Schema::hasTable('raca')) {
             return response()->json([
                 'message' => 'A tabela de raça ainda não foi criada no banco.',
             ], 422);
@@ -34,4 +34,3 @@ class RacaController extends Controller
         return response()->json($raca, 201);
     }
 }
-

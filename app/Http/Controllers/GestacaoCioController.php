@@ -86,9 +86,10 @@ class GestacaoCioController extends Controller
             ], 422);
         }
 
-        if ((string) $row->tipo_compra !== 'leitoa') {
+        $tipo = (string) $row->tipo_compra;
+        if (! in_array($tipo, ['leitoa', 'matriz_vazia'], true)) {
             return response()->json([
-                'message' => 'Registro de cio é permitido apenas para leitoas.',
+                'message' => 'Registro de cio é permitido apenas para leitoas ou matrizes em período de cio.',
             ], 422);
         }
 
@@ -102,12 +103,12 @@ class GestacaoCioController extends Controller
         $nascimento = Carbon::parse($row->data_nascimento)->startOfDay();
         $idadeDias = $nascimento->diffInDays($data);
 
-        $minDias = max(0, $this->metaInt('criterio_leitoa_idade_min_dias', 150));
-        $maxDias = max($minDias, $this->metaInt('criterio_leitoa_idade_max_dias', 210));
+        $matMinDias = max(0, $this->metaInt('criterio_maturidade_idade_min_dias', 151));
+        $diasAteCio = max(1, $this->metaInt('criterio_dias_ate_cio', 21));
 
-        if ($idadeDias < $minDias || $idadeDias > $maxDias) {
+        if ($tipo === 'leitoa' && $idadeDias < $matMinDias) {
             return response()->json([
-                'message' => "Cio só pode ser registrado quando a leitoa estiver entre {$minDias} e {$maxDias} dias de idade (idade atual: {$idadeDias}).",
+                'message' => "Leitoa ainda não atingiu maturidade reprodutiva ({$idadeDias} dias, mínimo {$matMinDias}).",
             ], 422);
         }
 
@@ -116,6 +117,20 @@ class GestacaoCioController extends Controller
             ->where('data', $data->toDateString())
             ->exists();
 
+        $lastCio = DB::table('gestacao_cio')
+            ->where('femea_id', (int) $validated['femea_id'])
+            ->where('data', '<=', $data->toDateString())
+            ->max('data');
+
+        if ($lastCio) {
+            $last = Carbon::parse($lastCio)->startOfDay();
+            if ($last->diffInDays($data) < $diasAteCio) {
+                return response()->json([
+                    'message' => "Novo cio só pode ser registrado após {$diasAteCio} dias do anterior.",
+                ], 422);
+            }
+        }
+
         if (! $exists) {
             DB::table('gestacao_cio')->insert([
                 'femea_id' => (int) $validated['femea_id'],
@@ -123,10 +138,39 @@ class GestacaoCioController extends Controller
                 'criado_em' => now(),
                 'atualizado_em' => now(),
             ]);
+
+            if ($tipo === 'leitoa' && $idadeDias >= $matMinDias && Schema::hasTable('femea') && Schema::hasColumn('femea', 'tipo_compra')) {
+                DB::table('femea')->where('id', (int) $validated['femea_id'])->update([
+                    'tipo_compra' => 'matriz_vazia',
+                    'atualizado_em' => now(),
+                ]);
+            }
         }
 
         return response()->json([
             'message' => 'Cio registrado com sucesso!',
         ], 201);
+    }
+
+    public function destroy(int $id)
+    {
+        if (! Schema::hasTable('gestacao_cio')) {
+            return response()->json([
+                'message' => 'Tabela gestacao_cio não existe no banco.',
+            ], 422);
+        }
+
+        $exists = DB::table('gestacao_cio')->where('id', $id)->exists();
+        if (! $exists) {
+            return response()->json([
+                'message' => 'Registro não encontrado.',
+            ], 404);
+        }
+
+        DB::table('gestacao_cio')->where('id', $id)->delete();
+
+        return response()->json([
+            'message' => 'Registro excluído com sucesso!',
+        ]);
     }
 }

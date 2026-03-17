@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\GrupoCausa;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class GrupoCausaController extends Controller
 {

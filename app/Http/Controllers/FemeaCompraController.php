@@ -82,12 +82,20 @@ class FemeaCompraController extends Controller
             ], 422);
         }
 
+        $request->merge([
+            'id_primaria' => trim((string) $request->input('id_primaria', '')),
+            'id_secundaria' => $request->input('id_secundaria') === null ? null : trim((string) $request->input('id_secundaria')),
+            'localizacao' => $request->input('localizacao') === null ? null : trim((string) $request->input('localizacao')),
+            'baia' => $request->input('baia') === null ? null : trim((string) $request->input('baia')),
+            'caracteristicas' => $request->input('caracteristicas') === null ? null : trim((string) $request->input('caracteristicas')),
+        ]);
+
         $validated = $request->validate([
             'tipo_compra' => ['required', 'in:leitoa,matriz_vazia,matriz_gestante'],
             'id_primaria' => ['required', 'string', 'max:50', 'unique:femea,id_primaria'],
             'id_secundaria' => ['nullable', 'string', 'max:50', 'unique:femea,id_secundaria'],
             'data_compra' => ['required', 'date'],
-            'data_nascimento' => ['nullable', 'date'],
+            'data_nascimento' => ['nullable', 'date', 'required_if:tipo_compra,leitoa'],
             'ciclos_ate_compra' => ['nullable', 'integer', 'min:0'],
             'data_cobertura' => ['nullable', 'date'],
             'raca_id' => ['required', 'exists:raca,id'],
@@ -98,6 +106,20 @@ class FemeaCompraController extends Controller
             'localizacao' => ['nullable', 'string', 'max:120'],
             'baia' => ['nullable', 'string', 'max:60'],
         ]);
+
+        if ($validated['tipo_compra'] === 'leitoa') {
+            if (! empty($validated['data_cobertura'])) {
+                return response()->json([
+                    'message' => 'Leitoa não deve ter data de cobertura na compra.',
+                ], 422);
+            }
+
+            if ($validated['ciclos_ate_compra'] !== null) {
+                return response()->json([
+                    'message' => 'Leitoa não deve ter ciclos até a compra.',
+                ], 422);
+            }
+        }
 
         if ($validated['tipo_compra'] === 'matriz_gestante' && empty($validated['data_cobertura'])) {
             return response()->json([
@@ -114,6 +136,29 @@ class FemeaCompraController extends Controller
         if (empty($validated['data_nascimento']) && isset($validated['ciclos_ate_compra'])) {
             $dias = (int) $validated['ciclos_ate_compra'] * 21;
             $validated['data_nascimento'] = Carbon::parse($validated['data_compra'])->subDays($dias)->format('Y-m-d');
+        }
+
+        $dataCompra = Carbon::parse($validated['data_compra'])->startOfDay();
+        $dataNasc = empty($validated['data_nascimento']) ? null : Carbon::parse($validated['data_nascimento'])->startOfDay();
+        $dataCob = empty($validated['data_cobertura']) ? null : Carbon::parse($validated['data_cobertura'])->startOfDay();
+
+        if ($dataNasc && $dataNasc->gt($dataCompra)) {
+            return response()->json([
+                'message' => 'Data de nascimento não pode ser maior que a data de compra.',
+            ], 422);
+        }
+
+        if ($validated['tipo_compra'] === 'matriz_gestante' && $dataCob) {
+            if ($dataCob->gt($dataCompra)) {
+                return response()->json([
+                    'message' => 'Data de cobertura não pode ser maior que a data de compra para matriz gestante.',
+                ], 422);
+            }
+            if ($dataNasc && $dataNasc->gt($dataCob)) {
+                return response()->json([
+                    'message' => 'Data de nascimento não pode ser maior que a data de cobertura.',
+                ], 422);
+            }
         }
 
         $result = DB::transaction(function () use ($validated) {

@@ -125,7 +125,7 @@ class GestacaoCoberturaController extends Controller
 
         $femeaRow = DB::table('femea')
             ->where('id', (int) $validated['femea_id'])
-            ->select(['id', 'tipo_compra', 'localizacao', 'baia'])
+            ->select(['id', 'tipo_compra', 'localizacao', 'baia', 'data_nascimento'])
             ->first();
 
         if ($femeaRow === null) {
@@ -150,8 +150,11 @@ class GestacaoCoberturaController extends Controller
         $cioDias = max(1, $metaInt('criterio_dias_cio', 3));
         $diasAteCio = max(1, $metaInt('criterio_dias_ate_cio', 21));
         $gestacaoDias = max(1, $metaInt('criterio_dias_gestacao', 114));
-        $lactacaoDias = max(1, $metaInt('criterio_dias_lactacao', 21));
+        $lactacaoMinDias = max(1, $metaInt('criterio_dias_lactacao_min', 21));
+        $lactacaoMaxDias = max($lactacaoMinDias, $metaInt('criterio_dias_lactacao_max', 28));
         $intervaloDesmameCioDias = max(0, $metaInt('criterio_dias_intervalo_desmame_cio', 5));
+        $coberturaCiclosMin = max(0, $metaInt('criterio_cobertura_ciclos_min', 3));
+        $coberturaIdadeMin = max(0, $metaInt('criterio_cobertura_idade_min_dias', 210));
 
         $cioAuto = 'nao';
         if (Schema::hasTable('meta')) {
@@ -183,6 +186,30 @@ class GestacaoCoberturaController extends Controller
         }
 
         $dataCobertura = Carbon::parse($validated['data'])->startOfDay();
+        $dataCoberturaIso = $dataCobertura->toDateString();
+
+        if (! empty($femeaRow->data_nascimento)) {
+            $idadeDias = Carbon::parse($femeaRow->data_nascimento)->diffInDays($dataCobertura);
+            if ($idadeDias < $coberturaIdadeMin) {
+                return response()->json([
+                    'message' => "Idade insuficiente para cobertura ({$idadeDias} dias, mínimo {$coberturaIdadeMin}).",
+                ], 422);
+            }
+        }
+
+        $dupQuery = DB::table('gestacao_cobertura')
+            ->where('femea_id', (int) $validated['femea_id'])
+            ->where('data', $dataCoberturaIso);
+
+        if (Schema::hasColumn('gestacao_cobertura', 'hora')) {
+            $dupQuery->where('hora', (string) $validated['hora']);
+        }
+
+        if ($dupQuery->exists()) {
+            return response()->json([
+                'message' => 'Já existe uma cobertura registrada para essa data e hora.',
+            ], 422);
+        }
 
         $cioWindowStart = null;
         $cioWindowEnd = null;
@@ -194,7 +221,8 @@ class GestacaoCoberturaController extends Controller
         if ($last) {
             $lastCobertura = Carbon::parse($last)->startOfDay();
             $partoPrev = (clone $lastCobertura)->addDays($gestacaoDias);
-            $desmamePrev = (clone $partoPrev)->addDays($lactacaoDias);
+            $desmamePrevMin = (clone $partoPrev)->addDays($lactacaoMinDias);
+            $desmamePrevMax = (clone $partoPrev)->addDays($lactacaoMaxDias);
 
             if ($dataCobertura->lt($partoPrev)) {
                 return response()->json([
@@ -202,13 +230,13 @@ class GestacaoCoberturaController extends Controller
                 ], 422);
             }
 
-            if ($dataCobertura->betweenIncluded($partoPrev, $desmamePrev)) {
+            if ($dataCobertura->betweenIncluded($partoPrev, $desmamePrevMax)) {
                 return response()->json([
                     'message' => 'A fêmea selecionada está em lactação e não pode receber cobertura.',
                 ], 422);
             }
 
-            $firstCioStart = (clone $desmamePrev)->addDays($intervaloDesmameCioDias);
+            $firstCioStart = (clone $desmamePrevMin)->addDays($intervaloDesmameCioDias);
             if ($dataCobertura->lt($firstCioStart)) {
                 return response()->json([
                     'message' => 'A fêmea selecionada ainda não está na fase de cio para cobertura.',
@@ -217,6 +245,11 @@ class GestacaoCoberturaController extends Controller
 
             $diff = $firstCioStart->diffInDays($dataCobertura);
             $cycles = intdiv($diff, $diasAteCio);
+            if ($cycles < $coberturaCiclosMin) {
+                return response()->json([
+                    'message' => "Cobertura permitida a partir de {$coberturaCiclosMin} ciclos.",
+                ], 422);
+            }
             $cioWindowStart = (clone $firstCioStart)->addDays($cycles * $diasAteCio)->startOfDay();
             $cioWindowEnd = (clone $cioWindowStart)->addDays($cioDias)->startOfDay();
 
@@ -405,6 +438,66 @@ class GestacaoCoberturaController extends Controller
             'message' => 'Cobertura registrada com sucesso!',
             'warnings' => $warnings,
         ], 201);
+    }
+
+    public function destroy(int $id)
+    {
+        if (! Schema::hasTable('gestacao_cobertura')) {
+            return response()->json([
+                'message' => 'Tabela gestacao_cobertura não existe no banco.',
+            ], 422);
+        }
+
+        $row = DB::table('gestacao_cobertura')->where('id', $id)->select(['id', 'femea_id'])->first();
+        if (! $row) {
+            return response()->json([
+                'message' => 'Cobertura não encontrada.',
+            ], 404);
+        }
+
+        $femeaId = (int) $row->femea_id;
+
+        DB::transaction(function () use ($id, $femeaId) {
+            DB::table('gestacao_cobertura')->where('id', $id)->delete();
+
+            if (Schema::hasTable('criterio_log')) {
+                DB::table('criterio_log')
+                    ->where('evento', 'cobertura')
+                    ->where('referencia_id', $id)
+                    ->delete();
+            }
+
+            if (! Schema::hasTable('femea')) {
+                return;
+            }
+
+            $last = DB::table('gestacao_cobertura')->where('femea_id', $femeaId)->max('data');
+
+            $update = [];
+            if (Schema::hasColumn('femea', 'data_cobertura')) {
+                $update['data_cobertura'] = $last ? Carbon::parse($last)->toDateString() : null;
+            }
+
+            if (Schema::hasColumn('femea', 'tipo_compra')) {
+                if ($last) {
+                    $update['tipo_compra'] = 'matriz_gestante';
+                } else {
+                    $current = DB::table('femea')->where('id', $femeaId)->value('tipo_compra');
+                    if ((string) $current === 'matriz_gestante') {
+                        $update['tipo_compra'] = 'matriz_vazia';
+                    }
+                }
+            }
+
+            if (! empty($update)) {
+                $update['atualizado_em'] = now();
+                DB::table('femea')->where('id', $femeaId)->update($update);
+            }
+        });
+
+        return response()->json([
+            'message' => 'Cobertura excluída com sucesso!',
+        ]);
     }
 
     private function criteriosWarnings(array $payload): array

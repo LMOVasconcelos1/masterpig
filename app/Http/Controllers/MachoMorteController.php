@@ -13,7 +13,7 @@ class MachoMorteController extends Controller
 {
     public function store(Request $request)
     {
-        if (!Schema::hasTable('macho') || !Schema::hasTable('macho_movimento')) {
+        if (! Schema::hasTable('macho') || ! Schema::hasTable('macho_movimento')) {
             return response()->json([
                 'message' => 'Tabelas de machos ainda não foram criadas no banco.',
             ], 422);
@@ -26,10 +26,22 @@ class MachoMorteController extends Controller
         ]);
 
         $macho = Macho::findOrFail($validated['macho_id']);
+
+        $lastAcao = DB::table('macho_movimento')
+            ->where('macho_id', $macho->id)
+            ->orderByDesc('id')
+            ->value('acao');
+
+        if (is_string($lastAcao) && in_array($lastAcao, ['morte', 'descarte', 'venda'], true)) {
+            return response()->json([
+                'message' => 'O macho já está inativo e não pode receber novo lançamento.',
+            ], 422);
+        }
+
         $causa = Causa::with('grupoCausa')->findOrFail($validated['causa_id']);
 
         $grupoNome = mb_strtolower($causa->grupoCausa?->nome ?? '');
-        if (!str_contains($grupoNome, 'morte')) {
+        if (! str_contains($grupoNome, 'morte')) {
             return response()->json([
                 'message' => 'Selecione uma causa do tipo morte.',
             ], 422);
@@ -56,4 +68,3 @@ class MachoMorteController extends Controller
         ], 201);
     }
 }
-

@@ -13,7 +13,7 @@ class FemeaDescarteController extends Controller
 {
     public function store(Request $request)
     {
-        if (!Schema::hasTable('femea') || !Schema::hasTable('femea_movimento')) {
+        if (! Schema::hasTable('femea') || ! Schema::hasTable('femea_movimento')) {
             return response()->json([
                 'message' => 'Tabelas do plantel ainda não foram criadas no banco.',
             ], 422);
@@ -26,10 +26,22 @@ class FemeaDescarteController extends Controller
         ]);
 
         $femea = Femea::findOrFail($validated['femea_id']);
+
+        $lastAcao = DB::table('femea_movimento')
+            ->where('femea_id', $femea->id)
+            ->orderByDesc('id')
+            ->value('acao');
+
+        if (is_string($lastAcao) && in_array($lastAcao, ['morte', 'descarte', 'venda'], true)) {
+            return response()->json([
+                'message' => 'A fêmea já está inativa e não pode receber novo lançamento.',
+            ], 422);
+        }
+
         $causa = Causa::with('grupoCausa')->findOrFail($validated['causa_id']);
 
         $grupoNome = mb_strtolower($causa->grupoCausa?->nome ?? '');
-        if (!str_contains($grupoNome, 'descarte')) {
+        if (! str_contains($grupoNome, 'descarte')) {
             return response()->json([
                 'message' => 'Selecione uma causa do tipo descarte.',
             ], 422);
@@ -56,4 +68,3 @@ class FemeaDescarteController extends Controller
         ], 201);
     }
 }
-

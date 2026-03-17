@@ -15,16 +15,20 @@
         criterio_registro_cio_automatico: 'nao',
         criterio_cobertura_idade_min_dias: '210',
         criterio_cobertura_idade_max_dias: '240',
+        criterio_cobertura_ciclos_min: '3',
         criterio_cobertura_peso_min_kg: '0',
         criterio_cobertura_peso_max_kg: '0',
         criterio_cobertura_presenca_cio: 'sim',
         criterio_dias_ate_cio: '21',
         criterio_dias_cio: '3',
         criterio_dias_gestacao: '114',
-        criterio_dias_lactacao: '21',
+        criterio_dias_lactacao_min: '21',
+        criterio_dias_lactacao_max: '28',
         criterio_dias_intervalo_desmame_cio: '5',
         criterio_leitoa_idade_min_dias: '150',
-        criterio_leitoa_idade_max_dias: '210',
+        criterio_leitoa_idade_max_dias: '150',
+        criterio_maturidade_idade_min_dias: '151',
+        criterio_maturidade_idade_max_dias: '220',
     },
     load() {
         this.loading = true;
@@ -37,16 +41,20 @@
                 this.criterios.criterio_registro_cio_automatico = (items.criterio_registro_cio_automatico === null || items.criterio_registro_cio_automatico === undefined || String(items.criterio_registro_cio_automatico).trim() === '') ? 'nao' : String(items.criterio_registro_cio_automatico);
                 this.criterios.criterio_cobertura_idade_min_dias = (items.criterio_cobertura_idade_min_dias === null || items.criterio_cobertura_idade_min_dias === undefined || String(items.criterio_cobertura_idade_min_dias).trim() === '' || Number(items.criterio_cobertura_idade_min_dias) === 0) ? '210' : String(items.criterio_cobertura_idade_min_dias);
                 this.criterios.criterio_cobertura_idade_max_dias = (items.criterio_cobertura_idade_max_dias === null || items.criterio_cobertura_idade_max_dias === undefined || String(items.criterio_cobertura_idade_max_dias).trim() === '' || Number(items.criterio_cobertura_idade_max_dias) === 0) ? '240' : String(items.criterio_cobertura_idade_max_dias);
+                this.criterios.criterio_cobertura_ciclos_min = (items.criterio_cobertura_ciclos_min === null || items.criterio_cobertura_ciclos_min === undefined || String(items.criterio_cobertura_ciclos_min).trim() === '') ? '3' : String(items.criterio_cobertura_ciclos_min);
                 this.criterios.criterio_cobertura_peso_min_kg = (items.criterio_cobertura_peso_min_kg === null || items.criterio_cobertura_peso_min_kg === undefined || String(items.criterio_cobertura_peso_min_kg).trim() === '') ? '0' : String(items.criterio_cobertura_peso_min_kg);
                 this.criterios.criterio_cobertura_peso_max_kg = (items.criterio_cobertura_peso_max_kg === null || items.criterio_cobertura_peso_max_kg === undefined || String(items.criterio_cobertura_peso_max_kg).trim() === '') ? '0' : String(items.criterio_cobertura_peso_max_kg);
                 this.criterios.criterio_cobertura_presenca_cio = (items.criterio_cobertura_presenca_cio === null || items.criterio_cobertura_presenca_cio === undefined || String(items.criterio_cobertura_presenca_cio).trim() === '') ? 'sim' : String(items.criterio_cobertura_presenca_cio);
                 this.criterios.criterio_dias_ate_cio = (items.criterio_dias_ate_cio === null || items.criterio_dias_ate_cio === undefined || String(items.criterio_dias_ate_cio).trim() === '') ? '21' : String(items.criterio_dias_ate_cio);
                 this.criterios.criterio_dias_cio = (items.criterio_dias_cio === null || items.criterio_dias_cio === undefined || String(items.criterio_dias_cio).trim() === '') ? '3' : String(items.criterio_dias_cio);
                 this.criterios.criterio_dias_gestacao = (items.criterio_dias_gestacao === null || items.criterio_dias_gestacao === undefined || String(items.criterio_dias_gestacao).trim() === '') ? '114' : String(items.criterio_dias_gestacao);
-                this.criterios.criterio_dias_lactacao = (items.criterio_dias_lactacao === null || items.criterio_dias_lactacao === undefined || String(items.criterio_dias_lactacao).trim() === '') ? '21' : String(items.criterio_dias_lactacao);
+                this.criterios.criterio_dias_lactacao_min = (items.criterio_dias_lactacao_min === null || items.criterio_dias_lactacao_min === undefined || String(items.criterio_dias_lactacao_min).trim() === '') ? '21' : String(items.criterio_dias_lactacao_min);
+                this.criterios.criterio_dias_lactacao_max = (items.criterio_dias_lactacao_max === null || items.criterio_dias_lactacao_max === undefined || String(items.criterio_dias_lactacao_max).trim() === '') ? '28' : String(items.criterio_dias_lactacao_max);
                 this.criterios.criterio_dias_intervalo_desmame_cio = (items.criterio_dias_intervalo_desmame_cio === null || items.criterio_dias_intervalo_desmame_cio === undefined || String(items.criterio_dias_intervalo_desmame_cio).trim() === '') ? '5' : String(items.criterio_dias_intervalo_desmame_cio);
                 this.criterios.criterio_leitoa_idade_min_dias = (items.criterio_leitoa_idade_min_dias === null || items.criterio_leitoa_idade_min_dias === undefined || String(items.criterio_leitoa_idade_min_dias).trim() === '') ? '150' : String(items.criterio_leitoa_idade_min_dias);
-                this.criterios.criterio_leitoa_idade_max_dias = (items.criterio_leitoa_idade_max_dias === null || items.criterio_leitoa_idade_max_dias === undefined || String(items.criterio_leitoa_idade_max_dias).trim() === '') ? '210' : String(items.criterio_leitoa_idade_max_dias);
+                this.criterios.criterio_leitoa_idade_max_dias = (items.criterio_leitoa_idade_max_dias === null || items.criterio_leitoa_idade_max_dias === undefined || String(items.criterio_leitoa_idade_max_dias).trim() === '') ? '150' : String(items.criterio_leitoa_idade_max_dias);
+                this.criterios.criterio_maturidade_idade_min_dias = (items.criterio_maturidade_idade_min_dias === null || items.criterio_maturidade_idade_min_dias === undefined || String(items.criterio_maturidade_idade_min_dias).trim() === '') ? '151' : String(items.criterio_maturidade_idade_min_dias);
+                this.criterios.criterio_maturidade_idade_max_dias = (items.criterio_maturidade_idade_max_dias === null || items.criterio_maturidade_idade_max_dias === undefined || String(items.criterio_maturidade_idade_max_dias).trim() === '') ? '220' : String(items.criterio_maturidade_idade_max_dias);
                 if (data.message) this.error = data.message;
                 this.loaded = true;
             })
@@ -64,16 +72,20 @@
             criterio_registro_cio_automatico: this.criterios.criterio_registro_cio_automatico === '' ? null : String(this.criterios.criterio_registro_cio_automatico),
             criterio_cobertura_idade_min_dias: this.criterios.criterio_cobertura_idade_min_dias === '' ? null : Number(String(this.criterios.criterio_cobertura_idade_min_dias).trim()),
             criterio_cobertura_idade_max_dias: this.criterios.criterio_cobertura_idade_max_dias === '' ? null : Number(String(this.criterios.criterio_cobertura_idade_max_dias).trim()),
+            criterio_cobertura_ciclos_min: this.criterios.criterio_cobertura_ciclos_min === '' ? null : Number(String(this.criterios.criterio_cobertura_ciclos_min).trim()),
             criterio_cobertura_peso_min_kg: this.criterios.criterio_cobertura_peso_min_kg === '' ? null : Number(String(this.criterios.criterio_cobertura_peso_min_kg).trim().replace(',', '.')),
             criterio_cobertura_peso_max_kg: this.criterios.criterio_cobertura_peso_max_kg === '' ? null : Number(String(this.criterios.criterio_cobertura_peso_max_kg).trim().replace(',', '.')),
             criterio_cobertura_presenca_cio: this.criterios.criterio_cobertura_presenca_cio === '' ? null : String(this.criterios.criterio_cobertura_presenca_cio),
             criterio_dias_ate_cio: this.criterios.criterio_dias_ate_cio === '' ? null : Number(String(this.criterios.criterio_dias_ate_cio).trim()),
             criterio_dias_cio: this.criterios.criterio_dias_cio === '' ? null : Number(String(this.criterios.criterio_dias_cio).trim()),
             criterio_dias_gestacao: this.criterios.criterio_dias_gestacao === '' ? null : Number(String(this.criterios.criterio_dias_gestacao).trim()),
-            criterio_dias_lactacao: this.criterios.criterio_dias_lactacao === '' ? null : Number(String(this.criterios.criterio_dias_lactacao).trim()),
+            criterio_dias_lactacao_min: this.criterios.criterio_dias_lactacao_min === '' ? null : Number(String(this.criterios.criterio_dias_lactacao_min).trim()),
+            criterio_dias_lactacao_max: this.criterios.criterio_dias_lactacao_max === '' ? null : Number(String(this.criterios.criterio_dias_lactacao_max).trim()),
             criterio_dias_intervalo_desmame_cio: this.criterios.criterio_dias_intervalo_desmame_cio === '' ? null : Number(String(this.criterios.criterio_dias_intervalo_desmame_cio).trim()),
             criterio_leitoa_idade_min_dias: this.criterios.criterio_leitoa_idade_min_dias === '' ? null : Number(String(this.criterios.criterio_leitoa_idade_min_dias).trim()),
             criterio_leitoa_idade_max_dias: this.criterios.criterio_leitoa_idade_max_dias === '' ? null : Number(String(this.criterios.criterio_leitoa_idade_max_dias).trim()),
+            criterio_maturidade_idade_min_dias: this.criterios.criterio_maturidade_idade_min_dias === '' ? null : Number(String(this.criterios.criterio_maturidade_idade_min_dias).trim()),
+            criterio_maturidade_idade_max_dias: this.criterios.criterio_maturidade_idade_max_dias === '' ? null : Number(String(this.criterios.criterio_maturidade_idade_max_dias).trim()),
         };
 
         fetch('{{ route('admin.criterios.store', [], false) }}', {
@@ -138,7 +150,7 @@
 
             <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
                 <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Leitoa</div>
-                <div class="text-xs text-gray-500 mt-1">Janela de maturidade reprodutiva usada para permitir registro de cio.</div>
+                <div class="text-xs text-gray-500 mt-1">Fase considerada até a idade máxima.</div>
                 <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Idade mínima (dias)</label>
@@ -147,8 +159,25 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Idade máxima (dias)</label>
-                        <div class="text-xs text-gray-500 mt-1">Padrão: 210.</div>
+                        <div class="text-xs text-gray-500 mt-1">Padrão: 150.</div>
                         <input type="number" min="0" max="1000" step="1" x-model="criterios.criterio_leitoa_idade_max_dias" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Maturidade reprodutiva</div>
+                <div class="text-xs text-gray-500 mt-1">Janela usada para permitir registro de cio inicial.</div>
+                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Idade mínima (dias)</label>
+                        <div class="text-xs text-gray-500 mt-1">Padrão: 151.</div>
+                        <input type="number" min="0" max="1000" step="1" x-model="criterios.criterio_maturidade_idade_min_dias" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Idade máxima (dias)</label>
+                        <div class="text-xs text-gray-500 mt-1">Padrão: 220.</div>
+                        <input type="number" min="0" max="1000" step="1" x-model="criterios.criterio_maturidade_idade_max_dias" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                     </div>
                 </div>
             </div>
@@ -189,6 +218,11 @@
                         <input type="number" min="0" step="1" x-model="criterios.criterio_cobertura_idade_max_dias" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:opacity-60" :disabled="locked">
                     </div>
                     <div>
+                        <label class="block text-sm font-medium text-gray-700">Ciclos mínimos</label>
+                        <div class="text-xs text-gray-500 mt-1">Cobertura permitida a partir deste número de ciclos.</div>
+                        <input type="number" min="0" step="1" x-model="criterios.criterio_cobertura_ciclos_min" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:opacity-60" :disabled="locked">
+                    </div>
+                    <div>
                         <label class="block text-sm font-medium text-gray-700">Presença de cio</label>
                         <select x-model="criterios.criterio_cobertura_presenca_cio" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:opacity-60" :disabled="locked">
                             <option value="">Não validar</option>
@@ -216,9 +250,14 @@
                         <input type="number" min="1" max="200" step="1" x-model="criterios.criterio_dias_gestacao" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Dias lactação</label>
-                        <div class="text-xs text-gray-500 mt-1">Período de lactação (parto → desmame previsto). Usado para travar coberturas durante a lactação e para previsões. Padrão: 21.</div>
-                        <input type="number" min="1" max="60" step="1" x-model="criterios.criterio_dias_lactacao" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                        <label class="block text-sm font-medium text-gray-700">Lactação (mínimo dias)</label>
+                        <div class="text-xs text-gray-500 mt-1">Padrão: 21.</div>
+                        <input type="number" min="1" max="60" step="1" x-model="criterios.criterio_dias_lactacao_min" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Lactação (máximo dias)</label>
+                        <div class="text-xs text-gray-500 mt-1">Padrão: 28.</div>
+                        <input type="number" min="1" max="60" step="1" x-model="criterios.criterio_dias_lactacao_max" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Dias intervalo desmame-cio</label>

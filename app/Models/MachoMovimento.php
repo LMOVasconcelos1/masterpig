@@ -12,6 +12,7 @@ class MachoMovimento extends Model
     protected $table = 'macho_movimento';
 
     const CREATED_AT = 'criado_em';
+
     const UPDATED_AT = 'atualizado_em';
 
     protected $fillable = [
@@ -40,4 +41,3 @@ class MachoMovimento extends Model
         return $this->belongsTo(Fornecedor::class, 'fornecedor_id');
     }
 }
-

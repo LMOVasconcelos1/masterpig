@@ -13,7 +13,7 @@ class MachoVendaController extends Controller
 {
     public function store(Request $request)
     {
-        if (!Schema::hasTable('macho') || !Schema::hasTable('macho_movimento')) {
+        if (! Schema::hasTable('macho') || ! Schema::hasTable('macho_movimento')) {
             return response()->json([
                 'message' => 'Tabelas de machos ainda não foram criadas no banco.',
             ], 422);
@@ -29,10 +29,22 @@ class MachoVendaController extends Controller
         ]);
 
         $macho = Macho::findOrFail($validated['macho_id']);
+
+        $lastAcao = DB::table('macho_movimento')
+            ->where('macho_id', $macho->id)
+            ->orderByDesc('id')
+            ->value('acao');
+
+        if (is_string($lastAcao) && in_array($lastAcao, ['morte', 'descarte', 'venda'], true)) {
+            return response()->json([
+                'message' => 'O macho já está inativo e não pode receber novo lançamento.',
+            ], 422);
+        }
+
         $causa = Causa::with('grupoCausa')->findOrFail($validated['causa_id']);
 
         $grupoNome = mb_strtolower($causa->grupoCausa?->nome ?? '');
-        if (!str_contains($grupoNome, 'venda')) {
+        if (! str_contains($grupoNome, 'venda')) {
             return response()->json([
                 'message' => 'Selecione uma causa do tipo venda.',
             ], 422);
@@ -54,8 +66,8 @@ class MachoVendaController extends Controller
 
         if (Schema::hasColumn('macho_movimento', 'comprador')) {
             $payload['comprador'] = $validated['comprador'] ?? null;
-        } elseif (!empty($validated['comprador'])) {
-            $payload['observacoes'] = $payload['observacoes'] . ' | Comprador: ' . $validated['comprador'];
+        } elseif (! empty($validated['comprador'])) {
+            $payload['observacoes'] = $payload['observacoes'].' | Comprador: '.$validated['comprador'];
         }
 
         DB::table('macho_movimento')->insert($payload);
@@ -65,4 +77,3 @@ class MachoVendaController extends Controller
         ], 201);
     }
 }
-

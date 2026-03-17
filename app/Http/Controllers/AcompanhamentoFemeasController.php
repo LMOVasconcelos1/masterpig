@@ -9,6 +9,18 @@ use Illuminate\Support\Facades\Schema;
 
 class AcompanhamentoFemeasController extends Controller
 {
+    private function tipoLabel(?string $tipo): string
+    {
+        $key = trim((string) $tipo);
+
+        return match ($key) {
+            'leitoa' => 'Leitoa',
+            'matriz_vazia' => 'Matriz vazia',
+            'matriz_gestante' => 'Matriz gestante',
+            default => $key === '' ? '-' : $key,
+        };
+    }
+
     private function metaInt(string $key, int $default): int
     {
         if (! Schema::hasTable('meta')) {
@@ -29,8 +41,9 @@ class AcompanhamentoFemeasController extends Controller
     {
         if ($cobertura) {
             $parto = (clone $cobertura)->addDays($cfg['gestacao_dias']);
-            $desmame = (clone $parto)->addDays($cfg['lactacao_dias']);
-            $cioPosDesmame = (clone $desmame)->addDays($cfg['intervalo_desmame_cio_dias']);
+            $desmameMin = (clone $parto)->addDays($cfg['lactacao_min_dias']);
+            $desmameMax = (clone $parto)->addDays($cfg['lactacao_max_dias']);
+            $cioPosDesmame = (clone $desmameMin)->addDays($cfg['intervalo_desmame_cio_dias']);
             $fimCio = (clone $cioPosDesmame)->addDays($cfg['cio_dias']);
 
             return [
@@ -48,7 +61,7 @@ class AcompanhamentoFemeasController extends Controller
                 ],
                 [
                     'fase' => 'Desmame (previsto)',
-                    'data' => $desmame->format('d/m/Y'),
+                    'data' => $desmameMin->format('d/m/Y'),
                 ],
                 [
                     'fase' => 'Cio pós-desmame (previsto)',
@@ -114,8 +127,9 @@ class AcompanhamentoFemeasController extends Controller
 
         if ($lastCobertura) {
             $parto = (clone $lastCobertura)->addDays($cfg['gestacao_dias']);
-            $desmame = (clone $parto)->addDays($cfg['lactacao_dias']);
-            $cioPosDesmame = (clone $desmame)->addDays($cfg['intervalo_desmame_cio_dias']);
+            $desmameMin = (clone $parto)->addDays($cfg['lactacao_min_dias']);
+            $desmameMax = (clone $parto)->addDays($cfg['lactacao_max_dias']);
+            $cioPosDesmame = (clone $desmameMin)->addDays($cfg['intervalo_desmame_cio_dias']);
             $fimCio = (clone $cioPosDesmame)->addDays($cfg['cio_dias']);
 
             if ($now->lt($parto)) {
@@ -126,11 +140,11 @@ class AcompanhamentoFemeasController extends Controller
                 ];
             }
 
-            if ($now->lt($desmame)) {
+            if ($now->lt($desmameMax)) {
                 return [
                     'fase' => 'Lactação',
                     'proxima_fase' => 'Desmame',
-                    'prevista_em' => $desmame->format('d/m/Y'),
+                    'prevista_em' => $desmameMin->format('d/m/Y'),
                 ];
             }
 
@@ -153,8 +167,8 @@ class AcompanhamentoFemeasController extends Controller
             $nextCio = (clone $cioPosDesmame)->addDays(max(1, $cfg['dias_ate_cio']));
 
             return [
-                'fase' => 'Aguardando cio',
-                'proxima_fase' => 'Cio',
+                'fase' => 'Cio',
+                'proxima_fase' => 'Cobertura',
                 'prevista_em' => $nextCio->format('d/m/Y'),
             ];
         }
@@ -196,33 +210,58 @@ class AcompanhamentoFemeasController extends Controller
             $nextCio = (clone $lastEventoCio)->addDays(max(1, $cfg['dias_ate_cio']));
 
             return [
-                'fase' => $tipo === 'leitoa' ? 'Leitoa' : 'Matriz vazia',
-                'proxima_fase' => 'Cio',
+                'fase' => 'Cio',
+                'proxima_fase' => 'Cobertura',
                 'prevista_em' => $nextCio->format('d/m/Y'),
             ];
         }
 
         if ($tipo === 'leitoa' && $idade !== null) {
-            if ($idade < $cfg['leitoa_min_dias']) {
-                $prev = (clone $nasc)->addDays($cfg['leitoa_min_dias']);
+            if ($idade < $cfg['leitoa_max_dias']) {
+                $prev = (clone $nasc)->addDays($cfg['leitoa_max_dias']);
 
                 return [
                     'fase' => 'Leitoa',
-                    'proxima_fase' => 'Leitoa (150–210 dias)',
+                    'proxima_fase' => 'Maturidade reprodutiva',
                     'prevista_em' => $prev->format('d/m/Y'),
-                ];
-            }
-            if ($idade <= $cfg['leitoa_max_dias']) {
-                return [
-                    'fase' => 'Leitoa (150–210 dias)',
-                    'proxima_fase' => 'Cio',
-                    'prevista_em' => '-',
                 ];
             }
         }
 
+        if ($idade !== null) {
+            $matMin = $cfg['maturidade_min_dias'];
+            $matMax = $cfg['maturidade_max_dias'];
+            if ($idade >= $matMin && $idade <= $matMax) {
+                $maturityStart = (clone $nasc)->addDays($matMin);
+                $nextCio = (clone $maturityStart)->addDays(max(1, $cfg['dias_ate_cio']));
+                return [
+                    'fase' => 'Maturidade reprodutiva',
+                    'proxima_fase' => 'Cio',
+                    'prevista_em' => $nextCio->format('d/m/Y'),
+                ];
+            }
+        }
+
+        if ($tipo === 'matriz_gestante') {
+            return [
+                'fase' => 'Gestação',
+                'proxima_fase' => 'Parto',
+                'prevista_em' => '-',
+            ];
+        }
+
+        if ($nasc) {
+            $maturityStart = (clone $nasc)->addDays($cfg['maturidade_min_dias']);
+            $nextCio = (clone $maturityStart)->addDays(max(1, $cfg['dias_ate_cio']));
+            return [
+                'fase' => 'Maturidade reprodutiva',
+                'proxima_fase' => 'Cio',
+                'prevista_em' => $nextCio->format('d/m/Y'),
+            ];
+        }
+
         return [
-            'fase' => $tipo === 'leitoa' ? 'Leitoa' : ($tipo === 'matriz_vazia' ? 'Matriz vazia' : 'Gestação'),
+            'fase' => 'Maturidade reprodutiva',
             'proxima_fase' => 'Cio',
             'prevista_em' => '-',
         ];
@@ -243,10 +282,13 @@ class AcompanhamentoFemeasController extends Controller
             'dias_ate_cio' => $this->metaInt('criterio_dias_ate_cio', 21),
             'cio_dias' => $this->metaInt('criterio_dias_cio', 3),
             'gestacao_dias' => $this->metaInt('criterio_dias_gestacao', 114),
-            'lactacao_dias' => $this->metaInt('criterio_dias_lactacao', 21),
+            'lactacao_min_dias' => $this->metaInt('criterio_dias_lactacao_min', 21),
+            'lactacao_max_dias' => $this->metaInt('criterio_dias_lactacao_max', 28),
             'intervalo_desmame_cio_dias' => $this->metaInt('criterio_dias_intervalo_desmame_cio', 5),
             'leitoa_min_dias' => $this->metaInt('criterio_leitoa_idade_min_dias', 150),
-            'leitoa_max_dias' => $this->metaInt('criterio_leitoa_idade_max_dias', 210),
+            'leitoa_max_dias' => $this->metaInt('criterio_leitoa_idade_max_dias', 150),
+            'maturidade_min_dias' => $this->metaInt('criterio_maturidade_idade_min_dias', 151),
+            'maturidade_max_dias' => $this->metaInt('criterio_maturidade_idade_max_dias', 220),
         ];
 
         $query = DB::table('femea')
@@ -322,7 +364,8 @@ class AcompanhamentoFemeasController extends Controller
                 'id' => $id,
                 'id_primaria' => (string) $row->id_primaria,
                 'id_secundaria' => $row->id_secundaria === null ? null : (string) $row->id_secundaria,
-                'tipo' => (string) $row->tipo_compra,
+                'tipo' => $this->tipoLabel($row->tipo_compra),
+                'tipo_key' => (string) $row->tipo_compra,
                 'fase' => $fase['fase'],
                 'proxima_fase' => $fase['proxima_fase'],
                 'prevista_em' => $fase['prevista_em'],
@@ -365,10 +408,13 @@ class AcompanhamentoFemeasController extends Controller
             'dias_ate_cio' => $this->metaInt('criterio_dias_ate_cio', 21),
             'cio_dias' => $this->metaInt('criterio_dias_cio', 3),
             'gestacao_dias' => $this->metaInt('criterio_dias_gestacao', 114),
-            'lactacao_dias' => $this->metaInt('criterio_dias_lactacao', 21),
+            'lactacao_min_dias' => $this->metaInt('criterio_dias_lactacao_min', 21),
+            'lactacao_max_dias' => $this->metaInt('criterio_dias_lactacao_max', 28),
             'intervalo_desmame_cio_dias' => $this->metaInt('criterio_dias_intervalo_desmame_cio', 5),
             'leitoa_min_dias' => $this->metaInt('criterio_leitoa_idade_min_dias', 150),
-            'leitoa_max_dias' => $this->metaInt('criterio_leitoa_idade_max_dias', 210),
+            'leitoa_max_dias' => $this->metaInt('criterio_leitoa_idade_max_dias', 150),
+            'maturidade_min_dias' => $this->metaInt('criterio_maturidade_idade_min_dias', 151),
+            'maturidade_max_dias' => $this->metaInt('criterio_maturidade_idade_max_dias', 220),
         ];
 
         $lastCob = null;
@@ -401,7 +447,8 @@ class AcompanhamentoFemeasController extends Controller
                 'id' => (int) $row->id,
                 'id_primaria' => (string) $row->id_primaria,
                 'id_secundaria' => $row->id_secundaria === null ? null : (string) $row->id_secundaria,
-                'tipo' => (string) $row->tipo_compra,
+                'tipo' => $this->tipoLabel($row->tipo_compra),
+                'tipo_key' => (string) $row->tipo_compra,
                 'data_nascimento' => empty($row->data_nascimento) ? null : Carbon::parse($row->data_nascimento)->format('d/m/Y'),
                 'data_compra' => empty($row->data_compra) ? null : Carbon::parse($row->data_compra)->format('d/m/Y'),
                 'localizacao' => $row->localizacao === null ? null : (string) $row->localizacao,

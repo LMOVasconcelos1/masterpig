@@ -83,10 +83,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/plantel/femeas/mortes', [FemeaMorteController::class, 'store'])->name('plantel.femeas.mortes.store');
     Route::post('/plantel/femeas/descarte', [FemeaDescarteController::class, 'store'])->name('plantel.femeas.descarte.store');
     Route::post('/plantel/femeas/venda', [FemeaVendaController::class, 'store'])->name('plantel.femeas.venda.store');
+    Route::delete('/plantel/femeas/movimentos/{id}', [FemeaMovimentoController::class, 'destroy'])->whereNumber('id')->name('plantel.femeas.movimentos.destroy');
     Route::post('/plantel/machos/compras', [MachoCompraController::class, 'store'])->name('plantel.machos.compras.store');
     Route::post('/plantel/machos/mortes', [MachoMorteController::class, 'store'])->name('plantel.machos.mortes.store');
     Route::post('/plantel/machos/descarte', [MachoDescarteController::class, 'store'])->name('plantel.machos.descarte.store');
     Route::post('/plantel/machos/venda', [MachoVendaController::class, 'store'])->name('plantel.machos.venda.store');
+    Route::delete('/plantel/machos/movimentos/{id}', [MachoMovimentoController::class, 'destroy'])->whereNumber('id')->name('plantel.machos.movimentos.destroy');
     Route::get('/plantel/femeas/{femea}', [FemeaController::class, 'show'])->name('plantel.femeas.show');
     Route::get('/relatorios/plantel/femeas', [PlantelRelatorioController::class, 'femeas'])->name('relatorios.plantel.femeas');
     Route::get('/relatorios/plantel/machos', [PlantelRelatorioController::class, 'machos'])->name('relatorios.plantel.machos');
@@ -135,12 +137,15 @@ Route::middleware('auth')->get('/api/criterios', [CriteriosController::class, 'i
 Route::middleware(['auth', 'admin'])->get('/api/criterios/logs', [CriteriosLogsController::class, 'index']);
 Route::middleware('auth')->get('/api/gestacao/coberturas', [GestacaoCoberturaController::class, 'index']);
 Route::middleware('auth')->post('/api/gestacao/coberturas', [GestacaoCoberturaController::class, 'store']);
+Route::middleware('auth')->delete('/api/gestacao/coberturas/{id}', [GestacaoCoberturaController::class, 'destroy'])->whereNumber('id');
 Route::middleware('auth')->get('/api/gestacao/cio', [GestacaoCioController::class, 'index']);
 Route::middleware('auth')->post('/api/gestacao/cio', [GestacaoCioController::class, 'store']);
+Route::middleware('auth')->delete('/api/gestacao/cio/{id}', [GestacaoCioController::class, 'destroy'])->whereNumber('id');
 Route::middleware('auth')->get('/api/gestacao/perdas', [GestacaoPerdaController::class, 'index']);
 Route::middleware('auth')->post('/api/gestacao/perdas', [GestacaoPerdaController::class, 'store']);
 Route::middleware('auth')->get('/api/gestacao/salta-cio', [GestacaoSaltaCioController::class, 'index']);
 Route::middleware('auth')->post('/api/gestacao/salta-cio', [GestacaoSaltaCioController::class, 'store']);
+Route::middleware('auth')->delete('/api/gestacao/salta-cio/{id}', [GestacaoSaltaCioController::class, 'destroy'])->whereNumber('id');
 Route::middleware('auth')->get('/api/gestacao/metas', [GestacaoMetasController::class, 'index']);
 Route::middleware('auth')->post('/api/gestacao/metas', [GestacaoMetasController::class, 'store']);
 

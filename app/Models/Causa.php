@@ -12,6 +12,7 @@ class Causa extends Model
     protected $table = 'causa';
 
     const CREATED_AT = 'criado_em';
+
     const UPDATED_AT = 'atualizado_em';
 
     protected $fillable = [

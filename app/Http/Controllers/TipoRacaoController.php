@@ -23,4 +23,3 @@ class TipoRacaoController extends Controller
         return response()->json($tipo, 201);
     }
 }
-

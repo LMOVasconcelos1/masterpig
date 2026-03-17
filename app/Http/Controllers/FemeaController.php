@@ -9,7 +9,7 @@ class FemeaController extends Controller
 {
     public function show(Femea $femea)
     {
-        if (!Schema::hasTable('femea')) {
+        if (! Schema::hasTable('femea')) {
             abort(404);
         }
 
@@ -18,4 +18,3 @@ class FemeaController extends Controller
         return view('admin.plantel.femeas.show', compact('femea'));
     }
 }
-
