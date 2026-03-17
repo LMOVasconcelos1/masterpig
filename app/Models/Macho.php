@@ -12,6 +12,7 @@ class Macho extends Model
     protected $table = 'macho';
 
     const CREATED_AT = 'criado_em';
+
     const UPDATED_AT = 'atualizado_em';
 
     protected $fillable = [
@@ -50,4 +51,3 @@ class Macho extends Model
         return $this->hasMany(MachoMovimento::class, 'macho_id');
     }
 }
-

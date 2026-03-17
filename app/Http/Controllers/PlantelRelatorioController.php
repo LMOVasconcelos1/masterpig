@@ -16,11 +16,11 @@ class PlantelRelatorioController extends Controller
         $items = $this->getFemeasItems();
 
         $format = mb_strtolower((string) $request->query('format', 'html'));
-        $baseFile = 'relatorio-femeas-' . Carbon::now()->format('Ymd-Hi');
+        $baseFile = 'relatorio-femeas-'.Carbon::now()->format('Ymd-Hi');
 
         if ($format === 'csv') {
             return $this->streamCsv(
-                $baseFile . '.csv',
+                $baseFile.'.csv',
                 ['id_primaria', 'id_secundaria', 'tipo', 'raca', 'localizacao', 'baia', 'data_compra', 'ultima_operacao', 'status'],
                 $items->map(fn ($r) => [
                     $r['id_primaria'] ?? '',
@@ -41,10 +41,11 @@ class PlantelRelatorioController extends Controller
 
             return Pdf::loadView('admin.plantel.relatorios.femeas', compact('items', 'data_emissao', 'isPdf'))
                 ->setPaper('a4', 'landscape')
-                ->download($baseFile . '.pdf');
+                ->download($baseFile.'.pdf');
         }
 
         $isPdf = false;
+
         return view('admin.plantel.relatorios.femeas', compact('items', 'data_emissao'));
     }
 
@@ -54,11 +55,11 @@ class PlantelRelatorioController extends Controller
         $items = $this->getMachosItems();
 
         $format = mb_strtolower((string) $request->query('format', 'html'));
-        $baseFile = 'relatorio-machos-' . Carbon::now()->format('Ymd-Hi');
+        $baseFile = 'relatorio-machos-'.Carbon::now()->format('Ymd-Hi');
 
         if ($format === 'csv') {
             return $this->streamCsv(
-                $baseFile . '.csv',
+                $baseFile.'.csv',
                 ['id_primaria', 'id_secundaria', 'raca', 'localizacao', 'baia', 'data_compra', 'ultima_operacao', 'status'],
                 $items->map(fn ($r) => [
                     $r['id_primaria'] ?? '',
@@ -78,10 +79,11 @@ class PlantelRelatorioController extends Controller
 
             return Pdf::loadView('admin.plantel.relatorios.machos', compact('items', 'data_emissao', 'isPdf'))
                 ->setPaper('a4', 'landscape')
-                ->download($baseFile . '.pdf');
+                ->download($baseFile.'.pdf');
         }
 
         $isPdf = false;
+
         return view('admin.plantel.relatorios.machos', compact('items', 'data_emissao'));
     }
 
@@ -102,7 +104,7 @@ class PlantelRelatorioController extends Controller
 
     private function getFemeasItems()
     {
-        if (!Schema::hasTable('femea')) {
+        if (! Schema::hasTable('femea')) {
             return collect();
         }
 
@@ -141,14 +143,14 @@ class PlantelRelatorioController extends Controller
             $ultimaOperacao = '-';
             $status = 'Ativo';
 
-            if (!empty($row->ultima_acao)) {
+            if (! empty($row->ultima_acao)) {
                 $ultimaOperacao = $row->ultima_acao;
-                if (!empty($row->ultima_data)) {
-                    $ultimaOperacao .= ' - ' . Carbon::parse($row->ultima_data)->format('d/m/Y');
+                if (! empty($row->ultima_data)) {
+                    $ultimaOperacao .= ' - '.Carbon::parse($row->ultima_data)->format('d/m/Y');
                 }
 
                 if (in_array($row->ultima_acao, ['morte', 'descarte', 'venda'], true)) {
-                    $status = 'Inativo (' . $row->ultima_acao . ')';
+                    $status = 'Inativo ('.$row->ultima_acao.')';
                 }
             }
 
@@ -169,7 +171,7 @@ class PlantelRelatorioController extends Controller
 
     private function getMachosItems()
     {
-        if (!Schema::hasTable('macho')) {
+        if (! Schema::hasTable('macho')) {
             return collect();
         }
 
@@ -206,14 +208,14 @@ class PlantelRelatorioController extends Controller
             $ultimaOperacao = '-';
             $status = 'Ativo';
 
-            if (!empty($row->ultima_acao)) {
+            if (! empty($row->ultima_acao)) {
                 $ultimaOperacao = $row->ultima_acao;
-                if (!empty($row->ultima_data)) {
-                    $ultimaOperacao .= ' - ' . Carbon::parse($row->ultima_data)->format('d/m/Y');
+                if (! empty($row->ultima_data)) {
+                    $ultimaOperacao .= ' - '.Carbon::parse($row->ultima_data)->format('d/m/Y');
                 }
 
                 if (in_array($row->ultima_acao, ['morte', 'descarte', 'venda'], true)) {
-                    $status = 'Inativo (' . $row->ultima_acao . ')';
+                    $status = 'Inativo ('.$row->ultima_acao.')';
                 }
             }
 

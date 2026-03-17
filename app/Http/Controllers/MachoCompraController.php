@@ -75,6 +75,14 @@ class MachoCompraController extends Controller
             ], 422);
         }
 
+        $request->merge([
+            'id_primaria' => trim((string) $request->input('id_primaria', '')),
+            'id_secundaria' => $request->input('id_secundaria') === null ? null : trim((string) $request->input('id_secundaria')),
+            'localizacao' => $request->input('localizacao') === null ? null : trim((string) $request->input('localizacao')),
+            'baia' => $request->input('baia') === null ? null : trim((string) $request->input('baia')),
+            'caracteristicas' => $request->input('caracteristicas') === null ? null : trim((string) $request->input('caracteristicas')),
+        ]);
+
         $validated = $request->validate([
             'id_primaria' => ['required', 'string', 'max:50', 'unique:macho,id_primaria'],
             'id_secundaria' => ['nullable', 'string', 'max:50', 'unique:macho,id_secundaria'],
@@ -88,6 +96,15 @@ class MachoCompraController extends Controller
             'localizacao' => ['nullable', 'string', 'max:120'],
             'baia' => ['nullable', 'string', 'max:60'],
         ]);
+
+        $dataCompra = Carbon::parse($validated['data_compra'])->startOfDay();
+        $dataNasc = empty($validated['data_nascimento']) ? null : Carbon::parse($validated['data_nascimento'])->startOfDay();
+
+        if ($dataNasc && $dataNasc->gt($dataCompra)) {
+            return response()->json([
+                'message' => 'Data de nascimento não pode ser maior que a data de compra.',
+            ], 422);
+        }
 
         $result = DB::transaction(function () use ($validated) {
             $macho = Macho::create($validated);

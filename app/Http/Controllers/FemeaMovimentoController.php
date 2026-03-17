@@ -23,6 +23,35 @@ class FemeaMovimentoController extends Controller
         return $this->listarPorAcao('venda');
     }
 
+    public function destroy(int $id)
+    {
+        if (! Schema::hasTable('femea_movimento')) {
+            return response()->json([
+                'message' => 'Tabela femea_movimento não existe no banco.',
+            ], 422);
+        }
+
+        $row = DB::table('femea_movimento')->where('id', $id)->select(['id', 'acao'])->first();
+        if (! $row) {
+            return response()->json([
+                'message' => 'Lançamento não encontrado.',
+            ], 404);
+        }
+
+        $acao = (string) ($row->acao ?? '');
+        if (! in_array($acao, ['morte', 'descarte', 'venda'], true)) {
+            return response()->json([
+                'message' => 'Este tipo de lançamento não pode ser excluído.',
+            ], 422);
+        }
+
+        DB::table('femea_movimento')->where('id', $id)->delete();
+
+        return response()->json([
+            'message' => 'Lançamento excluído com sucesso!',
+        ]);
+    }
+
     private function listarPorAcao(string $acao)
     {
         if (! Schema::hasTable('femea') || ! Schema::hasTable('femea_movimento')) {

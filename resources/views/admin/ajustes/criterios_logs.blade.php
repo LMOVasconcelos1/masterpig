@@ -69,6 +69,7 @@
                         <label class="block text-sm font-medium text-gray-700">Evento</label>
                         <select x-model="filtro.evento" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                             <option value="cobertura">Cobertura</option>
+                            <option value="cio_previsto_sem_registro">Cio previsto sem registro</option>
                         </select>
                     </div>
                     <div>
@@ -144,4 +145,3 @@
     </div>
 </div>
 @endsection
-

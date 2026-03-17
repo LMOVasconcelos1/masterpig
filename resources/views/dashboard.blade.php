@@ -219,6 +219,9 @@
                                         <a href="{{ route('admin.plantel.femeas.show', $row['femea_id'], false) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" title="Abrir cadastro">
                                             <i class="fa-solid fa-arrow-up-right-from-square"></i>
                                         </a>
+                                        <a href="{{ route('gestacao', [], false) }}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" title="Abrir manejo de gestação" target="_blank" rel="noopener">
+                                            <i class="fa-solid fa-stethoscope"></i>
+                                        </a>
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 text-sm text-gray-700">
@@ -663,6 +666,49 @@
                     this.vendasFemeas = [];
                 })
                 .finally(() => { this.lancamentosLoading = false; });
+        },
+        deleteLancamento(id) {
+            const movimentoId = Number(id);
+            if (!Number.isFinite(movimentoId) || movimentoId <= 0) return;
+            if (!['morte', 'descarte', 'venda'].includes(this.mov)) return;
+            if (!confirm('Excluir este lançamento?')) return;
+
+            const csrf = document.querySelector('meta[name=\'csrf-token\']')?.getAttribute('content') || '';
+
+            let url = '';
+            if (this.item === 'femeas') {
+                url = '{{ route('admin.plantel.femeas.movimentos.destroy', ['id' => 0], false) }}';
+            } else if (this.item === 'machos') {
+                url = '{{ route('admin.plantel.machos.movimentos.destroy', ['id' => 0], false) }}';
+            }
+
+            url = url.replace(/0$/, String(movimentoId));
+
+            fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                },
+            })
+                .then(async (r) => {
+                    const ct = String(r.headers.get('content-type') || '');
+                    const data = ct.includes('application/json') ? await r.json().catch(() => ({})) : {};
+                    if (!r.ok) throw new Error(String(data?.message || 'Erro ao excluir.'));
+                    return data;
+                })
+                .then((data) => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Excluído com sucesso!', type: 'success' } }));
+                    if (this.item === 'femeas' && this.mov === 'morte') this.loadMortesFemeas();
+                    if (this.item === 'femeas' && this.mov === 'descarte') this.loadDescartesFemeas();
+                    if (this.item === 'femeas' && this.mov === 'venda') this.loadVendasFemeas();
+                    if (this.item === 'machos' && this.mov === 'morte') this.loadMortesMachos();
+                    if (this.item === 'machos' && this.mov === 'descarte') this.loadDescartesMachos();
+                    if (this.item === 'machos' && this.mov === 'venda') this.loadVendasMachos();
+                })
+                .catch((e) => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao excluir.', type: 'error' } }));
+                });
         },
         formatData(iso) {
             if (!iso) return '-';
@@ -1532,6 +1578,7 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fêmea</th>
@@ -1542,6 +1589,11 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <template x-for="row in mortesFemeas" :key="row.id">
                                         <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm text-gray-700">
+                                                <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteLancamento(row.id)">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </td>
                                             <td class="px-4 py-3 text-sm text-gray-700" x-text="row.acao"></td>
                                             <td class="px-4 py-3 text-sm text-gray-700" x-text="row.data"></td>
                                             <td class="px-4 py-3 text-sm">
@@ -1552,7 +1604,7 @@
                                         </tr>
                                     </template>
                                     <tr x-show="!lancamentosLoading && mortesFemeas.length === 0" x-cloak>
-                                        <td colspan="5" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
+                                        <td colspan="6" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1569,6 +1621,7 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Macho</th>
@@ -1578,6 +1631,11 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <template x-for="row in mortesFemeas" :key="row.id">
                                         <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm text-gray-700">
+                                                <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteLancamento(row.id)">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </td>
                                             <td class="px-4 py-3 text-sm text-gray-700" x-text="row.acao"></td>
                                             <td class="px-4 py-3 text-sm text-gray-700" x-text="row.data"></td>
                                             <td class="px-4 py-3 text-sm font-semibold text-gray-900" x-text="row.id_primaria"></td>
@@ -1585,7 +1643,7 @@
                                         </tr>
                                     </template>
                                     <tr x-show="!lancamentosLoading && mortesFemeas.length === 0" x-cloak>
-                                        <td colspan="4" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
+                                        <td colspan="5" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1602,6 +1660,7 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fêmea</th>
@@ -1612,6 +1671,11 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <template x-for="row in descartesFemeas" :key="row.id">
                                         <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm text-gray-700">
+                                                <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteLancamento(row.id)">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </td>
                                             <td class="px-4 py-3 text-sm text-gray-700" x-text="row.acao"></td>
                                             <td class="px-4 py-3 text-sm text-gray-700" x-text="row.data"></td>
                                             <td class="px-4 py-3 text-sm">
@@ -1622,7 +1686,7 @@
                                         </tr>
                                     </template>
                                     <tr x-show="!lancamentosLoading && descartesFemeas.length === 0" x-cloak>
-                                        <td colspan="5" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
+                                        <td colspan="6" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1639,6 +1703,7 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Macho</th>
@@ -1648,6 +1713,11 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <template x-for="row in descartesFemeas" :key="row.id">
                                         <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm text-gray-700">
+                                                <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteLancamento(row.id)">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </td>
                                             <td class="px-4 py-3 text-sm text-gray-700" x-text="row.acao"></td>
                                             <td class="px-4 py-3 text-sm text-gray-700" x-text="row.data"></td>
                                             <td class="px-4 py-3 text-sm font-semibold text-gray-900" x-text="row.id_primaria"></td>
@@ -1655,7 +1725,7 @@
                                         </tr>
                                     </template>
                                     <tr x-show="!lancamentosLoading && descartesFemeas.length === 0" x-cloak>
-                                        <td colspan="4" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
+                                        <td colspan="5" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1672,6 +1742,7 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fêmea</th>
@@ -1682,6 +1753,11 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <template x-for="row in vendasFemeas" :key="row.id">
                                         <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm text-gray-700">
+                                                <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteLancamento(row.id)">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </td>
                                             <td class="px-4 py-3 text-sm text-gray-700" x-text="row.acao"></td>
                                             <td class="px-4 py-3 text-sm text-gray-700" x-text="row.data"></td>
                                             <td class="px-4 py-3 text-sm">
@@ -1692,7 +1768,7 @@
                                         </tr>
                                     </template>
                                     <tr x-show="!lancamentosLoading && vendasFemeas.length === 0" x-cloak>
-                                        <td colspan="5" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
+                                        <td colspan="6" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1709,6 +1785,7 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Macho</th>
@@ -1718,6 +1795,11 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <template x-for="row in vendasFemeas" :key="row.id">
                                         <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm text-gray-700">
+                                                <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteLancamento(row.id)">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </td>
                                             <td class="px-4 py-3 text-sm text-gray-700" x-text="row.acao"></td>
                                             <td class="px-4 py-3 text-sm text-gray-700" x-text="row.data"></td>
                                             <td class="px-4 py-3 text-sm font-semibold text-gray-900" x-text="row.id_primaria"></td>
@@ -1725,7 +1807,7 @@
                                         </tr>
                                     </template>
                                     <tr x-show="!lancamentosLoading && vendasFemeas.length === 0" x-cloak>
-                                        <td colspan="4" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
+                                        <td colspan="5" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
                                     </tr>
                                 </tbody>
                             </table>

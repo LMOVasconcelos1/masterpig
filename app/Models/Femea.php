@@ -12,6 +12,7 @@ class Femea extends Model
     protected $table = 'femea';
 
     const CREATED_AT = 'criado_em';
+
     const UPDATED_AT = 'atualizado_em';
 
     protected $fillable = [
@@ -55,4 +56,3 @@ class Femea extends Model
         return $this->hasMany(FemeaMovimento::class, 'femea_id');
     }
 }
-

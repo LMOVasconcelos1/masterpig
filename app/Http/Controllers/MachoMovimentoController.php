@@ -23,9 +23,38 @@ class MachoMovimentoController extends Controller
         return $this->listarPorAcao('venda');
     }
 
+    public function destroy(int $id)
+    {
+        if (! Schema::hasTable('macho_movimento')) {
+            return response()->json([
+                'message' => 'Tabela macho_movimento não existe no banco.',
+            ], 422);
+        }
+
+        $row = DB::table('macho_movimento')->where('id', $id)->select(['id', 'acao'])->first();
+        if (! $row) {
+            return response()->json([
+                'message' => 'Lançamento não encontrado.',
+            ], 404);
+        }
+
+        $acao = (string) ($row->acao ?? '');
+        if (! in_array($acao, ['morte', 'descarte', 'venda'], true)) {
+            return response()->json([
+                'message' => 'Este tipo de lançamento não pode ser excluído.',
+            ], 422);
+        }
+
+        DB::table('macho_movimento')->where('id', $id)->delete();
+
+        return response()->json([
+            'message' => 'Lançamento excluído com sucesso!',
+        ]);
+    }
+
     private function listarPorAcao(string $acao)
     {
-        if (!Schema::hasTable('macho') || !Schema::hasTable('macho_movimento')) {
+        if (! Schema::hasTable('macho') || ! Schema::hasTable('macho_movimento')) {
             return response()->json([
                 'items' => [],
                 'message' => 'Tabelas de machos ainda não foram criadas no banco.',
@@ -55,7 +84,9 @@ class MachoMovimentoController extends Controller
 
         $items = $rows->map(function ($row) use ($hasCausaId, $acao) {
             $causa = $hasCausaId ? ($row->causa_nome ?? null) : null;
-            if (!$causa) $causa = $row->observacoes ?? '-';
+            if (! $causa) {
+                $causa = $row->observacoes ?? '-';
+            }
 
             return [
                 'id' => $row->id,
@@ -72,4 +103,3 @@ class MachoMovimentoController extends Controller
         ]);
     }
 }
-

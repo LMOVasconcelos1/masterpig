@@ -59,9 +59,23 @@ class GestacaoSaltaCioController extends Controller
             'data' => ['required', 'date'],
         ]);
 
+        $data = Carbon::parse($validated['data'])->toDateString();
+        $femeaId = (int) $validated['femea_id'];
+
+        $exists = DB::table('gestacao_salta_cio')
+            ->where('femea_id', $femeaId)
+            ->where('data', $data)
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'message' => 'Salta cio já registrado para essa data.',
+            ]);
+        }
+
         DB::table('gestacao_salta_cio')->insert([
-            'femea_id' => (int) $validated['femea_id'],
-            'data' => Carbon::parse($validated['data'])->toDateString(),
+            'femea_id' => $femeaId,
+            'data' => $data,
             'criado_em' => now(),
             'atualizado_em' => now(),
         ]);
@@ -69,5 +83,27 @@ class GestacaoSaltaCioController extends Controller
         return response()->json([
             'message' => 'Salta cio registrado com sucesso!',
         ], 201);
+    }
+
+    public function destroy(int $id)
+    {
+        if (! Schema::hasTable('gestacao_salta_cio')) {
+            return response()->json([
+                'message' => 'Tabela gestacao_salta_cio não existe no banco.',
+            ], 422);
+        }
+
+        $exists = DB::table('gestacao_salta_cio')->where('id', $id)->exists();
+        if (! $exists) {
+            return response()->json([
+                'message' => 'Registro não encontrado.',
+            ], 404);
+        }
+
+        DB::table('gestacao_salta_cio')->where('id', $id)->delete();
+
+        return response()->json([
+            'message' => 'Registro excluído com sucesso!',
+        ]);
     }
 }

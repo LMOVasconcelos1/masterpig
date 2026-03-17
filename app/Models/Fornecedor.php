@@ -12,10 +12,10 @@ class Fornecedor extends Model
     protected $table = 'fornecedor';
 
     const CREATED_AT = 'criado_em';
+
     const UPDATED_AT = 'atualizado_em';
 
     protected $fillable = [
         'nome',
     ];
 }
-

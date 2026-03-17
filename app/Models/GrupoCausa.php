@@ -12,6 +12,7 @@ class GrupoCausa extends Model
     protected $table = 'grupo_causa';
 
     const CREATED_AT = 'criado_em';
+
     const UPDATED_AT = 'atualizado_em';
 
     protected $fillable = ['nome'];

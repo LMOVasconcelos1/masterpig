@@ -29,16 +29,20 @@ class CriteriosController extends Controller
             'criterio_registro_cio_automatico' => 'nao',
             'criterio_cobertura_idade_min_dias' => '210',
             'criterio_cobertura_idade_max_dias' => '240',
+            'criterio_cobertura_ciclos_min' => '3',
             'criterio_cobertura_peso_min_kg' => '0',
             'criterio_cobertura_peso_max_kg' => '0',
             'criterio_cobertura_presenca_cio' => 'sim',
             'criterio_dias_ate_cio' => '21',
             'criterio_dias_cio' => '3',
             'criterio_dias_gestacao' => '114',
-            'criterio_dias_lactacao' => '21',
+            'criterio_dias_lactacao_min' => '21',
+            'criterio_dias_lactacao_max' => '28',
             'criterio_dias_intervalo_desmame_cio' => '5',
             'criterio_leitoa_idade_min_dias' => '150',
-            'criterio_leitoa_idade_max_dias' => '210',
+            'criterio_leitoa_idade_max_dias' => '150',
+            'criterio_maturidade_idade_min_dias' => '151',
+            'criterio_maturidade_idade_max_dias' => '220',
         ];
 
         $items = [];
@@ -115,6 +119,7 @@ class CriteriosController extends Controller
             'criterio_registro_cio_automatico' => ['nullable', 'in:sim,nao'],
             'criterio_cobertura_idade_min_dias' => ['nullable', 'integer', 'min:0', 'max:2000'],
             'criterio_cobertura_idade_max_dias' => ['nullable', 'integer', 'min:0', 'max:2000'],
+            'criterio_cobertura_ciclos_min' => ['nullable', 'integer', 'min:0', 'max:100'],
             'criterio_cobertura_peso_min_kg' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'criterio_cobertura_peso_max_kg' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'criterio_cobertura_presenca_cio' => ['nullable', 'in:sim,nao'],
@@ -122,10 +127,13 @@ class CriteriosController extends Controller
             'criterio_dias_ate_cio' => ['nullable', 'integer', 'min:0', 'max:365'],
             'criterio_dias_cio' => ['nullable', 'integer', 'min:1', 'max:10'],
             'criterio_dias_gestacao' => ['nullable', 'integer', 'min:1', 'max:200'],
-            'criterio_dias_lactacao' => ['nullable', 'integer', 'min:1', 'max:60'],
+            'criterio_dias_lactacao_min' => ['nullable', 'integer', 'min:1', 'max:60'],
+            'criterio_dias_lactacao_max' => ['nullable', 'integer', 'min:1', 'max:60'],
             'criterio_dias_intervalo_desmame_cio' => ['nullable', 'integer', 'min:0', 'max:30'],
             'criterio_leitoa_idade_min_dias' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'criterio_leitoa_idade_max_dias' => ['nullable', 'integer', 'min:0', 'max:1000'],
+            'criterio_maturidade_idade_min_dias' => ['nullable', 'integer', 'min:0', 'max:1000'],
+            'criterio_maturidade_idade_max_dias' => ['nullable', 'integer', 'min:0', 'max:1000'],
         ];
     }
 }

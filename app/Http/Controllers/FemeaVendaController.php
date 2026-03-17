@@ -13,7 +13,7 @@ class FemeaVendaController extends Controller
 {
     public function store(Request $request)
     {
-        if (!Schema::hasTable('femea') || !Schema::hasTable('femea_movimento')) {
+        if (! Schema::hasTable('femea') || ! Schema::hasTable('femea_movimento')) {
             return response()->json([
                 'message' => 'Tabelas do plantel ainda não foram criadas no banco.',
             ], 422);
@@ -29,10 +29,22 @@ class FemeaVendaController extends Controller
         ]);
 
         $femea = Femea::findOrFail($validated['femea_id']);
+
+        $lastAcao = DB::table('femea_movimento')
+            ->where('femea_id', $femea->id)
+            ->orderByDesc('id')
+            ->value('acao');
+
+        if (is_string($lastAcao) && in_array($lastAcao, ['morte', 'descarte', 'venda'], true)) {
+            return response()->json([
+                'message' => 'A fêmea já está inativa e não pode receber novo lançamento.',
+            ], 422);
+        }
+
         $causa = Causa::with('grupoCausa')->findOrFail($validated['causa_id']);
 
         $grupoNome = mb_strtolower($causa->grupoCausa?->nome ?? '');
-        if (!str_contains($grupoNome, 'venda')) {
+        if (! str_contains($grupoNome, 'venda')) {
             return response()->json([
                 'message' => 'Selecione uma causa do tipo venda.',
             ], 422);
@@ -54,8 +66,8 @@ class FemeaVendaController extends Controller
 
         if (Schema::hasColumn('femea_movimento', 'comprador')) {
             $payload['comprador'] = $validated['comprador'] ?? null;
-        } elseif (!empty($validated['comprador'])) {
-            $payload['observacoes'] = $payload['observacoes'] . ' | Comprador: ' . $validated['comprador'];
+        } elseif (! empty($validated['comprador'])) {
+            $payload['observacoes'] = $payload['observacoes'].' | Comprador: '.$validated['comprador'];
         }
 
         DB::table('femea_movimento')->insert($payload);
@@ -65,4 +77,3 @@ class FemeaVendaController extends Controller
         ], 201);
     }
 }
-

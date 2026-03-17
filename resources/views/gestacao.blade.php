@@ -206,6 +206,90 @@
                 .catch(() => {});
         },
 
+        deleteCobertura(id) {
+            const rowId = Number(id);
+            if (!Number.isFinite(rowId) || rowId <= 0) return;
+            if (!confirm('Excluir esta cobertura?')) return;
+
+            fetch(`/api/gestacao/coberturas/${rowId}`, {
+                method: 'DELETE',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
+                },
+            })
+                .then(async (r) => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(data?.message || 'Erro ao excluir cobertura');
+                    return data;
+                })
+                .then((data) => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Cobertura excluída com sucesso!', type: 'success' } }));
+                    this.loadCoberturas();
+                })
+                .catch((e) => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao excluir cobertura', type: 'error' } }));
+                });
+        },
+
+        deleteCio(id) {
+            const rowId = Number(id);
+            if (!Number.isFinite(rowId) || rowId <= 0) return;
+            if (!confirm('Excluir este registro de cio?')) return;
+
+            fetch(`/api/gestacao/cio/${rowId}`, {
+                method: 'DELETE',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
+                },
+            })
+                .then(async (r) => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(data?.message || 'Erro ao excluir cio');
+                    return data;
+                })
+                .then((data) => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Registro excluído com sucesso!', type: 'success' } }));
+                    this.loadCio();
+                })
+                .catch((e) => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao excluir cio', type: 'error' } }));
+                });
+        },
+
+        deleteSaltaCio(id) {
+            const rowId = Number(id);
+            if (!Number.isFinite(rowId) || rowId <= 0) return;
+            if (!confirm('Excluir este registro de salta cio?')) return;
+
+            fetch(`/api/gestacao/salta-cio/${rowId}`, {
+                method: 'DELETE',
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
+                },
+            })
+                .then(async (r) => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(data?.message || 'Erro ao excluir salta cio');
+                    return data;
+                })
+                .then((data) => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Registro excluído com sucesso!', type: 'success' } }));
+                    this.loadSaltaCio();
+                })
+                .catch((e) => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao excluir salta cio', type: 'error' } }));
+                });
+        },
+
         openCoberturaModal() {
             this.error = '';
             this.coberturaTab = 'principal';
@@ -681,6 +765,7 @@
                         <table class="min-w-full divide-y divide-gray-100">
                             <thead>
                                 <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    <th class="py-2 pr-4">Ações</th>
                                     <th class="py-2 pr-4">Matriz</th>
                                     <th class="py-2 pr-4">Macho/Sêmen</th>
                                     <th class="py-2 pr-4">Data</th>
@@ -690,6 +775,11 @@
                             <tbody class="divide-y divide-gray-100">
                                 <template x-for="c in coberturas" :key="c.id">
                                     <tr class="text-sm text-gray-700">
+                                        <td class="py-2 pr-4">
+                                            <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteCobertura(c.id)">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </td>
                                         <td class="py-2 pr-4" x-text="c.matriz"></td>
                                         <td class="py-2 pr-4" x-text="c.macho || c.semen || '-'"></td>
                                         <td class="py-2 pr-4" x-text="c.data"></td>
@@ -697,7 +787,7 @@
                                     </tr>
                                 </template>
                                 <tr x-show="coberturas.length === 0">
-                                    <td colspan="4" class="py-4 text-sm text-gray-500">Nenhuma cobertura registrada.</td>
+                                    <td colspan="5" class="py-4 text-sm text-gray-500">Nenhuma cobertura registrada.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -749,6 +839,7 @@
                         <table class="min-w-full divide-y divide-gray-100">
                             <thead>
                                 <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    <th class="py-2 pr-4">Ações</th>
                                     <th class="py-2 pr-4">Fêmea</th>
                                     <th class="py-2 pr-4">Data</th>
                                 </tr>
@@ -756,12 +847,17 @@
                             <tbody class="divide-y divide-gray-100">
                                 <template x-for="c in cios" :key="c.id">
                                     <tr class="text-sm text-gray-700">
+                                        <td class="py-2 pr-4">
+                                            <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteCio(c.id)">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </td>
                                         <td class="py-2 pr-4" x-text="c.matriz"></td>
                                         <td class="py-2 pr-4" x-text="c.data"></td>
                                     </tr>
                                 </template>
                                 <tr x-show="cios.length === 0">
-                                    <td colspan="2" class="py-4 text-sm text-gray-500">Nenhum registro encontrado.</td>
+                                    <td colspan="3" class="py-4 text-sm text-gray-500">Nenhum registro encontrado.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -779,6 +875,7 @@
                         <table class="min-w-full divide-y divide-gray-100">
                             <thead>
                                 <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    <th class="py-2 pr-4">Ações</th>
                                     <th class="py-2 pr-4">Fêmea</th>
                                     <th class="py-2 pr-4">Data</th>
                                 </tr>
@@ -786,12 +883,17 @@
                             <tbody class="divide-y divide-gray-100">
                                 <template x-for="s in saltasCio" :key="s.id">
                                     <tr class="text-sm text-gray-700">
+                                        <td class="py-2 pr-4">
+                                            <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteSaltaCio(s.id)">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </td>
                                         <td class="py-2 pr-4" x-text="s.matriz"></td>
                                         <td class="py-2 pr-4" x-text="s.data"></td>
                                     </tr>
                                 </template>
                                 <tr x-show="saltasCio.length === 0">
-                                    <td colspan="2" class="py-4 text-sm text-gray-500">Nenhum registro encontrado.</td>
+                                    <td colspan="3" class="py-4 text-sm text-gray-500">Nenhum registro encontrado.</td>
                                 </tr>
                             </tbody>
                         </table>
