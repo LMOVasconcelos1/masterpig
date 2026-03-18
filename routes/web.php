@@ -93,6 +93,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/plantel/machos/descarte', [MachoDescarteController::class, 'store'])->name('plantel.machos.descarte.store');
     Route::post('/plantel/machos/venda', [MachoVendaController::class, 'store'])->name('plantel.machos.venda.store');
     Route::delete('/plantel/machos/movimentos/{id}', [MachoMovimentoController::class, 'destroy'])->whereNumber('id')->name('plantel.machos.movimentos.destroy');
+    Route::get('/plantel/femeas', [FemeaController::class, 'index'])->name('plantel.femeas.index');
     Route::get('/plantel/femeas/{femea}', [FemeaController::class, 'show'])->name('plantel.femeas.show');
     Route::get('/relatorios/plantel/femeas', [PlantelRelatorioController::class, 'femeas'])->name('relatorios.plantel.femeas');
     Route::get('/relatorios/plantel/machos', [PlantelRelatorioController::class, 'machos'])->name('relatorios.plantel.machos');

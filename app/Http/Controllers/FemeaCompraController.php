@@ -181,13 +181,21 @@ class FemeaCompraController extends Controller
             // Se informou que houve cio, registra na tabela gestacao_cio
             if (($validated['houve_cio'] ?? 'nao') === 'sim' && ! empty($validated['data_ultimo_cio'])) {
                 if (Schema::hasTable('gestacao_cio')) {
-                    DB::table('gestacao_cio')->insert([
+                    $payload = [
                         'femea_id' => $femea->id,
                         'data' => $validated['data_ultimo_cio'],
-                        'observacao' => 'Registrado no ato da compra',
-                        'criado_em' => now(),
-                        'atualizado_em' => now(),
-                    ]);
+                    ];
+                    if (Schema::hasColumn('gestacao_cio', 'observacao')) {
+                        $payload['observacao'] = 'Registrado no ato da compra';
+                    }
+                    if (Schema::hasColumn('gestacao_cio', 'criado_em')) {
+                        $payload['criado_em'] = now();
+                    }
+                    if (Schema::hasColumn('gestacao_cio', 'atualizado_em')) {
+                        $payload['atualizado_em'] = now();
+                    }
+
+                    DB::table('gestacao_cio')->insert($payload);
                 }
             }
 

@@ -73,5 +73,47 @@
       "Plantel Reprodutivo: criada aba Acompanhamento de fêmeas (fase atual e calendário de previsões)",
       "Utilitários: criada opção Começar do zero (remove todos os animais e lançamentos com confirmação de CNPJ)"
     ]
+  },
+  {
+    "date": "2026-03-17",
+    "title": "Manejo - Maternidade",
+    "items": [
+      "Criada tela /maternidade com abas (Visão Geral e Lançamentos)",
+      "Visão Geral: indicadores (Fêmeas lactantes e Mães de leite) e listagem de inconsistências",
+      "Inconsistências: leitões com idade > 101 dias sem desmame, com ação direta \"Cadastrar Desmame\"",
+      "Lançamentos: cadastro de Parto e Desmame com validações (horários opcionais)",
+      "Parto vincula automaticamente à última cobertura disponível da fêmea (quando existir)"
+    ]
+  },
+  {
+    "date": "2026-03-17",
+    "title": "Banco - Versão 0.10 (Maternidade + ajustes Plantel)",
+    "items": [
+      "Criado banco_versions/0.10.sql com tabelas maternidade_parto, maternidade_desmame e maternidade_adocao",
+      "Parto recebeu campo lote (opcional) para rastreio",
+      "Adicionada coluna femea_id_primaria em femea_movimento para facilitar relatórios"
+    ]
+  },
+  {
+    "date": "2026-03-17",
+    "title": "Gestação / Plantel - Previsões e Acompanhamento",
+    "items": [
+      "Inconsistências de cio no Plantel Reprodutivo: só aparecem dentro da janela de cio ou em atraso (não aparece para previsão futura)",
+      "API de plantel: /api/plantel/femeas?previsao_cio=1 retorna janela de cio prevista (início/fim) para filtrar seleção",
+      "Acompanhamento de fêmeas: fase anterior/atual/próxima com data prevista e numeração do cio (1º, 2º, 3º...)",
+      "Salta cio não incrementa a numeração do cio",
+      "Fluxo de próxima fase ajustado: 2º cio -> 3º cio -> 4º cio -> Cobertura (baseado em criterio_cobertura_ciclos_min e criterio_cobertura_idade_min_dias)"
+    ]
+  },
+  {
+    "date": "2026-03-17",
+    "title": "Plantel - Cadastro e Ficha de Fêmeas",
+    "items": [
+      "Criada listagem geral do cadastro de fêmeas: /admin/plantel/femeas (Ativas/Inativas + busca)",
+      "Status Ativo/Inativo calculado pela última movimentação (morte/descarte/venda)",
+      "Novo acesso na sidebar (Cadastros -> Fêmeas) e atalho no Plantel Reprodutivo",
+      "Ficha da fêmea redesenhada: cards, indicadores, histórico e gráfico comparando com metas e média do plantel",
+      "Compra de leitoa: opção de informar \"Já houve cio\" com registro do último cio no ato da compra (sem depender de coluna extra em gestacao_cio)"
+    ]
   }
 ]

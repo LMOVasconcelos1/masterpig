@@ -150,7 +150,7 @@
                     </div>
 
                     @if(!config('masterpig.enforce_perfil_permissions', false) || Auth::user()->perfil === 'administrador')
-                    <div x-data="{ open: {{ (request()->is('admin/causas*') || request()->is('admin/racoes*') || request()->is('admin/fornecedores*') || request()->is('admin/clientes*')) ? 'true' : 'false' }} }">
+                    <div x-data="{ open: {{ (request()->is('admin/causas*') || request()->is('admin/racoes*') || request()->is('admin/fornecedores*') || request()->is('admin/clientes*') || request()->is('admin/plantel/femeas*')) ? 'true' : 'false' }} }">
                         <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white group">
                             <div class="flex items-center">
                                 <i class="fa-solid fa-folder-open w-6 text-center"></i>
@@ -160,6 +160,10 @@
                         </button>
 
                         <div x-show="open" x-cloak class="mt-1 ml-4 pl-4 border-l border-primary-600 space-y-1">
+                            <a href="{{ route('admin.plantel.femeas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.plantel.femeas.index') ? 'text-white font-bold bg-primary-700/50' : (request()->routeIs('admin.plantel.femeas.show') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300') }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Fêmeas (cadastro)
+                            </a>
                             <a href="{{ route('admin.causas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.causas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white" @click="mobileSidebarOpen = false">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Causas
@@ -256,7 +260,7 @@
                     </div>
 
                     @if(!config('masterpig.enforce_perfil_permissions', false) || Auth::user()->perfil === 'administrador')
-                    <div x-data="{ open: {{ (request()->is('admin/causas*') || request()->is('admin/racoes*') || request()->is('admin/fornecedores*') || request()->is('admin/clientes*')) ? 'true' : 'false' }} }">
+                    <div x-data="{ open: {{ (request()->is('admin/causas*') || request()->is('admin/racoes*') || request()->is('admin/fornecedores*') || request()->is('admin/clientes*') || request()->is('admin/plantel/femeas*')) ? 'true' : 'false' }} }">
                         <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-primary-100 transition-colors rounded-lg hover:bg-primary-700 hover:text-white group">
                             <div class="flex items-center">
                                 <i class="fa-solid fa-folder-open w-6 text-center"></i>
@@ -266,6 +270,10 @@
                         </button>
                         
                         <div x-show="open && sidebarOpen" x-cloak class="mt-1 ml-4 pl-4 border-l border-primary-600 space-y-1">
+                            <a href="{{ route('admin.plantel.femeas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ (request()->routeIs('admin.plantel.femeas.index') || request()->routeIs('admin.plantel.femeas.show')) ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Fêmeas (cadastro)
+                            </a>
                             <a href="{{ route('admin.causas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.causas.index') ? 'text-white font-bold bg-primary-700/50' : 'text-primary-300' }} transition-colors rounded-lg hover:bg-primary-700 hover:text-white">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Causas

@@ -23,22 +23,139 @@ class FemeaController extends Controller
         return (int) $raw;
     }
 
+    private function ultimaMovimentacao(int $femeaId): array
+    {
+        if (! Schema::hasTable('femea_movimento')) {
+            return [
+                'acao' => null,
+                'data' => null,
+                'status' => 'Ativo',
+            ];
+        }
+
+        $row = DB::table('femea_movimento')
+            ->where('femea_id', $femeaId)
+            ->orderByDesc('id')
+            ->select(['acao', 'data'])
+            ->first();
+
+        $acao = $row?->acao === null ? null : (string) $row->acao;
+        $data = empty($row?->data) ? null : Carbon::parse($row->data)->format('d/m/Y');
+        $inativo = $acao !== null && in_array($acao, ['morte', 'descarte', 'venda'], true);
+
+        return [
+            'acao' => $acao,
+            'data' => $data,
+            'status' => $inativo ? 'Inativo' : 'Ativo',
+        ];
+    }
+
+    public function index()
+    {
+        if (! Schema::hasTable('femea')) {
+            abort(404);
+        }
+
+        $mostrarInativas = request()->boolean('inativas');
+
+        $query = DB::table('femea as f')
+            ->select([
+                'f.id',
+                'f.id_primaria',
+                'f.id_secundaria',
+                'f.tipo_compra',
+                'f.localizacao',
+                'f.baia',
+                'f.data_compra',
+            ])
+            ->orderBy('f.id_primaria')
+            ->limit(5000);
+
+        if (Schema::hasTable('raca')) {
+            $query->leftJoin('raca as r', 'r.id', '=', 'f.raca_id')->addSelect(['r.nome as raca_nome']);
+        } else {
+            $query->addSelect([DB::raw('NULL as raca_nome')]);
+        }
+
+        if (Schema::hasTable('fornecedor')) {
+            $query->leftJoin('fornecedor as fo', 'fo.id', '=', 'f.fornecedor_id')->addSelect(['fo.nome as fornecedor_nome']);
+        } else {
+            $query->addSelect([DB::raw('NULL as fornecedor_nome')]);
+        }
+
+        if (Schema::hasTable('femea_movimento')) {
+            $last = DB::table('femea_movimento')
+                ->selectRaw('MAX(id) as last_id, femea_id')
+                ->groupBy('femea_id');
+
+            $query->leftJoinSub($last, 'lm', function ($join) {
+                $join->on('lm.femea_id', '=', 'f.id');
+            });
+
+            $query->leftJoin('femea_movimento as fm', 'fm.id', '=', 'lm.last_id')
+                ->addSelect([
+                    'fm.acao as ultima_acao',
+                    'fm.data as ultima_data',
+                ]);
+
+            if (! $mostrarInativas) {
+                $query->where(function ($q) {
+                    $q->whereNull('fm.acao')
+                        ->orWhereNotIn('fm.acao', ['morte', 'descarte', 'venda']);
+                });
+            }
+        }
+
+        $items = $query->get()->map(function ($row) {
+            $acao = empty($row->ultima_acao) ? null : (string) $row->ultima_acao;
+            $data = empty($row->ultima_data) ? null : Carbon::parse($row->ultima_data)->format('d/m/Y');
+            $inativo = $acao !== null && in_array($acao, ['morte', 'descarte', 'venda'], true);
+
+            return [
+                'id' => (int) $row->id,
+                'id_primaria' => (string) $row->id_primaria,
+                'id_secundaria' => $row->id_secundaria === null ? null : (string) $row->id_secundaria,
+                'tipo' => (string) $row->tipo_compra,
+                'raca' => $row->raca_nome === null ? '-' : (string) $row->raca_nome,
+                'fornecedor' => $row->fornecedor_nome === null ? '-' : (string) $row->fornecedor_nome,
+                'localizacao' => $row->localizacao === null ? '-' : (string) $row->localizacao,
+                'baia' => $row->baia === null ? '-' : (string) $row->baia,
+                'data_compra' => empty($row->data_compra) ? '-' : Carbon::parse($row->data_compra)->format('d/m/Y'),
+                'ultima_operacao' => $acao === null ? '-' : $acao . ($data ? " - {$data}" : ''),
+                'status' => $inativo ? 'Inativo' : 'Ativo',
+            ];
+        })->values();
+
+        return view('admin.plantel.femeas.index', [
+            'items' => $items,
+            'mostrarInativas' => $mostrarInativas,
+        ]);
+    }
+
     public function show(Femea $femea)
     {
         if (! Schema::hasTable('femea')) {
             abort(404);
         }
 
-        $femea->load(['raca', 'fornecedor']);
+        $with = [];
+        if (Schema::hasTable('raca')) {
+            $with[] = 'raca';
+        }
+        if (Schema::hasTable('fornecedor')) {
+            $with[] = 'fornecedor';
+        }
+        if (! empty($with)) {
+            $femea->load($with);
+        }
+        $mov = $this->ultimaMovimentacao($femea->id);
 
-        // Buscar Metas para Comparação
         $metas = [
             'total_vivos' => $this->metaInt('meta_parto_vivos', 12),
             'lactacao_dias' => $this->metaInt('meta_lactacao_dias', 21),
             'intervalo_desmame_cio' => $this->metaInt('meta_intervalo_desmame_cio', 5),
         ];
 
-        // Buscar Histórico de Performance da Fêmea
         $performance = [];
         if (Schema::hasTable('maternidade_parto')) {
             $performance = DB::table('maternidade_parto as mp')
@@ -56,7 +173,6 @@ class FemeaController extends Controller
                 ->get();
         }
 
-        // Média do Plantel para Comparação
         $mediaPlantel = [
             'total_vivos' => 0,
             'total_desmamados' => 0
@@ -68,7 +184,6 @@ class FemeaController extends Controller
             $mediaPlantel['total_desmamados'] = DB::table('maternidade_desmame')->avg('quantidade') ?? 0;
         }
 
-        // Resumo de Eventos Reprodutivos
         $resumoEventos = [
             'cios' => Schema::hasTable('gestacao_cio') ? DB::table('gestacao_cio')->where('femea_id', $femea->id)->count() : 0,
             'coberturas' => Schema::hasTable('gestacao_cobertura') ? DB::table('gestacao_cobertura')->where('femea_id', $femea->id)->count() : 0,
@@ -76,10 +191,9 @@ class FemeaController extends Controller
             'perdas' => Schema::hasTable('gestacao_perda') ? DB::table('gestacao_perda')->where('femea_id', $femea->id)->count() : 0,
         ];
 
-        // Idade e Tempo de Granja
-        $idadeSemanas = $femea->data_nascimento ? (int) $femea->data_nascimento->diffInWeeks(now()) : null;
-        $tempoGranjaMeses = $femea->data_compra ? (int) $femea->data_compra->diffInMonths(now()) : null;
+        $idadeDias = $femea->data_nascimento ? (int) $femea->data_nascimento->diffInDays(now()) : null;
+        $tempoGranjaDias = $femea->data_compra ? (int) $femea->data_compra->diffInDays(now()) : null;
 
-        return view('admin.plantel.femeas.show', compact('femea', 'performance', 'metas', 'mediaPlantel', 'resumoEventos', 'idadeSemanas', 'tempoGranjaMeses'));
+        return view('admin.plantel.femeas.show', compact('femea', 'performance', 'metas', 'mediaPlantel', 'resumoEventos', 'idadeDias', 'tempoGranjaDias', 'mov'));
     }
 }

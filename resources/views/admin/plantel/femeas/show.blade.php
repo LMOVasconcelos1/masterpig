@@ -17,13 +17,26 @@
             <div class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold uppercase rounded-full">
                 {{ $femea->tipo_compra }}
             </div>
-            @if($idadeSemanas)
+            @if(isset($mov) && !empty($mov['status']))
+                <div class="px-3 py-1 text-xs font-bold uppercase rounded-full {{ $mov['status'] === 'Ativo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                    {{ $mov['status'] }}{{ !empty($mov['acao']) ? ' - ' . $mov['acao'] : '' }}{{ !empty($mov['data']) ? ' (' . $mov['data'] . ')' : '' }}
+                </div>
+            @endif
+            @if($idadeDias)
                 <div class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold uppercase rounded-full">
-                    {{ $idadeSemanas }} Semanas
+                    {{ $idadeDias }} Dias de Vida
+                </div>
+            @endif
+            @if($tempoGranjaDias)
+                <div class="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold uppercase rounded-full">
+                    {{ $tempoGranjaDias }} Dias na Granja
                 </div>
             @endif
         </div>
         <div class="flex items-center gap-3">
+            <a href="{{ route('admin.plantel.femeas.index', [], false) }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
+                <i class="fa-solid fa-list mr-2"></i> Fêmeas
+            </a>
             <a href="{{ route('dashboard') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
                 <i class="fa-solid fa-arrow-left mr-2"></i> Voltar
             </a>
@@ -95,7 +108,46 @@
                 </div>
             </div>
 
-            <!-- Card de Eventos Reprodutivos (Novo) -->
+            <!-- Fases do Ciclo (Novo) -->
+            @php
+                $acompanhamento = app(\App\Http\Controllers\AcompanhamentoFemeasController::class)->show($femea->id)->getData();
+                $faseInfo = $acompanhamento->item ?? null;
+            @endphp
+            @if($faseInfo)
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                    <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider">Status Reprodutivo</h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-2 h-12 bg-gray-200 rounded-full"></div>
+                        <div>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase">Fase Anterior</p>
+                            <p class="text-sm font-medium text-gray-600">{{ $faseInfo->fase_anterior ?? '-' }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="w-2 h-12 bg-primary-500 rounded-full"></div>
+                        <div>
+                            <p class="text-[10px] text-primary-400 font-bold uppercase">Fase Atual</p>
+                            <p class="text-base font-bold text-gray-900">{{ $faseInfo->fase }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="w-2 h-12 bg-green-400 rounded-full"></div>
+                        <div>
+                            <p class="text-[10px] text-green-500 font-bold uppercase">Próxima Fase</p>
+                            <div class="flex items-center gap-2">
+                                <p class="text-sm font-bold text-gray-800">{{ $faseInfo->proxima_fase }}</p>
+                                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{{ $faseInfo->prevista_em }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- Card de Eventos Reprodutivos -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                     <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider">Ciclo Reprodutivo</h3>

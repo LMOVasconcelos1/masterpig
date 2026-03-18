@@ -124,6 +124,24 @@ class AcompanhamentoFemeasController extends Controller
     private function computeFase(array $row, ?Carbon $lastCobertura, ?Carbon $lastCio, ?Carbon $lastSaltaCio, array $cfg): array
     {
         $now = Carbon::today();
+        $fId = $row['id'];
+
+        // Número do cio é baseado APENAS em registros reais de CIO (gestacao_cio).
+        // Salta cio não incrementa o número do cio.
+        $countCios = 0;
+        if (Schema::hasTable('gestacao_cio')) {
+            $q = DB::table('gestacao_cio')->where('femea_id', $fId);
+            if ($lastCobertura) {
+                $q->where('data', '>', $lastCobertura->toDateString());
+            }
+            $countCios = (int) $q->count();
+        }
+
+        $cioAtualLabel = ($countCios <= 0 ? 1 : $countCios) . 'º cio';
+        $cioProximoLabel = ($countCios + 1) . 'º cio';
+        $coberturaCiclosMin = (int) ($cfg['cobertura_ciclos_min'] ?? 3);
+        $coberturaIdadeMinDias = (int) ($cfg['cobertura_idade_min_dias'] ?? 210);
+        $cioCoberturaNumero = $coberturaCiclosMin + 1;
 
         if ($lastCobertura) {
             $parto = (clone $lastCobertura)->addDays($cfg['gestacao_dias']);
@@ -134,6 +152,7 @@ class AcompanhamentoFemeasController extends Controller
 
             if ($now->lt($parto)) {
                 return [
+                    'fase_anterior' => 'Cobertura',
                     'fase' => 'Gestação',
                     'proxima_fase' => 'Parto',
                     'prevista_em' => $parto->format('d/m/Y'),
@@ -142,6 +161,7 @@ class AcompanhamentoFemeasController extends Controller
 
             if ($now->lt($desmameMax)) {
                 return [
+                    'fase_anterior' => 'Parto',
                     'fase' => 'Lactação',
                     'proxima_fase' => 'Desmame',
                     'prevista_em' => $desmameMin->format('d/m/Y'),
@@ -150,15 +170,17 @@ class AcompanhamentoFemeasController extends Controller
 
             if ($now->lt($cioPosDesmame)) {
                 return [
+                    'fase_anterior' => 'Lactação',
                     'fase' => 'Intervalo desmame-cio',
-                    'proxima_fase' => 'Cio',
+                    'proxima_fase' => 'Cio pós-desmame',
                     'prevista_em' => $cioPosDesmame->format('d/m/Y'),
                 ];
             }
 
             if ($now->lte($fimCio)) {
                 return [
-                    'fase' => 'Cio',
+                    'fase_anterior' => 'Intervalo desmame-cio',
+                    'fase' => 'Cio pós-desmame',
                     'proxima_fase' => 'Cobertura',
                     'prevista_em' => $cioPosDesmame->format('d/m/Y'),
                 ];
@@ -167,8 +189,9 @@ class AcompanhamentoFemeasController extends Controller
             $nextCio = (clone $cioPosDesmame)->addDays(max(1, $cfg['dias_ate_cio']));
 
             return [
-                'fase' => 'Cio',
-                'proxima_fase' => 'Cobertura',
+                'fase_anterior' => 'Cio pós-desmame',
+                'fase' => 'Intervalo entre cios',
+                'proxima_fase' => 'Cio (previsto)',
                 'prevista_em' => $nextCio->format('d/m/Y'),
             ];
         }
@@ -176,6 +199,9 @@ class AcompanhamentoFemeasController extends Controller
         $tipo = (string) ($row['tipo_compra'] ?? '');
         $nasc = empty($row['data_nascimento']) ? null : Carbon::parse($row['data_nascimento']);
         $idade = $nasc ? $nasc->diffInDays($now) : null;
+        $idadeOkCobertura = $idade !== null && $idade >= $coberturaIdadeMinDias;
+        $cioOkCobertura = $countCios >= $cioCoberturaNumero;
+        $podeCobrirAgora = $idadeOkCobertura && $cioOkCobertura;
 
         if ($lastSaltaCio) {
             $cioFim = (clone $lastSaltaCio)->addDays($cfg['cio_dias']);
@@ -183,8 +209,9 @@ class AcompanhamentoFemeasController extends Controller
                 $nextCio = (clone $lastSaltaCio)->addDays(max(1, $cfg['dias_ate_cio']));
 
                 return [
+                    'fase_anterior' => 'Cio',
                     'fase' => 'Salta cio',
-                    'proxima_fase' => 'Próximo cio',
+                    'proxima_fase' => $cioProximoLabel,
                     'prevista_em' => $nextCio->format('d/m/Y'),
                 ];
             }
@@ -193,10 +220,23 @@ class AcompanhamentoFemeasController extends Controller
         if ($lastCio) {
             $cioFim = (clone $lastCio)->addDays($cfg['cio_dias']);
             if ($now->betweenIncluded($lastCio, $cioFim)) {
+                if ($podeCobrirAgora) {
+                    return [
+                        'fase_anterior' => 'Maturidade reprodutiva',
+                        'fase' => $cioAtualLabel,
+                        'proxima_fase' => 'Cobertura',
+                        'prevista_em' => $lastCio->format('d/m/Y'),
+                    ];
+                }
+
+                $nextCio = (clone $lastCio)->addDays(max(1, $cfg['dias_ate_cio']));
+                $nextLabel = ($countCios + 1) . 'º cio';
+
                 return [
-                    'fase' => 'Cio',
-                    'proxima_fase' => 'Cobertura',
-                    'prevista_em' => $lastCio->format('d/m/Y'),
+                    'fase_anterior' => 'Maturidade reprodutiva',
+                    'fase' => $cioAtualLabel,
+                    'proxima_fase' => $nextLabel,
+                    'prevista_em' => $nextCio->format('d/m/Y'),
                 ];
             }
         }
@@ -209,9 +249,19 @@ class AcompanhamentoFemeasController extends Controller
         if ($lastEventoCio) {
             $nextCio = (clone $lastEventoCio)->addDays(max(1, $cfg['dias_ate_cio']));
 
+            if ($idadeOkCobertura && $countCios >= $cioCoberturaNumero) {
+                return [
+                    'fase_anterior' => $cioAtualLabel,
+                    'fase' => $cioAtualLabel,
+                    'proxima_fase' => 'Cobertura',
+                    'prevista_em' => $nextCio->format('d/m/Y'),
+                ];
+            }
+
             return [
-                'fase' => 'Cio',
-                'proxima_fase' => 'Cobertura',
+                'fase_anterior' => $cioAtualLabel,
+                'fase' => $cioAtualLabel,
+                'proxima_fase' => $cioProximoLabel,
                 'prevista_em' => $nextCio->format('d/m/Y'),
             ];
         }
@@ -221,6 +271,7 @@ class AcompanhamentoFemeasController extends Controller
                 $prev = (clone $nasc)->addDays($cfg['leitoa_max_dias']);
 
                 return [
+                    'fase_anterior' => 'Nascimento',
                     'fase' => 'Leitoa',
                     'proxima_fase' => 'Maturidade reprodutiva',
                     'prevista_em' => $prev->format('d/m/Y'),
@@ -235,8 +286,9 @@ class AcompanhamentoFemeasController extends Controller
                 $maturityStart = (clone $nasc)->addDays($matMin);
                 $nextCio = (clone $maturityStart)->addDays(max(1, $cfg['dias_ate_cio']));
                 return [
+                    'fase_anterior' => 'Leitoa',
                     'fase' => 'Maturidade reprodutiva',
-                    'proxima_fase' => 'Cio',
+                    'proxima_fase' => $cioProximoLabel,
                     'prevista_em' => $nextCio->format('d/m/Y'),
                 ];
             }
@@ -244,26 +296,25 @@ class AcompanhamentoFemeasController extends Controller
 
         if ($tipo === 'matriz_gestante') {
             return [
+                'fase_anterior' => 'Cobertura',
                 'fase' => 'Gestação',
                 'proxima_fase' => 'Parto',
                 'prevista_em' => '-',
             ];
         }
 
+        $previstaEm = '-';
         if ($nasc) {
             $maturityStart = (clone $nasc)->addDays($cfg['maturidade_min_dias']);
             $nextCio = (clone $maturityStart)->addDays(max(1, $cfg['dias_ate_cio']));
-            return [
-                'fase' => 'Maturidade reprodutiva',
-                'proxima_fase' => 'Cio',
-                'prevista_em' => $nextCio->format('d/m/Y'),
-            ];
+            $previstaEm = $nextCio->format('d/m/Y');
         }
 
         return [
+            'fase_anterior' => $tipo === 'leitoa' ? 'Leitoa' : '-',
             'fase' => 'Maturidade reprodutiva',
-            'proxima_fase' => 'Cio',
-            'prevista_em' => '-',
+            'proxima_fase' => $cioProximoLabel,
+            'prevista_em' => $previstaEm,
         ];
     }
 
@@ -285,6 +336,8 @@ class AcompanhamentoFemeasController extends Controller
             'lactacao_min_dias' => $this->metaInt('criterio_dias_lactacao_min', 21),
             'lactacao_max_dias' => $this->metaInt('criterio_dias_lactacao_max', 28),
             'intervalo_desmame_cio_dias' => $this->metaInt('criterio_dias_intervalo_desmame_cio', 5),
+            'cobertura_idade_min_dias' => $this->metaInt('criterio_cobertura_idade_min_dias', 210),
+            'cobertura_ciclos_min' => $this->metaInt('criterio_cobertura_ciclos_min', 3),
             'leitoa_min_dias' => $this->metaInt('criterio_leitoa_idade_min_dias', 150),
             'leitoa_max_dias' => $this->metaInt('criterio_leitoa_idade_max_dias', 150),
             'maturidade_min_dias' => $this->metaInt('criterio_maturidade_idade_min_dias', 151),
@@ -356,6 +409,7 @@ class AcompanhamentoFemeasController extends Controller
             $lastSalta = isset($lastSaltas[$id]) && $lastSaltas[$id] ? Carbon::parse($lastSaltas[$id]) : null;
 
             $fase = $this->computeFase([
+                'id' => $id,
                 'tipo_compra' => $row->tipo_compra,
                 'data_nascimento' => $row->data_nascimento,
             ], $lastCob, $lastCio, $lastSalta, $cfg);
@@ -411,6 +465,8 @@ class AcompanhamentoFemeasController extends Controller
             'lactacao_min_dias' => $this->metaInt('criterio_dias_lactacao_min', 21),
             'lactacao_max_dias' => $this->metaInt('criterio_dias_lactacao_max', 28),
             'intervalo_desmame_cio_dias' => $this->metaInt('criterio_dias_intervalo_desmame_cio', 5),
+            'cobertura_idade_min_dias' => $this->metaInt('criterio_cobertura_idade_min_dias', 210),
+            'cobertura_ciclos_min' => $this->metaInt('criterio_cobertura_ciclos_min', 3),
             'leitoa_min_dias' => $this->metaInt('criterio_leitoa_idade_min_dias', 150),
             'leitoa_max_dias' => $this->metaInt('criterio_leitoa_idade_max_dias', 150),
             'maturidade_min_dias' => $this->metaInt('criterio_maturidade_idade_min_dias', 151),
@@ -436,6 +492,7 @@ class AcompanhamentoFemeasController extends Controller
         }
 
         $fase = $this->computeFase([
+            'id' => (int) $row->id,
             'tipo_compra' => $row->tipo_compra,
             'data_nascimento' => $row->data_nascimento,
         ], $lastCob, $lastCio, $lastSalta, $cfg);

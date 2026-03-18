@@ -198,6 +198,10 @@
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
             <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Inconsistências do Plantel</h6>
+            <a href="{{ route('admin.plantel.femeas.index', [], false) }}" class="inline-flex items-center rounded-xl border border-gray-200 shadow-sm px-3 py-2 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50">
+                <i class="fa-solid fa-list mr-2"></i>
+                Cadastro de fêmeas
+            </a>
         </div>
         <div class="p-6">
             <div class="overflow-x-auto border border-gray-100 rounded-xl">
