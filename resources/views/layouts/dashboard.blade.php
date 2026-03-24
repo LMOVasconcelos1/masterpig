@@ -351,6 +351,16 @@
 
                     <!-- Right Nav -->
                     <div class="ml-auto flex items-center space-x-4">
+                        <!-- Botão de Alternância de Calendário -->
+                        <div class="hidden sm:block">
+                            @include('components.calendar-toggle')
+                        </div>
+                        
+                        <!-- Calendário de 1000 Dias -->
+                        <div class="hidden sm:block">
+                            @include('components.calendar-menu')
+                        </div>
+                        
                         @if(($notificacoesCount ?? 0) > 0)
                             <div class="relative" x-data="{ open: false }">
                                 <button @click="open = !open" class="relative p-2 text-gray-500 hover:text-primary-600 transition-colors focus:outline-none">

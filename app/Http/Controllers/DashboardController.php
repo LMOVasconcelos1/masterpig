@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Femea;
 use App\Models\Macho;
 use App\Models\Racao;
+use App\Services\PigCycleService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -78,13 +79,14 @@ class DashboardController extends Controller
             return [];
         }
 
+        $durations = PigCycleService::getCycleDurations();
         $cfg = [
             'dias_ate_cio' => $this->metaInt('criterio_dias_ate_cio', 21),
-            'cio_dias' => $this->metaInt('criterio_dias_cio', 3),
-            'gestacao_dias' => $this->metaInt('criterio_dias_gestacao', 114),
-            'lactacao_min_dias' => $this->metaInt('criterio_dias_lactacao_min', 21),
-            'lactacao_max_dias' => $this->metaInt('criterio_dias_lactacao_max', 28),
-            'intervalo_desmame_cio_dias' => $this->metaInt('criterio_dias_intervalo_desmame_cio', 5),
+            'cio_dias' => $durations['cio'],
+            'gestacao_dias' => $durations['gestacao'],
+            'lactacao_min_dias' => $durations['lactacao'],
+            'lactacao_max_dias' => $durations['lactacao'] + 7, // Assuming 7 days buffer for max
+            'intervalo_desmame_cio_dias' => $durations['intervalo'],
             'maturidade_min_dias' => $this->metaInt('criterio_maturidade_idade_min_dias', 151),
         ];
 
@@ -245,21 +247,13 @@ class DashboardController extends Controller
                 $problema = "Fêmea com cio previsto em {$prevBr} (janela até {$fimBr}) sem registro de Cio/Salta cio ({$tipoLabel}).";
             }
 
-            $ultimaOperacao = '-';
-            if (! empty($row->ultima_acao)) {
-                $ultimaOperacao = (string) $row->ultima_acao;
-                if (! empty($row->ultima_data)) {
-                    $ultimaOperacao .= ' - '.Carbon::parse($row->ultima_data)->format('d/m/Y');
-                }
-            }
-
             $items[] = [
                 'tipo' => 'cio_previsto_sem_registro',
                 'femea_id' => $femeaId,
                 'id_primaria' => (string) $row->id_primaria,
                 'id_secundaria' => $row->id_secundaria === null ? null : (string) $row->id_secundaria,
-                'localizacao' => $row->localizacao === null ? null : (string) $row->localizacao,
-                'ultima_operacao' => $ultimaOperacao,
+                'localizacao' => $row->localizacao === null ? '-' : (string) $row->localizacao,
+                'ultima_operacao' => empty($row->ultima_acao) ? '-' : (string) $row->ultima_acao . ' (' . PigCycleService::formatDisplayDate(Carbon::parse($row->ultima_data)) . ')',
                 'problema' => $problema,
             ];
 
@@ -377,6 +371,7 @@ class DashboardController extends Controller
 
         $estoqueTotalAnimais = $leitoasAtivas + $matrizesAtivas + $machosAtivos;
         $criterioMaturidadeMin = $this->metaInt('criterio_maturidade_idade_min_dias', 151);
+        $calendarioTipo = PigCycleService::getCalendarType();
 
         return view('dashboard', [
             'estoqueRacoes' => $estoqueRacoes,
@@ -390,6 +385,7 @@ class DashboardController extends Controller
             'saidasMatrizes' => $saidasMatrizes,
             'saidasMachos' => $saidasMachos,
             'criterioMaturidadeMin' => $criterioMaturidadeMin,
+            'calendarioTipo' => $calendarioTipo,
         ]);
     }
 }

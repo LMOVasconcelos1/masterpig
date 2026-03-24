@@ -27,6 +27,11 @@
                     {{ $idadeDias }} Dias de Vida
                 </div>
             @endif
+            @if(isset($calendarType) && $calendarType === '1000_dias' && isset($diasNoCiclo))
+                <div class="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-bold uppercase rounded-full">
+                    Dia {{ $diasNoCiclo }} do Ciclo (1000 Dias)
+                </div>
+            @endif
             @if($tempoGranjaDias)
                 <div class="px-3 py-1 bg-purple-100 text-purple-700 text-xs font-bold uppercase rounded-full">
                     {{ $tempoGranjaDias }} Dias na Granja
@@ -63,11 +68,11 @@
                     </div>
                     <div class="flex justify-between items-center py-2 border-b border-gray-50">
                         <span class="text-sm text-gray-500">Nascimento</span>
-                        <span class="text-sm font-semibold text-gray-900">{{ $femea->data_nascimento ? $femea->data_nascimento->format('d/m/Y') : '-' }}</span>
+                        <span class="text-sm font-semibold text-gray-900">{{ \App\Services\PigCycleService::formatDisplayDate($femea->data_nascimento) }}</span>
                     </div>
                     <div class="flex justify-between items-center py-2 border-b border-gray-50">
                         <span class="text-sm text-gray-500">Compra</span>
-                        <span class="text-sm font-semibold text-gray-900">{{ optional($femea->data_compra)->format('d/m/Y') ?? '-' }}</span>
+                        <span class="text-sm font-semibold text-gray-900">{{ \App\Services\PigCycleService::formatDisplayDate($femea->data_compra) }}</span>
                     </div>
                     <div class="flex justify-between items-center py-2 border-b border-gray-50">
                         <span class="text-sm text-gray-500">Fornecedor</span>
@@ -108,29 +113,36 @@
                 </div>
             </div>
 
+            <!-- Alertas de Ciclo (Novo) -->
+            @if(!empty($alerts))
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-3">
+                <div class="flex items-center gap-2 text-amber-800 font-bold text-xs uppercase tracking-wider">
+                    <i class="fa-solid fa-bell"></i>
+                    Alertas do Ciclo
+                </div>
+                <div class="space-y-2">
+                    @foreach($alerts as $alert)
+                    <div class="flex items-start gap-3 text-sm text-amber-900 bg-white/50 p-3 rounded-xl border border-amber-100">
+                        <i class="fa-solid fa-circle-info mt-0.5 text-amber-500"></i>
+                        <span>{{ $alert }}</span>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
             <!-- Fases do Ciclo (Novo) -->
-            @php
-                $acompanhamento = app(\App\Http\Controllers\AcompanhamentoFemeasController::class)->show($femea->id)->getData();
-                $faseInfo = $acompanhamento->item ?? null;
-            @endphp
-            @if($faseInfo)
+            @if($cycle)
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                     <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider">Status Reprodutivo</h3>
                 </div>
                 <div class="p-6 space-y-4">
                     <div class="flex items-center gap-4">
-                        <div class="w-2 h-12 bg-gray-200 rounded-full"></div>
-                        <div>
-                            <p class="text-[10px] text-gray-400 font-bold uppercase">Fase Anterior</p>
-                            <p class="text-sm font-medium text-gray-600">{{ $faseInfo->fase_anterior ?? '-' }}</p>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-4">
                         <div class="w-2 h-12 bg-primary-500 rounded-full"></div>
                         <div>
                             <p class="text-[10px] text-primary-400 font-bold uppercase">Fase Atual</p>
-                            <p class="text-base font-bold text-gray-900">{{ $faseInfo->fase }}</p>
+                            <p class="text-base font-bold text-gray-900">{{ $cycle['currentPhaseLabel'] }}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-4">
@@ -138,8 +150,8 @@
                         <div>
                             <p class="text-[10px] text-green-500 font-bold uppercase">Próxima Fase</p>
                             <div class="flex items-center gap-2">
-                                <p class="text-sm font-bold text-gray-800">{{ $faseInfo->proxima_fase }}</p>
-                                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{{ $faseInfo->prevista_em }}</span>
+                                <p class="text-sm font-bold text-gray-800">{{ $cycle['nextPhaseLabel'] }}</p>
+                                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{{ $cycle['displayPrevistaEm'] }}</span>
                             </div>
                         </div>
                     </div>
@@ -264,12 +276,12 @@
                         <tbody class="divide-y divide-gray-100">
                             @forelse($performance as $p)
                             <tr class="hover:bg-gray-50/30 transition-colors">
-                                <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ \Carbon\Carbon::parse($p->data_parto)->format('d/m/Y') }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-900 font-medium">{{ \App\Services\PigCycleService::formatDisplayDate(\Carbon\Carbon::parse($p->data_parto)) }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-900 text-center font-bold">{{ $p->total_vivos }}</td>
                                 <td class="px-6 py-4 text-sm text-red-500 text-center">{{ $p->total_mortos }}</td>
                                 <td class="px-6 py-4 text-sm text-orange-500 text-center">{{ $p->total_mumificados }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-500">
-                                    {{ $p->data_desmame ? \Carbon\Carbon::parse($p->data_desmame)->format('d/m/Y') : '-' }}
+                                    {{ \App\Services\PigCycleService::formatDisplayDate($p->data_desmame ? \Carbon\Carbon::parse($p->data_desmame) : null) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-green-600 text-center font-bold">{{ $p->qtd_desmamados ?? '-' }}</td>
                             </tr>

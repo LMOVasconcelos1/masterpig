@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Femea;
+use App\Services\PigCycleService;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
@@ -108,7 +109,7 @@ class FemeaController extends Controller
 
         $items = $query->get()->map(function ($row) {
             $acao = empty($row->ultima_acao) ? null : (string) $row->ultima_acao;
-            $data = empty($row->ultima_data) ? null : Carbon::parse($row->ultima_data)->format('d/m/Y');
+            $data = empty($row->ultima_data) ? null : PigCycleService::formatDisplayDate(Carbon::parse($row->ultima_data));
             $inativo = $acao !== null && in_array($acao, ['morte', 'descarte', 'venda'], true);
 
             return [
@@ -120,7 +121,7 @@ class FemeaController extends Controller
                 'fornecedor' => $row->fornecedor_nome === null ? '-' : (string) $row->fornecedor_nome,
                 'localizacao' => $row->localizacao === null ? '-' : (string) $row->localizacao,
                 'baia' => $row->baia === null ? '-' : (string) $row->baia,
-                'data_compra' => empty($row->data_compra) ? '-' : Carbon::parse($row->data_compra)->format('d/m/Y'),
+                'data_compra' => empty($row->data_compra) ? '-' : PigCycleService::formatDisplayDate(Carbon::parse($row->data_compra)),
                 'ultima_operacao' => $acao === null ? '-' : $acao . ($data ? " - {$data}" : ''),
                 'status' => $inativo ? 'Inativo' : 'Ativo',
             ];
@@ -162,6 +163,7 @@ class FemeaController extends Controller
                 ->leftJoin('maternidade_desmame as md', 'mp.id', '=', 'md.parto_id')
                 ->where('mp.femea_id', $femea->id)
                 ->select([
+                    'mp.id as parto_id',
                     'mp.data as data_parto',
                     'mp.total_vivos',
                     'mp.total_mortos',
@@ -194,6 +196,19 @@ class FemeaController extends Controller
         $idadeDias = $femea->data_nascimento ? (int) $femea->data_nascimento->diffInDays(now()) : null;
         $tempoGranjaDias = $femea->data_compra ? (int) $femea->data_compra->diffInDays(now()) : null;
 
-        return view('admin.plantel.femeas.show', compact('femea', 'performance', 'metas', 'mediaPlantel', 'resumoEventos', 'idadeDias', 'tempoGranjaDias', 'mov'));
+        $lastCobertura = null;
+        if (Schema::hasTable('gestacao_cobertura')) {
+            $row = DB::table('gestacao_cobertura')->where('femea_id', $femea->id)->orderByDesc('data')->first();
+            if ($row) {
+                $lastCobertura = Carbon::parse($row->data);
+            }
+        }
+
+        $calendarType = PigCycleService::getCalendarType();
+        $cycle = $lastCobertura ? PigCycleService::calculateCycle($lastCobertura) : null;
+        $alerts = $cycle ? PigCycleService::getPhaseAlerts($cycle, $femea->id_primaria) : [];
+        $diasNoCiclo = $cycle ? (int) $cycle['totalDaysElapsed'] : null;
+
+        return view('admin.plantel.femeas.show', compact('femea', 'performance', 'metas', 'mediaPlantel', 'resumoEventos', 'idadeDias', 'tempoGranjaDias', 'mov', 'cycle', 'alerts', 'diasNoCiclo', 'calendarType'));
     }
 }

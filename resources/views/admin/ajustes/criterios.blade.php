@@ -29,6 +29,7 @@
         criterio_leitoa_idade_max_dias: '150',
         criterio_maturidade_idade_min_dias: '151',
         criterio_maturidade_idade_max_dias: '220',
+        criterio_calendario_tipo: 'gregoriano',
     },
     load() {
         this.loading = true;
@@ -55,6 +56,7 @@
                 this.criterios.criterio_leitoa_idade_max_dias = (items.criterio_leitoa_idade_max_dias === null || items.criterio_leitoa_idade_max_dias === undefined || String(items.criterio_leitoa_idade_max_dias).trim() === '') ? '150' : String(items.criterio_leitoa_idade_max_dias);
                 this.criterios.criterio_maturidade_idade_min_dias = (items.criterio_maturidade_idade_min_dias === null || items.criterio_maturidade_idade_min_dias === undefined || String(items.criterio_maturidade_idade_min_dias).trim() === '') ? '151' : String(items.criterio_maturidade_idade_min_dias);
                 this.criterios.criterio_maturidade_idade_max_dias = (items.criterio_maturidade_idade_max_dias === null || items.criterio_maturidade_idade_max_dias === undefined || String(items.criterio_maturidade_idade_max_dias).trim() === '') ? '220' : String(items.criterio_maturidade_idade_max_dias);
+                this.criterios.criterio_calendario_tipo = (items.criterio_calendario_tipo === null || items.criterio_calendario_tipo === undefined || String(items.criterio_calendario_tipo).trim() === '') ? 'gregoriano' : String(items.criterio_calendario_tipo);
                 if (data.message) this.error = data.message;
                 this.loaded = true;
             })
@@ -86,6 +88,7 @@
             criterio_leitoa_idade_max_dias: this.criterios.criterio_leitoa_idade_max_dias === '' ? null : Number(String(this.criterios.criterio_leitoa_idade_max_dias).trim()),
             criterio_maturidade_idade_min_dias: this.criterios.criterio_maturidade_idade_min_dias === '' ? null : Number(String(this.criterios.criterio_maturidade_idade_min_dias).trim()),
             criterio_maturidade_idade_max_dias: this.criterios.criterio_maturidade_idade_max_dias === '' ? null : Number(String(this.criterios.criterio_maturidade_idade_max_dias).trim()),
+            criterio_calendario_tipo: this.criterios.criterio_calendario_tipo === '' ? null : String(this.criterios.criterio_calendario_tipo),
         };
 
         fetch('{{ route('admin.criterios.store', [], false) }}', {
@@ -145,6 +148,17 @@
                         <input type="checkbox" class="rounded text-primary-600 focus:ring-primary-500 disabled:opacity-60" x-model="criterios.criterios_enabled" :disabled="locked">
                         Habilitado
                     </label>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Tipo de Calendário</div>
+                <div class="text-xs text-gray-500 mt-1">Define como o ciclo produtivo das fêmeas será calculado em todo o sistema.</div>
+                <div class="mt-4">
+                    <select x-model="criterios.criterio_calendario_tipo" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                        <option value="gregoriano">Gregoriano (Cálculo de dias simples)</option>
+                        <option value="1000_dias">Calendário dos 1000 Dias (Fases fixas padronizadas)</option>
+                    </select>
                 </div>
             </div>
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PigCycleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -40,80 +41,78 @@ class AcompanhamentoFemeasController extends Controller
     private function buildSchedule(?Carbon $cobertura, ?Carbon $lastCio, ?Carbon $lastSaltaCio, array $cfg): array
     {
         if ($cobertura) {
-            $parto = (clone $cobertura)->addDays($cfg['gestacao_dias']);
-            $desmameMin = (clone $parto)->addDays($cfg['lactacao_min_dias']);
-            $desmameMax = (clone $parto)->addDays($cfg['lactacao_max_dias']);
-            $cioPosDesmame = (clone $desmameMin)->addDays($cfg['intervalo_desmame_cio_dias']);
-            $fimCio = (clone $cioPosDesmame)->addDays($cfg['cio_dias']);
+            $cycle = PigCycleService::calculateCycle($cobertura);
 
             return [
                 [
                     'fase' => 'Cobertura',
-                    'data' => $cobertura->format('d/m/Y'),
+                    'data' => PigCycleService::formatDisplayDate($cobertura, $cobertura),
                 ],
                 [
                     'fase' => 'Parto (previsto)',
-                    'data' => $parto->format('d/m/Y'),
+                    'data' => $cycle['displayExpectedBirth'],
                 ],
                 [
                     'fase' => 'Lactação (início previsto)',
-                    'data' => $parto->format('d/m/Y'),
+                    'data' => $cycle['displayExpectedBirth'],
                 ],
                 [
                     'fase' => 'Desmame (previsto)',
-                    'data' => $desmameMin->format('d/m/Y'),
+                    'data' => $cycle['displayWeaning'],
                 ],
                 [
                     'fase' => 'Cio pós-desmame (previsto)',
-                    'data' => $cioPosDesmame->format('d/m/Y'),
+                    'data' => $cycle['displayNextCio'],
                 ],
                 [
                     'fase' => 'Nova cobertura (janela)',
-                    'data' => $cioPosDesmame->format('d/m/Y'),
+                    'data' => $cycle['displayNextCio'],
                 ],
                 [
                     'fase' => 'Fim do cio (previsto)',
-                    'data' => $fimCio->format('d/m/Y'),
+                    'data' => PigCycleService::formatDisplayDate($cycle['endCioDate'], $cobertura),
                 ],
             ];
         }
 
         if ($lastCio) {
-            $fimCio = (clone $lastCio)->addDays($cfg['cio_dias']);
-            $nextCio = (clone $lastCio)->addDays(max(1, $cfg['dias_ate_cio']));
+            $durations = PigCycleService::getCycleDurations();
+            $fimCio = (clone $lastCio)->addDays($durations['cio']);
+            $nextCio = (clone $lastCio)->addDays(max(1, (int) ($cfg['dias_ate_cio'] ?? 21)));
 
             return [
                 [
                     'fase' => 'Cio',
-                    'data' => $lastCio->format('d/m/Y'),
+                    'data' => PigCycleService::formatDisplayDate($lastCio),
                 ],
                 [
                     'fase' => 'Fim do cio (previsto)',
-                    'data' => $fimCio->format('d/m/Y'),
+                    'data' => PigCycleService::formatDisplayDate($fimCio),
                 ],
                 [
                     'fase' => 'Próximo cio (previsto)',
-                    'data' => $nextCio->format('d/m/Y'),
+                    'data' => PigCycleService::formatDisplayDate($nextCio),
                 ],
             ];
         }
 
         if ($lastSaltaCio) {
-            $fimCio = (clone $lastSaltaCio)->addDays($cfg['cio_dias']);
-            $nextCio = (clone $lastSaltaCio)->addDays(max(1, $cfg['dias_ate_cio']));
+            $durations = PigCycleService::getCycleDurations();
+            $fimCio = (clone $lastSaltaCio)->addDays($durations['cio']);
+            $nextCio = (clone $lastSaltaCio)->addDays(max(1, (int) ($cfg['dias_ate_cio'] ?? 21)));
 
             return [
                 [
                     'fase' => 'Salta cio',
-                    'data' => $lastSaltaCio->format('d/m/Y'),
+                    'data' => PigCycleService::formatDisplayDate($lastSaltaCio),
                 ],
                 [
                     'fase' => 'Fim do cio (previsto)',
-                    'data' => $fimCio->format('d/m/Y'),
+                    'data' => PigCycleService::formatDisplayDate($fimCio),
                 ],
                 [
                     'fase' => 'Próximo cio (previsto)',
-                    'data' => $nextCio->format('d/m/Y'),
+                    'data' => PigCycleService::formatDisplayDate($nextCio),
                 ],
             ];
         }
@@ -144,55 +143,13 @@ class AcompanhamentoFemeasController extends Controller
         $cioCoberturaNumero = $coberturaCiclosMin + 1;
 
         if ($lastCobertura) {
-            $parto = (clone $lastCobertura)->addDays($cfg['gestacao_dias']);
-            $desmameMin = (clone $parto)->addDays($cfg['lactacao_min_dias']);
-            $desmameMax = (clone $parto)->addDays($cfg['lactacao_max_dias']);
-            $cioPosDesmame = (clone $desmameMin)->addDays($cfg['intervalo_desmame_cio_dias']);
-            $fimCio = (clone $cioPosDesmame)->addDays($cfg['cio_dias']);
-
-            if ($now->lt($parto)) {
-                return [
-                    'fase_anterior' => 'Cobertura',
-                    'fase' => 'Gestação',
-                    'proxima_fase' => 'Parto',
-                    'prevista_em' => $parto->format('d/m/Y'),
-                ];
-            }
-
-            if ($now->lt($desmameMax)) {
-                return [
-                    'fase_anterior' => 'Parto',
-                    'fase' => 'Lactação',
-                    'proxima_fase' => 'Desmame',
-                    'prevista_em' => $desmameMin->format('d/m/Y'),
-                ];
-            }
-
-            if ($now->lt($cioPosDesmame)) {
-                return [
-                    'fase_anterior' => 'Lactação',
-                    'fase' => 'Intervalo desmame-cio',
-                    'proxima_fase' => 'Cio pós-desmame',
-                    'prevista_em' => $cioPosDesmame->format('d/m/Y'),
-                ];
-            }
-
-            if ($now->lte($fimCio)) {
-                return [
-                    'fase_anterior' => 'Intervalo desmame-cio',
-                    'fase' => 'Cio pós-desmame',
-                    'proxima_fase' => 'Cobertura',
-                    'prevista_em' => $cioPosDesmame->format('d/m/Y'),
-                ];
-            }
-
-            $nextCio = (clone $cioPosDesmame)->addDays(max(1, $cfg['dias_ate_cio']));
+            $cycle = PigCycleService::calculateCycle($lastCobertura);
 
             return [
-                'fase_anterior' => 'Cio pós-desmame',
-                'fase' => 'Intervalo entre cios',
-                'proxima_fase' => 'Cio (previsto)',
-                'prevista_em' => $nextCio->format('d/m/Y'),
+                'fase_anterior' => 'Cobertura',
+                'fase' => $cycle['currentPhaseLabel'],
+                'proxima_fase' => $cycle['nextPhaseLabel'],
+                'prevista_em' => $cycle['displayPrevistaEm'],
             ];
         }
 
@@ -204,9 +161,10 @@ class AcompanhamentoFemeasController extends Controller
         $podeCobrirAgora = $idadeOkCobertura && $cioOkCobertura;
 
         if ($lastSaltaCio) {
-            $cioFim = (clone $lastSaltaCio)->addDays($cfg['cio_dias']);
+            $durations = PigCycleService::getCycleDurations();
+            $cioFim = (clone $lastSaltaCio)->addDays($durations['cio']);
             if ($now->betweenIncluded($lastSaltaCio, $cioFim)) {
-                $nextCio = (clone $lastSaltaCio)->addDays(max(1, $cfg['dias_ate_cio']));
+                $nextCio = (clone $lastSaltaCio)->addDays(max(1, (int) ($cfg['dias_ate_cio'] ?? 21)));
 
                 return [
                     'fase_anterior' => 'Cio',
@@ -218,7 +176,8 @@ class AcompanhamentoFemeasController extends Controller
         }
 
         if ($lastCio) {
-            $cioFim = (clone $lastCio)->addDays($cfg['cio_dias']);
+            $durations = PigCycleService::getCycleDurations();
+            $cioFim = (clone $lastCio)->addDays($durations['cio']);
             if ($now->betweenIncluded($lastCio, $cioFim)) {
                 if ($podeCobrirAgora) {
                     return [
@@ -229,7 +188,7 @@ class AcompanhamentoFemeasController extends Controller
                     ];
                 }
 
-                $nextCio = (clone $lastCio)->addDays(max(1, $cfg['dias_ate_cio']));
+                $nextCio = (clone $lastCio)->addDays(max(1, (int) ($cfg['dias_ate_cio'] ?? 21)));
                 $nextLabel = ($countCios + 1) . 'º cio';
 
                 return [
@@ -423,9 +382,9 @@ class AcompanhamentoFemeasController extends Controller
                 'fase' => $fase['fase'],
                 'proxima_fase' => $fase['proxima_fase'],
                 'prevista_em' => $fase['prevista_em'],
-                'ultima_cobertura' => $lastCob ? $lastCob->format('d/m/Y') : null,
-                'ultimo_cio' => $lastCio ? $lastCio->format('d/m/Y') : null,
-                'ultimo_salta_cio' => $lastSalta ? $lastSalta->format('d/m/Y') : null,
+                'ultima_cobertura' => PigCycleService::formatDisplayDate($lastCob, $lastCob),
+                'ultimo_cio' => PigCycleService::formatDisplayDate($lastCio, $lastCob),
+                'ultimo_salta_cio' => PigCycleService::formatDisplayDate($lastSalta, $lastCob),
             ];
         })->values();
 
@@ -513,9 +472,9 @@ class AcompanhamentoFemeasController extends Controller
                 'fase' => $fase['fase'],
                 'proxima_fase' => $fase['proxima_fase'],
                 'prevista_em' => $fase['prevista_em'],
-                'ultimo_cio' => $lastCio ? $lastCio->format('d/m/Y') : null,
-                'ultimo_salta_cio' => $lastSalta ? $lastSalta->format('d/m/Y') : null,
-                'ultima_cobertura' => $lastCob ? $lastCob->format('d/m/Y') : null,
+                'ultimo_cio' => PigCycleService::formatDisplayDate($lastCio, $lastCob),
+                'ultimo_salta_cio' => PigCycleService::formatDisplayDate($lastSalta, $lastCob),
+                'ultima_cobertura' => PigCycleService::formatDisplayDate($lastCob, $lastCob),
                 'calendario' => $schedule,
             ],
         ]);

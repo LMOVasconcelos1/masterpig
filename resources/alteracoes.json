@@ -115,5 +115,25 @@
       "Ficha da fêmea redesenhada: cards, indicadores, histórico e gráfico comparando com metas e média do plantel",
       "Compra de leitoa: opção de informar \"Já houve cio\" com registro do último cio no ato da compra (sem depender de coluna extra em gestacao_cio)"
     ]
+  },
+  {
+    "date": "2026-03-24",
+    "title": "Calendário de 1000 dias",
+    "items": [
+      "Implementado suporte ao calendário de 1000 dias (sistema de contagem de dias a partir de 01/01/1969)",
+      "Adicionado toggle para alternar entre calendário Gregoriano e 1000 dias no dashboard",
+      "Integrado calendário 1000 dias com todas as funcionalidades de gestação, cio e cobertura",
+      "Corrigido exibição de datas no calendário de 1000 dias em todas as telas do sistema"
+    ]
+  },
+  {
+    "date": "2026-03-24",
+    "title": "Correção de bugs no Dashboard",
+    "items": [
+      "Corrigido botão de toggle de calendário que não estava funcionando corretamente",
+      "Implementado persistência do tipo de calendário selecionado no localStorage",
+      "Adicionado atualização automática da interface ao alternar entre os tipos de calendário",
+      "Melhorada a experiência do usuário com feedback visual adequado ao mudar o tipo de calendário"
+    ]
   }
 ]

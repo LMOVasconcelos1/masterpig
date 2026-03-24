@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PigCycleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -36,23 +37,46 @@ class GestacaoCioController extends Controller
 
         $limit = max(1, min(200, (int) $request->query('limit', 50)));
 
-        $items = DB::table('gestacao_cio as gc')
+        $query = DB::table('gestacao_cio as gc')
             ->join('femea as f', 'f.id', '=', 'gc.femea_id')
             ->orderByDesc('gc.data')
             ->select([
                 'gc.id',
                 'gc.data',
+                'f.id as femea_id',
                 'f.id_primaria',
                 'f.id_secundaria',
             ])
-            ->limit($limit)
-            ->get()
-            ->map(function ($row) {
+            ->limit($limit);
+
+        $rows = $query->get();
+        $ids = $rows->pluck('femea_id')->unique()->toArray();
+
+        $lastCoberturas = [];
+        if (!empty($ids) && Schema::hasTable('gestacao_cobertura')) {
+            $lastCoberturas = DB::table('gestacao_cobertura')
+                ->whereIn('femea_id', $ids)
+                ->selectRaw('femea_id, MAX(data) as last_data')
+                ->groupBy('femea_id')
+                ->pluck('last_data', 'femea_id')
+                ->toArray();
+        }
+
+        $items = $rows->map(function ($row) use ($lastCoberturas) {
+                $dataCio = Carbon::parse($row->data);
+                $lastCob = isset($lastCoberturas[$row->femea_id]) ? Carbon::parse($lastCoberturas[$row->femea_id]) : null;
+                
+                $diaCiclo = null;
+                if ($lastCob) {
+                    $diaCiclo = $lastCob->diffInDays($dataCio, false);
+                }
+
                 return [
                     'id' => (int) $row->id,
                     'matriz' => (string) $row->id_primaria,
                     'matriz_secundaria' => $row->id_secundaria === null ? null : (string) $row->id_secundaria,
-                    'data' => Carbon::parse($row->data)->format('d/m/Y'),
+                    'data' => PigCycleService::formatDisplayDate($dataCio),
+                    'dia_ciclo' => $diaCiclo,
                 ];
             })
             ->values();

@@ -4,7 +4,30 @@
 @section('page_title', '')
 
 @section('content')
-<div x-data="{ tab: (function(){ const t = (new URLSearchParams(window.location.search).get('tab') || 'visao'); return ['visao','lancamentos','acompanhamento','analise','relatorios'].includes(t) ? t : 'visao'; })(), toastOpen: false, toastMessage: '', toastType: 'success' }"
+<div x-data="{ 
+        tab: (function(){ const t = (new URLSearchParams(window.location.search).get('tab') || 'visao'); return ['visao','lancamentos','acompanhamento','analise','relatorios'].includes(t) ? t : 'visao'; })(), 
+        toastOpen: false, 
+        toastMessage: '', 
+        toastType: 'success',
+        calendarType: localStorage.getItem('masterpig_calendar_type') || '1000_dias',
+        toggleCalendar() {
+            const newType = this.calendarType === 'gregoriano' ? '1000_dias' : 'gregoriano';
+            this.calendarType = newType;
+            localStorage.setItem('masterpig_calendar_type', newType);
+            
+            fetch('{{ route('admin.criterios.store', [], false) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                },
+                body: JSON.stringify({ criterio_calendario_tipo: newType })
+            }).then(() => {
+                window.location.reload();
+            });
+        }
+     }"
      x-init="
         window.addEventListener('toast', (e) => { toastMessage = e.detail.message; toastType = e.detail.type || 'success'; toastOpen = true; setTimeout(() => toastOpen = false, 4000); });
      "
@@ -22,6 +45,7 @@
     x-cloak
 >
     <div class="p-4">
+
         <div class="flex items-start">
             <div class="flex-shrink-0">
                 <template x-if="toastType === 'success'">
@@ -46,12 +70,14 @@
 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
     <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="min-w-0">
-            <div class="text-xs font-bold text-primary-700 uppercase tracking-wider">Plantel Reprodutivo</div>
+            <div class="flex items-center gap-3">
+                <div class="text-xs font-bold text-primary-700 uppercase tracking-wider">Plantel Reprodutivo</div>
+            </div>
             <div class="text-sm text-gray-500 mt-1">Visão geral, lançamentos e relatórios</div>
         </div>
         <div class="w-full sm:w-auto grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-1">
             <button type="button" @click="tab = 'visao'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="tab === 'visao' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
-                Visão Geral
+                Plantel
             </button>
             <button type="button" @click="tab = 'lancamentos'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="tab === 'lancamentos' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
                 Lançamentos
@@ -272,6 +298,8 @@
         mortesFemeas: [],
         descartesFemeas: [],
         vendasFemeas: [],
+        cioFemeas: [],
+        cioFemeasLoaded: false,
         racas: [],
         fornecedores: [],
         utilLocalizacoes: [],
@@ -286,7 +314,117 @@
         dataCobertura: '',
         femeaMorteId: '',
         dataMorte: '',
+        femeaCioId: '',
+        dataCio: '',
+        diaCicloCio: '',
         causaMorteId: '',
+
+        // Paginação e busca de fêmeas
+        femeasPage: 1,
+        femeasLimit: 50,
+        femeasTotal: 0,
+        femeasLastPage: 1,
+        femeasSearch: '',
+        femeasFilterRaca: '',
+        femeasFilterFornecedor: '',
+        femeasFilterLocalizacao: '',
+        femeasFilterBaia: '',
+
+        // Paginação e busca de machos
+        machosPage: 1,
+        machosLimit: 50,
+        machosTotal: 0,
+        machosLastPage: 1,
+        machosSearch: '',
+        machosFilterLocalizacao: '',
+        machosFilterBaia: '',
+
+        // Edição rápida de fêmea
+        openEditFemea: false,
+        editFemeaData: {
+            id: '',
+            id_primaria: '',
+            id_secundaria: '',
+            raca_id: '',
+            localizacao: '',
+            baia: ''
+        },
+
+        // Edição rápida de cio
+        openEditCio: false,
+        editCioData: {
+            id: '',
+            data: '',
+            peso: ''
+        },
+
+        openEdit(f) {
+            this.editFemeaData = {
+                id: f.id,
+                id_primaria: f.id_primaria,
+                id_secundaria: f.id_secundaria || '',
+                raca_id: f.raca_id || '',
+                localizacao: f.localizacao || '',
+                baia: f.baia || ''
+            };
+            this.ensureRacas();
+            this.openEditFemea = true;
+        },
+        saveEditFemea() {
+            if (!this.editFemeaData.id_primaria) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'ID Primária é obrigatório', type: 'error' } }));
+                return;
+            }
+            this.saving = true;
+            fetch(`/api/plantel/femeas/${this.editFemeaData.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                },
+                body: JSON.stringify(this.editFemeaData)
+            })
+            .then(async r => {
+                const data = await r.json();
+                if (!r.ok) throw new Error(data.message || 'Erro ao salvar alterações');
+                return data;
+            })
+            .then(data => {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Fêmea atualizada com sucesso!', type: 'success' } }));
+                this.openEditFemea = false;
+                this.ensureFemeasAtivas();
+            })
+            .catch(e => {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message, type: 'error' } }));
+            })
+            .finally(() => this.saving = false);
+        },
+        deleteFemeaRecord(id) {
+            if (!confirm('Tem certeza que deseja excluir esta fêmea permanentemente? Todos os registros relacionados (cios, coberturas, movimentos) também serão removidos.')) return;
+            
+            this.saving = true;
+            fetch(`/api/plantel/femeas/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                }
+            })
+            .then(async r => {
+                const data = await r.json();
+                if (!r.ok) throw new Error(data.message || 'Erro ao excluir fêmea');
+                return data;
+            })
+            .then(data => {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Fêmea excluída com sucesso!', type: 'success' } }));
+                this.ensureFemeasAtivas();
+            })
+            .catch(e => {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message, type: 'error' } }));
+            })
+            .finally(() => this.saving = false);
+        },
         causasMorte: [],
         causasDescarte: [],
         causasVenda: [],
@@ -367,18 +505,16 @@
             if (!(this.item === 'femeas' && this.mov === 'compra' && this.compraFemeasTipo === 'matriz_gestante')) return null;
             const cobIso = this.parseBrDate(this.dataCobertura);
             if (!cobIso) return null;
-            const start = new Date(cobIso + 'T00:00:00');
-            const today = new Date();
-            const diff = Math.floor((today.getTime() - start.getTime()) / 86400000);
-            if (!Number.isFinite(diff) || diff < 0) return null;
-            return diff;
+            
+            const cycle = calculatePigCycle(cobIso + 'T00:00:00', new Date(), this.calendarType);
+            return cycle ? cycle.totalDaysElapsed : null;
         },
         get itemLabel() {
             const map = { femeas: 'Fêmeas', machos: 'Machos', semen: 'Sêmen' };
             return map[this.item] ?? 'Item';
         },
         get movLabel() {
-            const map = { compra: 'Compra', morte: 'Morte', descarte: 'Descarte', venda: 'Venda' };
+            const map = { compra: 'Compra', morte: 'Morte', descarte: 'Descarte', venda: 'Venda', cio: 'Cio' };
             return map[this.mov] ?? 'Movimentação';
         },
         get subtipoLabel() {
@@ -395,11 +531,15 @@
             if (this.mov === 'morte') return `Morte - ${this.itemLabel}`;
             if (this.mov === 'descarte') return `Descarte - ${this.itemLabel}`;
             if (this.mov === 'venda') return `Venda - ${this.itemLabel}`;
+            if (this.mov === 'cio') return `Cio - ${this.itemLabel}`;
             return `${this.movLabel} - ${this.itemLabel}`;
         },
         get modalTitle() {
             if (this.item === 'femeas' && this.mov === 'compra') {
                 return `Incluir compra de ${this.subtipoLabel || 'fêmeas'}`;
+            }
+            if (this.item === 'femeas' && this.mov === 'cio') {
+                return `Novo - Registro de Cio`;
             }
             return `Novo - ${this.tipoLabel}`;
         },
@@ -415,7 +555,12 @@
             const ciclos = Number(this.ciclosAteCompra);
             if (!Number.isFinite(ciclos) || ciclos <= 0) return '';
             const d = new Date(compraIso + 'T00:00:00');
-            d.setDate(d.getDate() - Math.round(ciclos * 21));
+            
+            // Se for 1000 dias, usamos ciclo de 142 dias (114+21+7). 
+            // Se for gregoriano, mantemos o padrão de 21 dias (provavelmente ciclos de cio).
+            const diasPorCiclo = this.calendarType === '1000_dias' ? 142 : 21;
+            
+            d.setDate(d.getDate() - Math.round(ciclos * diasPorCiclo));
             const yyyy = d.getFullYear();
             const mm = String(d.getMonth() + 1).padStart(2, '0');
             const dd = String(d.getDate()).padStart(2, '0');
@@ -445,62 +590,128 @@
         ensureRacas() {
             if (this.racasLoaded) return;
             this.racasLoaded = true;
-            fetch('/api/racas')
+            fetch('{{ url('/api/racas') }}')
                 .then(r => r.json())
                 .then(data => this.racas = data);
         },
         ensureFornecedores() {
             if (this.fornecedoresLoaded) return;
             this.fornecedoresLoaded = true;
-            fetch('/api/fornecedores')
+            fetch('{{ url('/api/fornecedores') }}')
                 .then(r => r.json())
                 .then(data => this.fornecedores = data);
         },
         ensureUtilitarios() {
             if (this.utilitariosLoaded) return;
             this.utilitariosLoaded = true;
-            fetch('/api/utilitarios')
+            fetch('{{ url('/api/utilitarios') }}')
                 .then(r => r.json())
                 .then(data => {
                     this.utilLocalizacoes = Array.isArray(data.localizacoes) ? data.localizacoes : [];
                     this.utilBaias = Array.isArray(data.baias) ? data.baias : [];
                 });
         },
-        ensureFemeasAtivas() {
-            if (this.femeasAtivas.length > 0 && this.femeasMode === 'ativas') return;
-            fetch('/api/plantel/femeas')
-                .then(r => r.json())
+        ensureFemeasAtivas(force = false) {
+            if (!force && this.femeasAtivas.length > 0 && this.femeasMode === 'ativas' && !this.femeasSearch && !this.femeasFilterRaca && !this.femeasFilterFornecedor && !this.femeasFilterLocalizacao && !this.femeasFilterBaia) return;
+            this.lancamentosLoading = true;
+            this.lancamentosError = '';
+            const params = new URLSearchParams({
+                limit: this.femeasLimit,
+                page: this.femeasPage,
+                search: this.femeasSearch,
+                raca_id: this.femeasFilterRaca,
+                fornecedor_id: this.femeasFilterFornecedor,
+                localizacao: this.femeasFilterLocalizacao,
+                baia: this.femeasFilterBaia
+            });
+            fetch(`${API_BASE_URL}/plantel/femeas?${params.toString()}`)
+                .then(async r => {
+                    const data = await r.json().catch(() => null);
+                    if (!r.ok) throw new Error(data?.message || 'Falha ao carregar os dados. Verifique a conexão e tente novamente.');
+                    if (!data) throw new Error('Dados inválidos recebidos do servidor.');
+                    return data;
+                })
                 .then(data => {
-                    this.femeasAtivas = data;
+                    this.femeasAtivas = data.items || [];
+                    this.femeasTotal = data.total || 0;
+                    this.femeasLastPage = data.last_page || 1;
                     this.femeasMode = 'ativas';
-                });
+                })
+                .catch(e => {
+                    this.lancamentosError = e.message;
+                    this.femeasAtivas = [];
+                    this.femeasTotal = 0;
+                })
+                .finally(() => { this.lancamentosLoading = false; });
         },
         ensureFemeasTodas() {
-            if (this.femeasAtivas.length > 0 && this.femeasMode === 'todas') return;
-            fetch('/api/plantel/femeas?all=1')
+            if (this.femeasAtivas.length > 0 && this.femeasMode === 'todas' && !this.femeasSearch) return;
+            this.lancamentosLoading = true;
+            const params = new URLSearchParams({
+                all: '1',
+                limit: this.femeasLimit,
+                page: this.femeasPage,
+                search: this.femeasSearch
+            });
+            fetch(`${API_BASE_URL}/plantel/femeas?${params.toString()}`)
                 .then(r => r.json())
                 .then(data => {
-                    this.femeasAtivas = data;
+                    this.femeasAtivas = data.items || [];
+                    this.femeasTotal = data.total || 0;
+                    this.femeasLastPage = data.last_page || 1;
                     this.femeasMode = 'todas';
-                });
+                })
+                .finally(() => { this.lancamentosLoading = false; });
         },
-        ensureMachosAtivos() {
-            if (this.machosAtivos.length > 0 && this.machosMode === 'ativos') return;
-            fetch('/api/plantel/machos')
-                .then(r => r.json())
+        ensureMachosAtivos(force = false) {
+            if (!force && this.machosAtivos.length > 0 && this.machosMode === 'ativos' && !this.machosSearch && !this.machosFilterLocalizacao && !this.machosFilterBaia) return;
+            this.lancamentosLoading = true;
+            this.lancamentosError = '';
+            const params = new URLSearchParams({
+                limit: this.machosLimit,
+                page: this.machosPage,
+                search: this.machosSearch,
+                localizacao: this.machosFilterLocalizacao,
+                baia: this.machosFilterBaia
+            });
+            fetch(`${API_BASE_URL}/plantel/machos?${params.toString()}`)
+                .then(async r => {
+                    const data = await r.json().catch(() => null);
+                    if (!r.ok) throw new Error(data?.message || 'Falha ao carregar os dados. Verifique a conexão e tente novamente.');
+                    if (!data) throw new Error('Dados inválidos recebidos do servidor.');
+                    return data;
+                })
                 .then(data => {
-                    this.machosAtivos = data;
+                    this.machosAtivos = data.items || [];
+                    this.machosTotal = data.total || 0;
+                    this.machosLastPage = data.last_page || 1;
                     this.machosMode = 'ativos';
-                });
+                })
+                .catch(e => {
+                    this.lancamentosError = e.message;
+                    this.machosAtivos = [];
+                    this.machosTotal = 0;
+                })
+                .finally(() => { this.lancamentosLoading = false; });
         },
         ensureMachosTodos() {
-            if (this.machosAtivos.length > 0 && this.machosMode === 'todos') return;
-            fetch('/api/plantel/machos?all=1')
+            if (this.machosAtivos.length > 0 && this.machosMode === 'todos' && !this.machosSearch) return;
+            this.lancamentosLoading = true;
+            const params = new URLSearchParams({
+                all: '1',
+                limit: this.machosLimit,
+                page: this.machosPage,
+                search: this.machosSearch
+            });
+            fetch(`${API_BASE_URL}/plantel/machos?${params.toString()}`)
                 .then(r => r.json())
                 .then(data => {
-                    this.machosAtivos = data;
+                    this.machosAtivos = data.items || [];
+                    this.machosTotal = data.total || 0;
+                    this.machosLastPage = data.last_page || 1;
                     this.machosMode = 'todos';
-                });
+                })
+                .finally(() => { this.lancamentosLoading = false; });
         },
         afterSaveReload() {
             if (this.item === 'femeas' && this.mov === 'compra') {
@@ -520,65 +731,35 @@
         },
         ensureCausasMorte() {
             if (this.causasMorte.length > 0) return;
-            fetch('/api/plantel/causas-morte')
+            fetch('{{ url('/api/plantel/causas-morte') }}')
                 .then(r => r.json())
                 .then(data => this.causasMorte = data);
         },
         ensureCausasDescarte() {
             if (this.causasDescarte.length > 0) return;
-            fetch('/api/plantel/causas-descarte')
+            fetch('{{ url('/api/plantel/causas-descarte') }}')
                 .then(r => r.json())
                 .then(data => this.causasDescarte = data);
         },
         ensureCausasVenda() {
             if (this.causasVenda.length > 0) return;
-            fetch('/api/plantel/causas-venda')
+            fetch('{{ url('/api/plantel/causas-venda') }}')
                 .then(r => r.json())
                 .then(data => this.causasVenda = data);
         },
         loadComprasFemeas(force = false) {
-            if (!force && !(this.item === 'femeas' && this.mov === 'compra')) return;
-            if (this.comprasFemeasLoaded && !force) return;
-
-            this.lancamentosLoading = true;
-            this.lancamentosError = '';
-
-            const cacheBust = force ? `&_=${Date.now()}` : '';
-            fetch(`/api/plantel/femeas/compras?limit=200${cacheBust}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' })
-                .then(r => r.json())
-                .then(data => {
-                    this.comprasFemeas = data.items ?? [];
-                    this.comprasFemeasLoaded = true;
-                    if (!force && data.message) this.lancamentosError = data.message;
-                })
-                .catch(() => {
-                    this.comprasFemeas = [];
-                    this.comprasFemeasLoaded = true;
-                    if (!force) this.lancamentosError = 'Não foi possível carregar a listagem.';
-                })
-                .finally(() => { this.lancamentosLoading = false; });
+            if (force) {
+                this.femeasAtivas = [];
+                this.femeasMode = '';
+            }
+            this.ensureFemeasAtivas();
         },
         loadComprasMachos(force = false) {
-            if (!force && !(this.item === 'machos' && this.mov === 'compra')) return;
-            if (this.comprasMachosLoaded && !force) return;
-
-            this.lancamentosLoading = true;
-            this.lancamentosError = '';
-
-            const cacheBust = force ? `&_=${Date.now()}` : '';
-            fetch(`/api/plantel/machos/compras?limit=200${cacheBust}`, { headers: { 'Accept': 'application/json' }, cache: 'no-store' })
-                .then(r => r.json())
-                .then(data => {
-                    this.comprasMachos = data.items ?? [];
-                    this.comprasMachosLoaded = true;
-                    if (!force && data.message) this.lancamentosError = data.message;
-                })
-                .catch(() => {
-                    this.comprasMachos = [];
-                    this.comprasMachosLoaded = true;
-                    if (!force) this.lancamentosError = 'Não foi possível carregar a listagem.';
-                })
-                .finally(() => { this.lancamentosLoading = false; });
+            if (force) {
+                this.machosAtivos = [];
+                this.machosMode = '';
+            }
+            this.ensureMachosAtivos();
         },
         loadMortesMachos() {
             if (!(this.item === 'machos' && this.mov === 'morte')) return;
@@ -763,6 +944,8 @@
             this.dataCobertura = '';
             this.femeaMorteId = '';
             this.dataMorte = '';
+            this.femeaCioId = '';
+            this.dataCio = '';
             this.causaMorteId = '';
             this.dataDescarte = '';
             this.causaDescarteId = '';
@@ -825,6 +1008,40 @@
             this.ensureMachosTodos();
             this.ensureCausasVenda();
             this.openNovo = true;
+        },
+        updateDateFromCycleDay(day) {
+            if (!this.femeaCioId || !day) return;
+            const femea = this.femeasAtivas.find(f => String(f.id) === String(this.femeaCioId));
+            if (!femea || !femea.data_cobertura) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Fêmea sem cobertura registrada para cálculo de ciclo', type: 'warning' } }));
+                return;
+            }
+            const base = new Date(femea.data_cobertura + 'T00:00:00');
+            base.setDate(base.getDate() + Number(day));
+            const yyyy = base.getFullYear();
+            const mm = String(base.getMonth() + 1).padStart(2, '0');
+            const dd = String(base.getDate()).padStart(2, '0');
+            this.dataCio = `${dd}/${mm}/${yyyy}`;
+        },
+        openNovoCio() {
+            this.resetForm();
+            this.ensureFemeasAtivas();
+            const now = new Date();
+            this.dataCio = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+            this.diaCicloCio = '';
+            this.openNovo = true;
+        },
+        loadCioFemeas() {
+            this.lancamentosLoading = true;
+            this.lancamentosError = '';
+            fetch('/api/gestacao/cio?limit=200')
+                .then(r => r.json())
+                .then(data => {
+                    this.cioFemeas = Array.isArray(data.items) ? data.items : [];
+                    this.cioFemeasLoaded = true;
+                })
+                .catch(e => this.lancamentosError = 'Erro ao carregar registros de cio')
+                .finally(() => this.lancamentosLoading = false);
         },
         saveRaca() {
             if (!this.novaRacaNome.trim()) {
@@ -1329,7 +1546,48 @@
             })
             .finally(() => { this.saving = false; });
         },
-    }" x-init="loadComprasFemeas(); loadComprasMachos(true)" class="space-y-6">
+        saveCioFemea() {
+            if (!this.femeaCioId) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Selecione uma fêmea', type: 'error' } }));
+                return;
+            }
+
+            const dataIso = this.parseBrDate(this.dataCio);
+            if (!dataIso) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Data inválida', type: 'error' } }));
+                return;
+            }
+
+            this.saving = true;
+
+            fetch('/api/gestacao/cio', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    femea_id: this.femeaCioId,
+                    data: dataIso
+                })
+            })
+            .then(async (r) => {
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok) throw new Error(data?.message || 'Erro ao salvar cio');
+                return data;
+            })
+            .then(data => {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Cio registrado com sucesso!', type: 'success' } }));
+                this.openNovo = false;
+                this.loadCioFemeas();
+            })
+            .catch(e => {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar cio', type: 'error' } }));
+            })
+            .finally(() => { this.saving = false; });
+        },
+    }" x-init="loadComprasFemeas(); loadComprasMachos(true); $watch('item', () => { if(item === 'femeas' && mov === 'compra') loadComprasFemeas(); }); $watch('mov', () => { if(item === 'femeas' && mov === 'compra') loadComprasFemeas(); })" class="space-y-6">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
@@ -1341,7 +1599,7 @@
                 <div class="bg-white border border-gray-100 rounded-2xl p-4">
                     <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">1) Item</div>
                     <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <button type="button" @click="item = 'femeas'; mov = 'compra'; compraFemeasTipo = 'leitoa'; loadComprasFemeas()" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="item === 'femeas' ? 'border-primary-200 bg-primary-50' : 'border-gray-100 bg-white hover:border-gray-200'">
+                        <button type="button" @click="item = 'femeas'; mov = 'compra'; compraFemeasTipo = 'leitoa';" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="item === 'femeas' ? 'border-primary-200 bg-primary-50' : 'border-gray-100 bg-white hover:border-gray-200'">
                             <div class="flex items-center justify-between">
                                 <div class="text-sm font-semibold text-gray-900">Fêmeas</div>
                                 <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="item === 'femeas' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'">
@@ -1359,7 +1617,7 @@
                             </div>
                             <div class="mt-2 text-xs text-gray-500">Reprodutores / machos do plantel.</div>
                         </button>
-                        <button type="button" @click="item = 'semen'" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="item === 'semen' ? 'border-primary-200 bg-primary-50' : 'border-gray-100 bg-white hover:border-gray-200'">
+                        <button type="button" @click="item = 'semen'; mov = null" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="item === 'semen' ? 'border-primary-200 bg-primary-50' : 'border-gray-100 bg-white hover:border-gray-200'">
                             <div class="flex items-center justify-between">
                                 <div class="text-sm font-semibold text-gray-900">Sêmen</div>
                                 <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="item === 'semen' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'">
@@ -1373,7 +1631,7 @@
 
                 <div class="bg-white border border-gray-100 rounded-2xl p-4 mt-4">
                     <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">2) Movimentação</div>
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4" :class="item === 'femeas' ? 'md:grid-cols-5' : 'md:grid-cols-4'">
                         <button type="button" @click="mov = 'compra'; loadComprasFemeas(); loadComprasMachos()" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="mov === 'compra' ? 'border-primary-200 bg-primary-50' : 'border-gray-100 bg-white hover:border-gray-200'">
                             <div class="flex items-center justify-between">
                                 <div class="text-sm font-semibold text-gray-900">Compra</div>
@@ -1382,6 +1640,15 @@
                                 </div>
                             </div>
                             <div class="mt-2 text-xs text-gray-500">Entrada.</div>
+                        </button>
+                        <button type="button" x-show="item === 'femeas'" x-cloak @click="mov = 'cio'; loadCioFemeas()" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="mov === 'cio' ? 'border-pink-200 bg-pink-50' : 'border-gray-100 bg-white hover:border-gray-200'">
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm font-semibold text-gray-900">Cio</div>
+                                <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="mov === 'cio' ? 'bg-pink-600 text-white' : 'bg-gray-100 text-gray-600'">
+                                    <i class="fa-solid fa-venus"></i>
+                                </div>
+                            </div>
+                            <div class="mt-2 text-xs text-gray-500">Registro de cio.</div>
                         </button>
                         <button type="button" @click="mov = 'morte'; loadMortesFemeas(); loadMortesMachos()" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="mov === 'morte' ? 'border-red-200 bg-red-50' : 'border-gray-100 bg-white hover:border-gray-200'">
                             <div class="flex items-center justify-between">
@@ -1455,6 +1722,14 @@
                             Macho
                         </button>
                     </template>
+                    <template x-if="item === 'femeas' && mov === 'cio'">
+                        <button type="button" @click="openNovoCio()" title="Registrar cio" class="inline-flex items-center gap-2 rounded-full border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-pink-50 text-pink-600">
+                                <i class="fa-solid fa-venus"></i>
+                            </span>
+                            Cio de Leitoa
+                        </button>
+                    </template>
                     <template x-if="item === 'femeas' && mov === 'morte'">
                         <button type="button" @click="openNovoMorte()" title="Registrar morte" class="inline-flex items-center justify-center w-11 h-11 rounded-2xl border border-transparent shadow-sm bg-red-600 text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                             <i class="fa-solid fa-skull-crossbones"></i>
@@ -1489,61 +1764,270 @@
             </div>
             <div class="p-6">
                 <template x-if="item === 'femeas' && mov === 'compra'">
-                    <div>
-                        <div class="mb-4 flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <div class="text-sm font-semibold text-gray-700">Listagem</div>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-sm font-bold text-gray-700 uppercase tracking-wider">Status das Fêmeas (Última Operação)</div>
+                        </div>
+
+                        <div class="bg-gray-50/50 border border-gray-100 rounded-2xl p-4 mb-4">
+                            <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Buscar ID</label>
+                                    <div class="relative">
+                                        <input type="text" x-model="femeasSearch" @keydown.enter="femeasPage = 1; ensureFemeasAtivas(true)" class="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500" placeholder="ID primária ou secundária...">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i class="fa-solid fa-magnifying-glass text-gray-400 text-xs"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Raça</label>
+                                    <select x-model="femeasFilterRaca" class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500">
+                                        <option value="">Todas</option>
+                                        <template x-for="r in racas" :key="r.id">
+                                            <option :value="r.id" x-text="r.nome"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fornecedor</label>
+                                    <select x-model="femeasFilterFornecedor" class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500">
+                                        <option value="">Todos</option>
+                                        <template x-for="f in fornecedores" :key="f.id">
+                                            <option :value="f.id" x-text="f.nome"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Localização</label>
+                                    <input type="text" x-model="femeasFilterLocalizacao" class="block w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Galpão A">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Baia</label>
+                                    <input type="text" x-model="femeasFilterBaia" class="block w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 12">
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="button" @click="femeasPage = 1; ensureFemeasAtivas(true)" class="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-semibold rounded-xl shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                        <i class="fa-solid fa-filter mr-2 text-xs"></i>
+                                        Filtrar
+                                    </button>
+                                </div>
                             </div>
-                            <div class="text-xs text-gray-500" x-show="lancamentosLoading">Carregando...</div>
                         </div>
 
                         <div x-show="lancamentosError" class="mb-4 bg-amber-50 border border-amber-100 text-amber-800 rounded-xl px-4 py-3 text-sm" x-text="lancamentosError" x-cloak></div>
 
-                        <div class="overflow-x-auto border border-gray-100 rounded-xl">
+                        <div class="overflow-x-auto border border-gray-100 rounded-2xl">
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID primária</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID secundária</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Raça</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ciclo</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Idade (dias)</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fornecedor</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peso</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase w-20">Ação</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase" x-text="calendarType === '1000_dias' ? 'Dia PIG' : 'Data'"></th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Tipo</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Primária</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Secundária</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Raça</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Idade</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Fornecedor</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Peso</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    <template x-for="row in comprasFemeas" :key="row.id">
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.acao"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="formatData(row.data)"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="formatTipo(row.tipo)"></td>
-                                            <td class="px-4 py-3 text-sm font-semibold text-gray-900" x-text="row.id_primaria"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.id_secundaria ?? '-'"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.raca ?? '-'"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.ciclo ?? '-'"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="formatIdade(row.idade_dias)"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.fornecedor ?? '-'"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.peso ?? '-'"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.valor ?? '-'"></td>
+                                    <template x-for="f in femeasAtivas" :key="f.id">
+                                        <tr class="hover:bg-gray-50 transition-colors group">
+                                            <td class="px-4 py-3">
+                                                <div class="flex items-center gap-1">
+                                                    <button @click.stop="openEdit(f)" class="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition-all" title="Editar fêmea">
+                                                        <i class="fa-solid fa-pencil"></i>
+                                                    </button>
+                                                    <button @click.stop="deleteFemeaRecord(f.id)" class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all" title="Excluir fêmea">
+                                                        <i class="fa-solid fa-trash-can"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm font-mono text-gray-600" x-text="f.ultima_data_formatada"></td>
+                                            <td class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase" x-text="f.tipo"></td>
+                                            <td class="px-4 py-3 cursor-pointer" @click="window.location.href = `/admin/plantel/femeas/${f.id}`">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="text-sm font-bold text-primary-700 group-hover:underline" x-text="f.id_primaria"></div>
+                                                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-gray-300 group-hover:text-primary-400"></i>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-gray-600 cursor-pointer" @click="window.location.href = `/admin/plantel/femeas/${f.id}`" x-text="f.id_secundaria || '-'"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.raca"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.idade_dias !== null ? f.idade_dias + ' d' : '-'"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.fornecedor"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.peso_formatado"></td>
                                         </tr>
                                     </template>
-                                    <tr x-show="!lancamentosLoading && comprasFemeas.length === 0" x-cloak>
-                                        <td colspan="11" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
+                                    <tr x-show="!lancamentosLoading && femeasAtivas.length === 0" x-cloak>
+                                        <td colspan="9" class="px-4 py-12 text-sm text-gray-500 text-center italic">
+                                            <div class="flex flex-col items-center justify-center space-y-2">
+                                                <i class="fa-solid fa-magnifying-glass text-3xl text-gray-200"></i>
+                                                <span>Nenhum registro encontrado. Tente ajustar os filtros ou clique em "Filtrar".</span>
+                                            </div>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+
+                        <div class="flex items-center justify-between bg-white px-4 py-3 sm:px-6 border border-gray-100 rounded-2xl" x-show="femeasTotal > 0">
+                            <div class="flex flex-1 justify-between sm:hidden">
+                                <button @click="if(femeasPage > 1) { femeasPage--; ensureFemeasAtivas(); }" :disabled="femeasPage === 1" class="relative inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Anterior</button>
+                                <button @click="if(femeasPage < femeasLastPage) { femeasPage++; ensureFemeasAtivas(); }" :disabled="femeasPage === femeasLastPage" class="relative ml-3 inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Próximo</button>
+                            </div>
+                            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-700">
+                                        Mostrando <span class="font-medium" x-text="((femeasPage - 1) * femeasLimit) + 1"></span> a <span class="font-medium" x-text="Math.min(femeasPage * femeasLimit, femeasTotal)"></span> de <span class="font-medium" x-text="femeasTotal"></span> resultados
+                                    </p>
+                                </div>
+                                <div>
+                                    <nav class="isolate inline-flex -space-x-px rounded-xl shadow-sm" aria-label="Pagination">
+                                        <button @click="femeasPage = 1; ensureFemeasAtivas()" :disabled="femeasPage === 1" class="relative inline-flex items-center rounded-l-xl px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
+                                            <span class="sr-only">Primeira</span>
+                                            <i class="fa-solid fa-angles-left text-xs"></i>
+                                        </button>
+                                        <button @click="if(femeasPage > 1) { femeasPage--; ensureFemeasAtivas(); }" :disabled="femeasPage === 1" class="relative inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
+                                            <span class="sr-only">Anterior</span>
+                                            <i class="fa-solid fa-chevron-left text-xs"></i>
+                                        </button>
+                                        <span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
+                                            Pág. <span x-text="femeasPage"></span> de <span x-text="femeasLastPage"></span>
+                                        </span>
+                                        <button @click="if(femeasPage < femeasLastPage) { femeasPage++; ensureFemeasAtivas(); }" :disabled="femeasPage === femeasLastPage" class="relative inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
+                                            <span class="sr-only">Próxima</span>
+                                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                                        </button>
+                                        <button @click="femeasPage = femeasLastPage; ensureFemeasAtivas()" :disabled="femeasPage === femeasLastPage" class="relative inline-flex items-center rounded-r-xl px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
+                                            <span class="sr-only">Última</span>
+                                            <i class="fa-solid fa-angles-right text-xs"></i>
+                                        </button>
+                                    </nav>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </template>
                 <template x-if="item === 'machos' && mov === 'compra'">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="text-sm font-bold text-gray-700 uppercase tracking-wider">Status dos Machos</div>
+                        </div>
+
+                        <div class="bg-gray-50/50 border border-gray-100 rounded-2xl p-4 mb-4">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div class="md:col-span-2">
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Buscar ID</label>
+                                    <div class="relative">
+                                        <input type="text" x-model="machosSearch" @keydown.enter="machosPage = 1; ensureMachosAtivos(true)" class="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500" placeholder="ID primária ou secundária...">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <i class="fa-solid fa-magnifying-glass text-gray-400 text-xs"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Localização</label>
+                                    <input type="text" x-model="machosFilterLocalizacao" class="block w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Galpão A">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Baia</label>
+                                    <input type="text" x-model="machosFilterBaia" class="block w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 12">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Limite</label>
+                                    <select x-model="machosLimit" class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500">
+                                        <option value="10">10 por pág.</option>
+                                        <option value="25">25 por pág.</option>
+                                        <option value="50">50 por pág.</option>
+                                        <option value="100">100 por pág.</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="button" @click="machosPage = 1; ensureMachosAtivos(true)" class="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-semibold rounded-xl shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                        <i class="fa-solid fa-filter mr-2 text-xs"></i>
+                                        Filtrar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div x-show="lancamentosError" class="mb-4 bg-amber-50 border border-amber-100 text-amber-800 rounded-xl px-4 py-3 text-sm" x-text="lancamentosError" x-cloak></div>
+
+                        <div class="overflow-x-auto border border-gray-100 rounded-2xl">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Primária</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Secundária</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Localização</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Baia</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <template x-for="m in machosAtivos" :key="m.id">
+                                        <tr class="hover:bg-gray-50 transition-colors group">
+                                            <td class="px-4 py-3 text-sm font-bold text-primary-700" x-text="m.id_primaria"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="m.id_secundaria || '-'"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="m.localizacao || '-'"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="m.baia || '-'"></td>
+                                        </tr>
+                                    </template>
+                                    <tr x-show="!lancamentosLoading && machosAtivos.length === 0" x-cloak>
+                                        <td colspan="4" class="px-4 py-12 text-sm text-gray-500 text-center italic">
+                                            <div class="flex flex-col items-center justify-center space-y-2">
+                                                <i class="fa-solid fa-magnifying-glass text-3xl text-gray-200"></i>
+                                                <span>Nenhum registro encontrado. Tente ajustar os filtros ou clique em "Filtrar".</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="flex items-center justify-between bg-white px-4 py-3 sm:px-6 border border-gray-100 rounded-2xl" x-show="machosTotal > 0">
+                            <div class="flex flex-1 justify-between sm:hidden">
+                                <button @click="if(machosPage > 1) { machosPage--; ensureMachosAtivos(); }" :disabled="machosPage === 1" class="relative inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Anterior</button>
+                                <button @click="if(machosPage < machosLastPage) { machosPage++; ensureMachosAtivos(); }" :disabled="machosPage === machosLastPage" class="relative ml-3 inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Próximo</button>
+                            </div>
+                            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-700">
+                                        Mostrando <span class="font-medium" x-text="((machosPage - 1) * machosLimit) + 1"></span> a <span class="font-medium" x-text="Math.min(machosPage * machosLimit, machosTotal)"></span> de <span class="font-medium" x-text="machosTotal"></span> resultados
+                                    </p>
+                                </div>
+                                <div>
+                                    <nav class="isolate inline-flex -space-x-px rounded-xl shadow-sm" aria-label="Pagination">
+                                        <button @click="machosPage = 1; ensureMachosAtivos()" :disabled="machosPage === 1" class="relative inline-flex items-center rounded-l-xl px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
+                                            <span class="sr-only">Primeira</span>
+                                            <i class="fa-solid fa-angles-left text-xs"></i>
+                                        </button>
+                                        <button @click="if(machosPage > 1) { machosPage--; ensureMachosAtivos(); }" :disabled="machosPage === 1" class="relative inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
+                                            <span class="sr-only">Anterior</span>
+                                            <i class="fa-solid fa-chevron-left text-xs"></i>
+                                        </button>
+                                        <span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
+                                            Pág. <span x-text="machosPage"></span> de <span x-text="machosLastPage"></span>
+                                        </span>
+                                        <button @click="if(machosPage < machosLastPage) { machosPage++; ensureMachosAtivos(); }" :disabled="machosPage === machosLastPage" class="relative inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
+                                            <span class="sr-only">Próxima</span>
+                                            <i class="fa-solid fa-chevron-right text-xs"></i>
+                                        </button>
+                                        <button @click="machosPage = machosLastPage; ensureMachosAtivos()" :disabled="machosPage === machosLastPage" class="relative inline-flex items-center rounded-r-xl px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
+                                            <span class="sr-only">Última</span>
+                                            <i class="fa-solid fa-angles-right text-xs"></i>
+                                        </button>
+                                    </nav>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="item === 'femeas' && mov === 'cio'">
                     <div>
                         <div class="mb-4 flex items-center justify-between">
-                            <div class="text-sm font-semibold text-gray-700">Listagem</div>
+                            <div class="text-sm font-semibold text-gray-700">Listagem de registros de cio</div>
                             <div class="text-xs text-gray-500" x-show="lancamentosLoading">Carregando...</div>
                         </div>
 
@@ -1553,42 +2037,78 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID primária</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID secundária</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Raça</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Idade (dias)</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fornecedor</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peso</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matriz</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" x-text="calendarType === '1000_dias' ? 'Ciclo' : 'Data'"></th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    <template x-for="row in comprasMachos" :key="row.id">
+                                    <template x-for="row in cioFemeas" :key="row.id">
                                         <tr class="hover:bg-gray-50">
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.acao"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.data"></td>
-                                            <td class="px-4 py-3 text-sm font-semibold text-gray-900" x-text="row.id_primaria"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.id_secundaria ?? '-'"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.raca ?? '-'"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.idade_dias ?? '-'"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.fornecedor ?? '-'"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.peso ?? '-'"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.valor ?? '-'"></td>
+                                            <td class="px-4 py-3 text-sm font-semibold text-gray-900" x-text="row.matriz + (row.matriz_secundaria ? ' (' + row.matriz_secundaria + ')' : '')"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="calendarType === '1000_dias' ? 'Dia ' + row.dia_ciclo : row.data"></td>
                                         </tr>
                                     </template>
-                                    <tr x-show="!lancamentosLoading && comprasMachos.length === 0" x-cloak>
-                                        <td colspan="9" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
+                                    <tr x-show="!lancamentosLoading && cioFemeas.length === 0" x-cloak>
+                                        <td colspan="2" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </template>
-                <template x-if="!(item === 'femeas' && mov === 'compra') && !(item === 'femeas' && mov === 'morte') && !(item === 'femeas' && mov === 'descarte') && !(item === 'femeas' && mov === 'venda')">
-                    <div class="bg-gray-50 border border-gray-100 rounded-xl p-6 text-sm text-gray-600">
-                        Tela pronta. Os demais tipos serão implementados na sequência.
+                <template x-if="!(item === 'femeas' && mov === 'compra') && !(item === 'femeas' && mov === 'morte') && !(item === 'femeas' && mov === 'descarte') && !(item === 'femeas' && mov === 'venda') && !(item === 'femeas' && mov === 'cio')">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm font-bold text-gray-700 uppercase tracking-wider">Status das Fêmeas (Última Operação)</div>
+                            <div class="text-xs text-gray-500" x-show="femeasLoading">Carregando...</div>
+                        </div>
+                        
+                        <div class="overflow-x-auto border border-gray-100 rounded-2xl">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase w-20">Ação</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase" x-text="calendarType === '1000_dias' ? 'Dia PIG' : 'Data'"></th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Tipo</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Primária</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Secundária</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Raça</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Idade</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Fornecedor</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Peso</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <template x-for="f in femeasAtivas" :key="f.id">
+                                        <tr class="hover:bg-gray-50 transition-colors group">
+                                            <td class="px-4 py-3">
+                                                <div class="flex items-center gap-1">
+                                                    <button @click.stop="openEdit(f)" class="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition-all" title="Editar fêmea">
+                                                        <i class="fa-solid fa-pencil"></i>
+                                                    </button>
+                                                    <button @click.stop="deleteFemeaRecord(f.id)" class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all" title="Excluir fêmea">
+                                                        <i class="fa-solid fa-trash-can"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm font-mono text-gray-600" x-text="f.ultima_data_formatada"></td>
+                                            <td class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase" x-text="f.tipo"></td>
+                                            <td class="px-4 py-3 cursor-pointer" @click="window.location.href = `/admin/plantel/femeas/${f.id}`">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="text-sm font-bold text-primary-700 group-hover:underline" x-text="f.id_primaria"></div>
+                                                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-gray-300 group-hover:text-primary-400"></i>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.id_secundaria || '-'"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.raca"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.idade_dias !== null ? f.idade_dias + ' d' : '-'"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.fornecedor"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.peso_formatado"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </template>
                 <template x-if="item === 'femeas' && mov === 'morte'">
@@ -2075,6 +2595,34 @@
                                 </div>
                             </div>
                         </template>
+
+                        <template x-if="item === 'femeas' && mov === 'cio'">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="sm:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700">Fêmea (Leitoa / Matriz vazia)</label>
+                                    <select x-model="femeaCioId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                        <option value="">Selecione...</option>
+                                        <template x-for="f in femeasAtivas" :key="f.id">
+                                            <option :value="String(f.id)" x-text="f.id_primaria + (f.id_secundaria ? ' / ' + f.id_secundaria : '')"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700" x-text="calendarType === '1000_dias' ? 'Dia do Ciclo' : 'Data do cio'"></label>
+                                    <template x-if="calendarType !== '1000_dias'">
+                                        <input type="text" x-model="dataCio" @input="dataCio = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
+                                    </template>
+                                    <template x-if="calendarType === '1000_dias'">
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="text-gray-500 text-sm">Dia</span>
+                                            <input type="number" x-model="diaCicloCio" @input="updateDateFromCycleDay($event.target.value)" class="w-24 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 114">
+                                            <span class="text-xs text-gray-400" x-text="dataCio ? '(' + dataCio + ')' : ''"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+
                         <template x-if="item === 'machos' && mov === 'compra'">
                             <div class="space-y-4">
                                 <template x-if="openNovoTab === 'principal'">
@@ -2365,7 +2913,75 @@
                                 <template x-if="saving"><span>Gravando...</span></template>
                             </button>
                         </template>
+                        <template x-if="item === 'femeas' && mov === 'cio'">
+                            <button type="button" @click="saveCioFemea()" :disabled="saving" class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-pink-600 text-sm font-semibold text-white hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
+                                <template x-if="!saving"><span>Salvar</span></template>
+                                <template x-if="saving"><span>Gravando...</span></template>
+                            </button>
+                        </template>
                         <button type="button" @click="openNovo = false" :disabled="saving" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 shadow-sm px-5 py-2.5 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto disabled:opacity-50">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Edição Rápida de Fêmea -->
+        <div x-show="openEditFemea" class="fixed inset-0 z-[110] overflow-y-auto" x-cloak>
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                <div x-show="openEditFemea" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 transition-opacity" aria-hidden="true" @click="openEditFemea = false">
+                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                </div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <div x-show="openEditFemea" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary-100 text-primary-600 sm:mx-0 sm:h-10 sm:w-10">
+                                <i class="fa-solid fa-pencil text-lg"></i>
+                            </div>
+                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                <h3 class="text-lg leading-6 font-bold text-gray-900">Editar Fêmea</h3>
+                                <div class="mt-4 space-y-4">
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">ID Primária</label>
+                                            <input type="text" x-model="editFemeaData.id_primaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700">ID Secundária</label>
+                                            <input type="text" x-model="editFemeaData.id_secundaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Raça</label>
+                                        <select x-model="editFemeaData.raca_id" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                            <option value="">Selecione...</option>
+                                            <template x-for="r in racas" :key="r.id">
+                                                <option :value="String(r.id)" x-text="r.nome"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Localização (Galpão)</label>
+                                        <input type="text" x-model="editFemeaData.localizacao" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Gestação 01">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Sala / Baia</label>
+                                        <input type="text" x-model="editFemeaData.baia" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Sala 02 / Baia 15">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                        <button type="button" @click="saveEditFemea()" :disabled="saving" class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto disabled:opacity-50">
+                            <template x-if="!saving"><span>Salvar</span></template>
+                            <template x-if="saving"><span>Salvando...</span></template>
+                        </button>
+                        <button type="button" @click="openEditFemea = false" :disabled="saving" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 shadow-sm px-5 py-2.5 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto">
                             Cancelar
                         </button>
                     </div>
@@ -3187,4 +3803,118 @@
 </div>
 
 </div>
+
+<script>
+    const API_BASE_URL = '/api';
+    const PIG_CYCLE_DAYS = {
+        gestacao: 114,
+        lactacao: 21,
+        intervalo: 7,
+        recria: 63,
+        terminacao: 70,
+        cio: 3
+    };
+
+    const PIG_BASE_DATE = '1969-01-01';
+
+    function toPigDay(date) {
+        if (!date) return null;
+        const start = new Date(PIG_BASE_DATE + 'T00:00:00');
+        const end = new Date(date);
+        end.setHours(0, 0, 0, 0);
+        const diff = Math.floor((end.getTime() - start.getTime()) / 86400000);
+        return diff + 1;
+    }
+
+    function calculatePigCycle(coverageDate, referenceDate = new Date(), calendarType = 'gregoriano', config = {}) {
+        const durations = calendarType === '1000_dias' ? PIG_CYCLE_DAYS : {
+            gestacao: Number(config.gestacao_dias) || 114,
+            lactacao: Number(config.lactacao_max_dias) || 21,
+            intervalo: Number(config.intervalo_desmame_cio_dias) || 5,
+            recria: 63,
+            terminacao: 70,
+            cio: Number(config.cio_dias) || 3
+        };
+
+        const start = new Date(coverageDate);
+        if (isNaN(start.getTime())) return null;
+
+        const ref = new Date(referenceDate);
+        ref.setHours(0, 0, 0, 0);
+
+        const expectedBirthDate = new Date(start);
+        expectedBirthDate.setDate(start.getDate() + durations.gestacao);
+
+        const weaningDate = new Date(expectedBirthDate);
+        weaningDate.setDate(expectedBirthDate.getDate() + durations.lactacao);
+
+        const nextCioDate = new Date(weaningDate);
+        nextCioDate.setDate(weaningDate.getDate() + durations.intervalo);
+
+        const endCioDate = new Date(nextCioDate);
+        endCioDate.setDate(nextCioDate.getDate() + durations.cio);
+
+        const diffDays = (d1, d2) => {
+            const t1 = new Date(d1).setHours(0, 0, 0, 0);
+            const t2 = new Date(d2).setHours(0, 0, 0, 0);
+            return Math.floor((t2 - t1) / (1000 * 60 * 60 * 24));
+        };
+
+        const formatDisplay = (date) => {
+            if (!date) return '-';
+            if (calendarType === '1000_dias') {
+                return toPigDay(date);
+            }
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            return `${dd}/${mm}/${yyyy}`;
+        };
+
+        const totalDaysElapsed = diffDays(start, ref);
+        let currentPhase = 'concluido';
+        let currentPhaseLabel = 'Concluído';
+        let nextPhaseLabel = '-';
+        let previstaEm = null;
+
+        if (ref < expectedBirthDate) {
+            currentPhase = 'gestacao';
+            currentPhaseLabel = 'Gestação';
+            nextPhaseLabel = 'Parto';
+            previstaEm = expectedBirthDate;
+        } else if (ref < weaningDate) {
+            currentPhase = 'lactacao';
+            currentPhaseLabel = 'Lactação';
+            nextPhaseLabel = 'Desmame';
+            previstaEm = weaningDate;
+        } else if (ref < nextCioDate) {
+            currentPhase = 'intervalo';
+            currentPhaseLabel = 'Intervalo desmame-cio';
+            nextPhaseLabel = 'Cio pós-desmame';
+            previstaEm = nextCioDate;
+        } else if (ref <= endCioDate) {
+            currentPhase = 'cio';
+            currentPhaseLabel = 'Cio pós-desmame';
+            nextPhaseLabel = 'Cobertura';
+            previstaEm = nextCioDate;
+        }
+
+        return {
+            coverageDate: start,
+            expectedBirthDate,
+            weaningDate,
+            nextCioDate,
+            endCioDate,
+            currentPhase,
+            currentPhaseLabel,
+            nextPhaseLabel,
+            previstaEm,
+            totalDaysElapsed,
+            displayExpectedBirth: formatDisplay(expectedBirthDate),
+            displayWeaning: formatDisplay(weaningDate),
+            displayNextCio: formatDisplay(nextCioDate),
+            displayPrevistaEm: formatDisplay(previstaEm)
+        };
+    }
+</script>
 @endsection

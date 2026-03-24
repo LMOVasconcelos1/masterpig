@@ -43,6 +43,7 @@ class CriteriosController extends Controller
             'criterio_leitoa_idade_max_dias' => '150',
             'criterio_maturidade_idade_min_dias' => '151',
             'criterio_maturidade_idade_max_dias' => '220',
+            'criterio_calendario_tipo' => 'gregoriano',
         ];
 
         $items = [];
@@ -134,6 +135,7 @@ class CriteriosController extends Controller
             'criterio_leitoa_idade_max_dias' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'criterio_maturidade_idade_min_dias' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'criterio_maturidade_idade_max_dias' => ['nullable', 'integer', 'min:0', 'max:1000'],
+            'criterio_calendario_tipo' => ['nullable', 'in:gregoriano,1000_dias'],
         ];
     }
 }
