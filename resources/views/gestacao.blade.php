@@ -19,7 +19,6 @@
         usuarios: [],
         coberturas: [],
         perdas: [],
-        cios: [],
         saltasCio: [],
 
         criteriosLoaded: false,
@@ -70,13 +69,8 @@
             femeaId: '',
             data: '',
         },
-        cio: {
-            femeaId: '',
-            data: '',
-        },
 
         openSaltaCio: false,
-        openCio: false,
 
         isoToBr(iso) {
             const v = String(iso || '').trim();
@@ -122,7 +116,6 @@
             this.cobertura.data = `${dd}/${mm}/${yyyy}`;
             this.perda.data = `${dd}/${mm}/${yyyy}`;
             this.saltaCio.data = `${dd}/${mm}/${yyyy}`;
-            this.cio.data = `${dd}/${mm}/${yyyy}`;
             this.cobertura.hora = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
             fetch('/api/plantel/femeas?previsao_cio=1')
@@ -162,7 +155,6 @@
 
             this.loadCoberturas();
             this.loadPerdas();
-            this.loadCio();
             this.loadSaltaCio();
         },
 
@@ -181,16 +173,6 @@
                 .then(r => r.json())
                 .then(data => {
                     this.perdas = Array.isArray(data.items) ? data.items : [];
-                    if (data.message) this.error = data.message;
-                })
-                .catch(() => {});
-        },
-
-        loadCio() {
-            fetch('/api/gestacao/cio?limit=50', { headers: { 'Accept': 'application/json' } })
-                .then(r => r.json())
-                .then(data => {
-                    this.cios = Array.isArray(data.items) ? data.items : [];
                     if (data.message) this.error = data.message;
                 })
                 .catch(() => {});
@@ -234,34 +216,6 @@
                 });
         },
 
-        deleteCio(id) {
-            const rowId = Number(id);
-            if (!Number.isFinite(rowId) || rowId <= 0) return;
-            if (!confirm('Excluir este registro de cio?')) return;
-
-            fetch(`/api/gestacao/cio/${rowId}`, {
-                method: 'DELETE',
-                credentials: 'same-origin',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
-                },
-            })
-                .then(async (r) => {
-                    const data = await r.json().catch(() => ({}));
-                    if (!r.ok) throw new Error(data?.message || 'Erro ao excluir cio');
-                    return data;
-                })
-                .then((data) => {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Registro excluído com sucesso!', type: 'success' } }));
-                    this.loadCio();
-                })
-                .catch((e) => {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao excluir cio', type: 'error' } }));
-                });
-        },
-
         deleteSaltaCio(id) {
             const rowId = Number(id);
             if (!Number.isFinite(rowId) || rowId <= 0) return;
@@ -299,83 +253,6 @@
         openPerdaModal() {
             this.error = '';
             this.openPerda = true;
-        },
-        cioMinDias() {
-            const n = Number(this.criterios.leitoaMinDias);
-            return Number.isFinite(n) ? n : 150;
-        },
-        cioMaxDias() {
-            const n = Number(this.criterios.leitoaMaxDias);
-            return Number.isFinite(n) ? n : 210;
-        },
-        cioDateObj() {
-            return this.brToDate(this.cio.data);
-        },
-        cioIdadeDias(f) {
-            const dt = this.cioDateObj();
-            const nasc = f && f.data_nascimento ? new Date(String(f.data_nascimento) + 'T00:00:00') : null;
-            if (!dt || !nasc || Number.isNaN(nasc.getTime())) return null;
-            const ms = dt.getTime() - nasc.getTime();
-            return Math.floor(ms / 86400000);
-        },
-        isCioElegivel(f) {
-            if (!f) return false;
-            
-            const selectedDate = this.cioDateObj();
-            if (!selectedDate) return false;
-
-            // Se a API retornou previsão, usamos ela como critério principal
-            if (f.previsao_cio_inicio && f.previsao_cio_fim) {
-                const inicio = new Date(f.previsao_cio_inicio + 'T00:00:00');
-                const fim = new Date(f.previsao_cio_fim + 'T00:00:00');
-                return selectedDate >= inicio && selectedDate <= fim;
-            }
-
-            // Fallback para leitoas sem histórico (primeiro cio)
-            if (String(f.tipo || '') === 'leitoa') {
-                const idade = this.cioIdadeDias(f);
-                if (idade === null || idade < 0) return false;
-                return idade >= this.cioMinDias() && idade <= this.cioMaxDias();
-            }
-
-            return false;
-        },
-        cioOptions() {
-            // Retorna todas as matrizes (leitoa/vazia) que estão na janela de previsão
-            // ou leitoas na janela de idade
-            return (this.matrizes || []).filter((f) => this.isCioElegivel(f));
-        },
-        cioSelected() {
-            const id = String(this.cio.femeaId || '');
-            return (this.matrizes || []).find((f) => String(f.id) === id) || null;
-        },
-        cioCanSave() {
-            const f = this.cioSelected();
-            return !!f && this.isCioElegivel(f);
-        },
-        cioStatusText() {
-            const f = this.cioSelected();
-            if (!f) return '';
-
-            if (f.previsao_cio_inicio && f.previsao_cio_fim) {
-                const inicio = this.isoToBr(f.previsao_cio_inicio);
-                const fim = this.isoToBr(f.previsao_cio_fim);
-                return `Cio previsto para o período de ${inicio} a ${fim}.`;
-            }
-
-            const idade = this.cioIdadeDias(f);
-            if (idade === null) return 'Não foi possível calcular a idade (verifique a data de nascimento).';
-            const min = this.cioMinDias();
-            const max = this.cioMaxDias();
-            if (idade < min) return `Idade ${idade} dias. Ainda em crescimento (mínimo ${min}).`;
-            if (idade > max) return `Idade ${idade} dias. Fora da janela reprodutiva (${min}–${max}).`;
-            return `Idade ${idade} dias. Dentro da janela reprodutiva (${min}–${max}).`;
-        },
-        openCioModal() {
-            this.error = '';
-            this.openCio = true;
-            const options = this.cioOptions();
-            this.cio.femeaId = options.length > 0 ? String(options[0].id) : '';
         },
         openSaltaCioModal() {
             this.error = '';
@@ -611,61 +488,6 @@
                 .finally(() => { this.saving = false; });
         },
 
-        saveCio() {
-            if (!this.cio.femeaId) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Selecione a fêmea', type: 'error' } }));
-                return;
-            }
-            if (!this.cio.data) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe a data', type: 'error' } }));
-                return;
-            }
-            if (!this.cioCanSave()) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: this.cioStatusText() || 'Não é possível registrar cio para esta fêmea.', type: 'error' } }));
-                return;
-            }
-
-            this.saving = true;
-
-            const dataIso = this.brToIso(this.cio.data);
-            if (!dataIso) {
-                this.saving = false;
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe a data (dd/mm/aaaa)', type: 'error' } }));
-                return;
-            }
-
-            const payload = {
-                femea_id: Number(this.cio.femeaId),
-                data: dataIso,
-            };
-
-            fetch('/api/gestacao/cio', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content')
-                },
-                body: JSON.stringify(payload)
-            })
-                .then(async (r) => {
-                    const data = await r.json().catch(() => ({}));
-                    if (!r.ok) throw new Error(data?.message || 'Erro ao salvar cio');
-                    return data;
-                })
-                .then(() => {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Cio registrado com sucesso!', type: 'success' } }));
-                    this.openCio = false;
-                    this.loadCio();
-                })
-                .catch(e => {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar cio', type: 'error' } }));
-                })
-                .finally(() => { this.saving = false; });
-        },
-
         saveSaltaCio() {
             if (!this.saltaCio.femeaId) {
                 window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Selecione a fêmea', type: 'error' } }));
@@ -757,9 +579,6 @@
                     <button type="button" @click="lancTab = 'perda'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="lancTab === 'perda' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
                         Perdas
                     </button>
-                    <button type="button" @click="lancTab = 'cio'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="lancTab === 'cio' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
-                        Cio
-                    </button>
                     <button type="button" @click="lancTab = 'salta_cio'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="lancTab === 'salta_cio' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
                         Salta cio
                     </button>
@@ -769,9 +588,6 @@
                         <i class="fa-solid fa-plus"></i>
                     </button>
                     <button type="button" x-show="lancTab === 'perda'" x-cloak @click="openPerdaModal()" class="inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm w-11 h-11 bg-primary-600 text-white hover:bg-primary-700" title="Registrar perda reprodutiva">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
-                    <button type="button" x-show="lancTab === 'cio'" x-cloak @click="openCioModal()" class="inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm w-11 h-11 bg-primary-600 text-white hover:bg-primary-700" title="Registrar cio">
                         <i class="fa-solid fa-plus"></i>
                     </button>
                     <button type="button" x-show="lancTab === 'salta_cio'" x-cloak @click="openSaltaCioModal()" class="inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm w-11 h-11 bg-primary-600 text-white hover:bg-primary-700" title="Registrar salta cio">
@@ -847,42 +663,6 @@
                                 </template>
                                 <tr x-show="perdas.length === 0">
                                     <td colspan="4" class="py-4 text-sm text-gray-500">Nenhuma perda registrada.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-6" x-show="lancTab === 'cio'" x-cloak>
-                <div class="rounded-2xl border border-gray-100 bg-white overflow-hidden">
-                    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-                        <div class="text-sm font-bold text-gray-900">Últimos cios</div>
-                        <button type="button" @click="loadCio()" class="text-sm text-primary-600 hover:text-primary-700">Atualizar</button>
-                    </div>
-                    <div class="p-5 overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-100">
-                            <thead>
-                                <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                    <th class="py-2 pr-4">Ações</th>
-                                    <th class="py-2 pr-4">Fêmea</th>
-                                    <th class="py-2 pr-4">Data</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100">
-                                <template x-for="c in cios" :key="c.id">
-                                    <tr class="text-sm text-gray-700">
-                                        <td class="py-2 pr-4">
-                                            <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteCio(c.id)">
-                                                <i class="fa-solid fa-trash"></i>
-                                            </button>
-                                        </td>
-                                        <td class="py-2 pr-4" x-text="c.matriz"></td>
-                                        <td class="py-2 pr-4" x-text="c.data"></td>
-                                    </tr>
-                                </template>
-                                <tr x-show="cios.length === 0">
-                                    <td colspan="3" class="py-4 text-sm text-gray-500">Nenhum registro encontrado.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -1214,53 +994,6 @@
         </div>
     </div>
 
-    <div x-show="openCio" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div x-show="openCio" @click="openCio = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div x-show="openCio" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-gray-100">
-                <div class="bg-white px-6 pt-6 pb-4">
-                    <div class="flex items-start justify-between">
-                        <h3 class="text-lg leading-6 font-semibold text-gray-900">Registrar cio</h3>
-                        <button type="button" @click="openCio = false" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50" title="Fechar">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700">Fêmea</label>
-                            <select x-model="cio.femeaId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
-                                <option value="">Selecione...</option>
-                                <template x-for="f in cioOptions()" :key="`c-${f.id}`">
-                                    <option :value="String(f.id)" x-text="f.id_primaria"></option>
-                                </template>
-                            </select>
-                            <div class="text-xs text-gray-500 mt-2" x-show="!cio.femeaId && cioOptions().length === 0" x-cloak>
-                                Nenhuma leitoa elegível para registrar cio (janela: <span x-text="cioMinDias()"></span>–<span x-text="cioMaxDias()"></span> dias).
-                            </div>
-                        </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700">Data</label>
-                            <input type="text" inputmode="numeric" placeholder="dd/mm/aaaa" x-model="cio.data" @blur="cio.data = normalizeBrDate(cio.data)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
-                        </div>
-                        <div class="md:col-span-2">
-                            <div class="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm text-gray-700" x-show="cio.femeaId" x-text="cioStatusText()" x-cloak></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-white border-t border-gray-100 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3">
-                    <button type="button" @click="saveCio()" :disabled="saving || !cioCanSave()" class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 sm:w-auto disabled:opacity-50">
-                        <template x-if="!saving"><span>Salvar</span></template>
-                        <template x-if="saving"><span>Gravando...</span></template>
-                    </button>
-                    <button type="button" @click="openCio = false" :disabled="saving" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 shadow-sm px-5 py-2.5 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto disabled:opacity-50">
-                        Cancelar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div x-show="openSaltaCio" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div x-show="openSaltaCio" @click="openSaltaCio = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
@@ -1301,5 +1034,6 @@
             </div>
         </div>
     </div>
+
 </div>
 @endsection

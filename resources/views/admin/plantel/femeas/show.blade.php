@@ -102,6 +102,15 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
+                        <div class="p-2 bg-blue-50 rounded-xl text-blue-600">
+                            <i class="fa-solid fa-weight-scale text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase font-bold">Peso Atual</p>
+                            <p class="text-sm font-bold text-gray-900">{{ $femea->peso_atual ? number_format($femea->peso_atual, 1) . 'kg' : '-' }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
                         <div class="p-2 bg-green-50 rounded-xl text-green-600">
                             <i class="fa-solid fa-dollar-sign text-lg"></i>
                         </div>

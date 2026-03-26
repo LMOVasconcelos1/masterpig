@@ -43,9 +43,12 @@ class GestacaoCioController extends Controller
             ->select([
                 'gc.id',
                 'gc.data',
+                'gc.peso',
                 'f.id as femea_id',
                 'f.id_primaria',
                 'f.id_secundaria',
+                'f.peso_atual',
+                'f.data_nascimento',
             ])
             ->limit($limit);
 
@@ -66,9 +69,31 @@ class GestacaoCioController extends Controller
                 $dataCio = Carbon::parse($row->data);
                 $lastCob = isset($lastCoberturas[$row->femea_id]) ? Carbon::parse($lastCoberturas[$row->femea_id]) : null;
                 
+                // Calcular dia PIG (dias desde 01/01/1969)
+                $pigBaseDate = Carbon::parse('1969-01-01');
+                $diaPig = (int) $pigBaseDate->diffInDays($dataCio) + 1;
+                
                 $diaCiclo = null;
                 if ($lastCob) {
                     $diaCiclo = $lastCob->diffInDays($dataCio, false);
+                }
+
+                // Calcular número do cio
+                $numeroCio = 1;
+                if (Schema::hasTable('gestacao_cio')) {
+                    $q = DB::table('gestacao_cio')->where('femea_id', $row->femea_id);
+                    if ($lastCob) {
+                        $q->where('data', '>', $lastCob->toDateString());
+                    }
+                    $q->where('data', '<=', $dataCio->toDateString());
+                    $numeroCio = $q->count();
+                }
+
+                // Calcular idade no momento do cio
+                $idade = null;
+                if ($row->data_nascimento) {
+                    $nascimento = Carbon::parse($row->data_nascimento);
+                    $idade = $nascimento->diffInDays($dataCio);
                 }
 
                 return [
@@ -76,7 +101,10 @@ class GestacaoCioController extends Controller
                     'matriz' => (string) $row->id_primaria,
                     'matriz_secundaria' => $row->id_secundaria === null ? null : (string) $row->id_secundaria,
                     'data' => PigCycleService::formatDisplayDate($dataCio),
-                    'dia_ciclo' => $diaCiclo,
+                    'dia_ciclo' => $diaPig,
+                    'cio' => $numeroCio . 'º cio',
+                    'peso' => $row->peso ? number_format($row->peso, 2, ',', '.') . ' kg' : '-',
+                    'idade' => $idade !== null ? $idade . ' dias' : '-',
                 ];
             })
             ->values();
@@ -97,6 +125,7 @@ class GestacaoCioController extends Controller
         $validated = $request->validate([
             'femea_id' => ['required', 'exists:femea,id'],
             'data' => ['required', 'date'],
+            'peso' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $row = DB::table('femea')
@@ -159,9 +188,21 @@ class GestacaoCioController extends Controller
             DB::table('gestacao_cio')->insert([
                 'femea_id' => (int) $validated['femea_id'],
                 'data' => $data->toDateString(),
+                'peso' => $validated['peso'] ?? null,
                 'criado_em' => now(),
                 'atualizado_em' => now(),
             ]);
+
+            // Atualizar o peso_atual da fêmea se informado
+            if (isset($validated['peso']) && $validated['peso'] !== null) {
+                $peso = floatval($validated['peso']);
+                if ($peso > 0) {
+                    DB::table('femea')->where('id', (int) $validated['femea_id'])->update([
+                        'peso_atual' => $peso,
+                        'atualizado_em' => now(),
+                    ]);
+                }
+            }
 
             if ($tipo === 'leitoa' && $idadeDias >= $matMinDias && Schema::hasTable('femea') && Schema::hasColumn('femea', 'tipo_compra')) {
                 DB::table('femea')->where('id', (int) $validated['femea_id'])->update([
