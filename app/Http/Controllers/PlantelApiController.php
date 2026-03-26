@@ -85,6 +85,21 @@ class PlantelApiController extends Controller
                     ]);
             }
 
+            // Buscar o último peso registrado nos cios
+            if (Schema::hasTable('gestacao_cio')) {
+                $lastPeso = DB::table('gestacao_cio')
+                    ->selectRaw('MAX(id) as last_id, femea_id')
+                    ->whereNotNull('peso')
+                    ->groupBy('femea_id');
+
+                $query->leftJoinSub($lastPeso, 'lp', function ($join) {
+                    $join->on('lp.femea_id', '=', 'femea.id');
+                });
+
+                $query->leftJoin('gestacao_cio as gc_peso', 'gc_peso.id', '=', 'lp.last_id')
+                    ->addSelect('gc_peso.peso as peso_atual');
+            }
+
             if (! $includeTodas && Schema::hasTable('femea_movimento')) {
                 $query->where(function ($q) {
                     $q->whereNull('fm.acao')

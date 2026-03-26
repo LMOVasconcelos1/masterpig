@@ -26,6 +26,7 @@ class Femea extends Model
         'raca_id',
         'valor_compra',
         'peso_compra',
+        'peso_atual',
         'fornecedor_id',
         'caracteristicas',
         'localizacao',
@@ -38,6 +39,7 @@ class Femea extends Model
         'data_cobertura' => 'date',
         'valor_compra' => 'decimal:2',
         'peso_compra' => 'decimal:2',
+        'peso_atual' => 'decimal:2',
         'ciclos_ate_compra' => 'integer',
     ];
 

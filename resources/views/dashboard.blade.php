@@ -444,6 +444,7 @@
         comprador: '',
         valorCompra: '',
         pesoCompra: '',
+        pesoCio: '',
         caracteristicas: '',
         localizacao: '',
         baia: '',
@@ -956,6 +957,7 @@
             this.comprador = '';
             this.valorCompra = '';
             this.pesoCompra = '';
+            this.pesoCio = '';
             this.caracteristicas = '';
             this.localizacao = '';
             this.baia = '';
@@ -1569,7 +1571,8 @@
                 },
                 body: JSON.stringify({
                     femea_id: this.femeaCioId,
-                    data: dataIso
+                    data: dataIso,
+                    peso: this.pesoCio === '' ? null : Number(this.pesoCio)
                 })
             })
             .then(async (r) => {
@@ -1790,21 +1793,12 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Fornecedor</label>
-                                    <select x-model="femeasFilterFornecedor" class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500">
-                                        <option value="">Todos</option>
-                                        <template x-for="f in fornecedores" :key="f.id">
-                                            <option :value="f.id" x-text="f.nome"></option>
-                                        </template>
-                                    </select>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Data inicial</label>
+                                    <input type="text" x-model="femeasFilterDataInicial" @input="femeasFilterDataInicial = normalizeDateInput($event.target.value)" class="block w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Localização</label>
-                                    <input type="text" x-model="femeasFilterLocalizacao" class="block w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Galpão A">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Baia</label>
-                                    <input type="text" x-model="femeasFilterBaia" class="block w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 12">
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Data final</label>
+                                    <input type="text" x-model="femeasFilterDataFinal" @input="femeasFilterDataFinal = normalizeDateInput($event.target.value)" class="block w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
                                 </div>
                                 <div class="flex items-end">
                                     <button type="button" @click="femeasPage = 1; ensureFemeasAtivas(true)" class="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-semibold rounded-xl shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
@@ -1857,7 +1851,7 @@
                                             <td class="px-4 py-3 text-sm text-gray-600" x-text="f.raca"></td>
                                             <td class="px-4 py-3 text-sm text-gray-600" x-text="f.idade_dias !== null ? f.idade_dias + ' d' : '-'"></td>
                                             <td class="px-4 py-3 text-sm text-gray-600" x-text="f.fornecedor"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.peso_formatado"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.peso_atual ? (Number(f.peso_atual).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg') : '-'"></td>
                                         </tr>
                                     </template>
                                     <tr x-show="!lancamentosLoading && femeasAtivas.length === 0" x-cloak>
@@ -2037,19 +2031,38 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matriz</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" x-text="calendarType === '1000_dias' ? 'Ciclo' : 'Data'"></th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" x-text="calendarType === '1000_dias' ? 'Dia PIG' : 'Data'"></th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fêmea</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID 2</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cio</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peso</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Idade</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <template x-for="row in cioFemeas" :key="row.id">
                                         <tr class="hover:bg-gray-50">
-                                            <td class="px-4 py-3 text-sm font-semibold text-gray-900" x-text="row.matriz + (row.matriz_secundaria ? ' (' + row.matriz_secundaria + ')' : '')"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="calendarType === '1000_dias' ? 'Dia ' + row.dia_ciclo : row.data"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-700">
+                                                <div class="flex items-center gap-2">
+                                                    <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" title="Abrir cadastro" @click="window.location.href = `/admin/plantel/femeas/${row.femea_id}`">
+                                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                                    </button>
+                                                    <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteCioRecord(row.id)">
+                                                        <i class="fa-solid fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="calendarType === '1000_dias' ? (row.dia_ciclo !== null ? row.dia_ciclo : '-') : row.data"></td>
+                                            <td class="px-4 py-3 text-sm font-semibold text-gray-900" x-text="row.matriz"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.matriz_secundaria || '-'"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.cio || '-'"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.peso || '-'"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.idade || '-'"></td>
                                         </tr>
                                     </template>
                                     <tr x-show="!lancamentosLoading && cioFemeas.length === 0" x-cloak>
-                                        <td colspan="2" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
+                                        <td colspan="7" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem registros.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -2103,7 +2116,7 @@
                                             <td class="px-4 py-3 text-sm text-gray-600" x-text="f.raca"></td>
                                             <td class="px-4 py-3 text-sm text-gray-600" x-text="f.idade_dias !== null ? f.idade_dias + ' d' : '-'"></td>
                                             <td class="px-4 py-3 text-sm text-gray-600" x-text="f.fornecedor"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.peso_formatado"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.peso_atual ? (Number(f.peso_atual).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg') : '-'"></td>
                                         </tr>
                                     </template>
                                 </tbody>
@@ -2619,6 +2632,13 @@
                                             <span class="text-xs text-gray-400" x-text="dataCio ? '(' + dataCio + ')' : ''"></span>
                                         </div>
                                     </template>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Peso (opcional)</label>
+                                    <div class="mt-1 relative">
+                                        <input type="number" step="0.01" x-model="pesoCio" class="w-full pr-12 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="0,00">
+                                        <span class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400">kg</span>
+                                    </div>
                                 </div>
                             </div>
                         </template>

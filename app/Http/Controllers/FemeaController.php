@@ -68,6 +68,8 @@ class FemeaController extends Controller
                 'f.localizacao',
                 'f.baia',
                 'f.data_compra',
+                'f.peso_compra',
+                'f.peso_atual',
             ])
             ->orderBy('f.id_primaria')
             ->limit(5000);
@@ -122,6 +124,8 @@ class FemeaController extends Controller
                 'localizacao' => $row->localizacao === null ? '-' : (string) $row->localizacao,
                 'baia' => $row->baia === null ? '-' : (string) $row->baia,
                 'data_compra' => empty($row->data_compra) ? '-' : PigCycleService::formatDisplayDate(Carbon::parse($row->data_compra)),
+                'peso_compra' => $row->peso_compra ? number_format($row->peso_compra, 2, ',', '.') . ' kg' : '-',
+                'peso_atual' => $row->peso_atual ? number_format($row->peso_atual, 2, ',', '.') . ' kg' : '-',
                 'ultima_operacao' => $acao === null ? '-' : $acao . ($data ? " - {$data}" : ''),
                 'status' => $inativo ? 'Inativo' : 'Ativo',
             ];
@@ -195,6 +199,8 @@ class FemeaController extends Controller
 
         $idadeDias = $femea->data_nascimento ? (int) $femea->data_nascimento->diffInDays(now()) : null;
         $tempoGranjaDias = $femea->data_compra ? (int) $femea->data_compra->diffInDays(now()) : null;
+        $pesoCompra = $femea->peso_compra ? number_format($femea->peso_compra, 2, ',', '.') . ' kg' : '-';
+        $pesoAtual = $femea->peso_atual ? number_format($femea->peso_atual, 2, ',', '.') . ' kg' : '-';
 
         $lastCobertura = null;
         if (Schema::hasTable('gestacao_cobertura')) {
@@ -209,6 +215,6 @@ class FemeaController extends Controller
         $alerts = $cycle ? PigCycleService::getPhaseAlerts($cycle, $femea->id_primaria) : [];
         $diasNoCiclo = $cycle ? (int) $cycle['totalDaysElapsed'] : null;
 
-        return view('admin.plantel.femeas.show', compact('femea', 'performance', 'metas', 'mediaPlantel', 'resumoEventos', 'idadeDias', 'tempoGranjaDias', 'mov', 'cycle', 'alerts', 'diasNoCiclo', 'calendarType'));
+        return view('admin.plantel.femeas.show', compact('femea', 'performance', 'metas', 'mediaPlantel', 'resumoEventos', 'idadeDias', 'tempoGranjaDias', 'pesoCompra', 'pesoAtual', 'mov', 'cycle', 'alerts', 'diasNoCiclo', 'calendarType'));
     }
 }

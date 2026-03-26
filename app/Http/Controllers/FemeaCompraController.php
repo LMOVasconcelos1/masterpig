@@ -20,6 +20,14 @@ class FemeaCompraController extends Controller
         }
 
         $limit = max(1, min(5000, (int) $request->query('limit', 200)));
+        $page = max(1, (int) $request->query('page', 1));
+        $search = $request->query('search', '');
+        $racaId = $request->query('raca_id', '');
+        $fornecedorId = $request->query('fornecedor_id', '');
+        $localizacao = $request->query('localizacao', '');
+        $baia = $request->query('baia', '');
+        $dataInicial = $request->query('data_inicial', '');
+        $dataFinal = $request->query('data_final', '');
 
         $query = DB::table('femea_movimento as fm')
             ->join('femea as f', 'f.id', '=', 'fm.femea_id')
@@ -38,6 +46,7 @@ class FemeaCompraController extends Controller
                 'f.data_nascimento',
                 'fo.nome as fornecedor_nome',
                 'f.peso_compra',
+                'f.peso_atual',
                 'f.valor_compra',
             ]);
 
@@ -45,7 +54,30 @@ class FemeaCompraController extends Controller
             $query->where('f.tipo_compra', $request->tipo_compra);
         }
 
-        $rows = $query->limit($limit)->get();
+        // Filtros adicionados
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('f.id_primaria', 'like', "%{$search}%")
+                  ->orWhere('f.id_secundaria', 'like', "%{$search}%");
+            });
+        }
+
+        if (!empty($racaId)) {
+            $query->where('f.raca_id', $racaId);
+        }
+
+        if (!empty($dataInicial)) {
+            $query->whereDate('fm.data', '>=', $dataInicial);
+        }
+
+        if (!empty($dataFinal)) {
+            $query->whereDate('fm.data', '<=', $dataFinal);
+        }
+
+        $total = $query->count();
+        $offset = ($page - 1) * $limit;
+
+        $rows = $query->offset($offset)->limit($limit)->get();
 
         $items = $rows->map(function ($row) {
             $idadeDias = null;
@@ -64,13 +96,18 @@ class FemeaCompraController extends Controller
                 'ciclo' => $row->ciclos_ate_compra,
                 'idade_dias' => $idadeDias,
                 'fornecedor' => $row->fornecedor_nome,
-                'peso' => $row->peso_compra,
+                'peso_compra' => $row->peso_compra,
+                'peso_atual' => $row->peso_atual,
                 'valor' => $row->valor_compra,
             ];
         })->values();
 
         return response()->json([
             'items' => $items,
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
+            'last_page' => (int) ceil($total / $limit)
         ]);
     }
 
@@ -164,6 +201,11 @@ class FemeaCompraController extends Controller
         }
 
         $result = DB::transaction(function () use ($validated) {
+            // Se informou peso_compra, define peso_atual igual ao peso_compra
+            if (isset($validated['peso_compra']) && $validated['peso_compra'] !== null) {
+                $validated['peso_atual'] = $validated['peso_compra'];
+            }
+
             $femea = Femea::create($validated);
 
             DB::table('femea_movimento')->insert([
