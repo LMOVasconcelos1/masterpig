@@ -1,0 +1,1 @@
+<?php require " vendor/autoload.php\; \ = require_once \bootstrap/app.php\; \->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); try { print_r(DB::table(\macho\)->first()); } catch (\Exception \) { echo \->getMessage(); }

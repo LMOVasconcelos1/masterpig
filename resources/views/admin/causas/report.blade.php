@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Relatório de Causas - MasterPig</title>
+    <title>Relatório de Causas - Sui Control</title>
     <style>
         body { font-family: sans-serif; font-size: 12px; color: #333; }
         .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
@@ -18,7 +18,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>MasterPig</h1>
+        <h1>Sui Control</h1>
         <p>Relatório de Cadastro de Causas</p>
         <p>Emitido em: {{ $data_emissao }}</p>
     </div>
@@ -49,7 +49,7 @@
     </table>
 
     <div class="footer">
-        © {{ date('Y') }} MasterPig - Sistema de Gestão de Suinocultura
+        © {{ date('Y') }} Sui Control - Sistema de Gestão de Suinocultura
     </div>
 </body>
 </html>

@@ -36,24 +36,50 @@ class GestacaoCioController extends Controller
         }
 
         $limit = max(1, min(200, (int) $request->query('limit', 50)));
+        $search = $request->input('search');
+        $dataInicInput = $request->input('data_inicial');
+        $dataFimInput = $request->input('data_final');
+        $cioFiltro = $request->input('cio');
 
         $query = DB::table('gestacao_cio as gc')
             ->join('femea as f', 'f.id', '=', 'gc.femea_id')
-            ->orderByDesc('gc.data')
-            ->select([
-                'gc.id',
+            ->orderByDesc('gc.data');
+
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('f.id_primaria', 'like', "%{$search}%")
+                  ->orWhere('f.id_secundaria', 'like', "%{$search}%");
+            });
+        }
+
+        // Filtros de data
+        $parsedInic = PigCycleService::parseFilterDate($dataInicInput);
+        if ($parsedInic) {
+            $query->where('gc.data', '>=', $parsedInic->toDateString());
+        }
+
+        $parsedFim = PigCycleService::parseFilterDate($dataFimInput);
+        if ($parsedFim) {
+            $query->where('gc.data', '<=', $parsedFim->toDateString());
+        }
+
+        $query->select([
+                'gc.id as cio_id',
                 'gc.data',
                 'gc.peso',
-                'f.id as femea_id',
+                'f.id',
                 'f.id_primaria',
                 'f.id_secundaria',
                 'f.peso_atual',
                 'f.data_nascimento',
+                'f.raca_id',
+                'f.localizacao',
+                'f.baia',
             ])
             ->limit($limit);
 
         $rows = $query->get();
-        $ids = $rows->pluck('femea_id')->unique()->toArray();
+        $ids = $rows->pluck('id')->unique()->toArray();
 
         $lastCoberturas = [];
         if (!empty($ids) && Schema::hasTable('gestacao_cobertura')) {
@@ -67,7 +93,7 @@ class GestacaoCioController extends Controller
 
         $items = $rows->map(function ($row) use ($lastCoberturas) {
                 $dataCio = Carbon::parse($row->data);
-                $lastCob = isset($lastCoberturas[$row->femea_id]) ? Carbon::parse($lastCoberturas[$row->femea_id]) : null;
+                $lastCob = isset($lastCoberturas[$row->id]) ? Carbon::parse($lastCoberturas[$row->id]) : null;
                 
                 // Calcular dia PIG (dias desde 01/01/1969)
                 $pigBaseDate = Carbon::parse('1969-01-01');
@@ -81,7 +107,7 @@ class GestacaoCioController extends Controller
                 // Calcular número do cio
                 $numeroCio = 1;
                 if (Schema::hasTable('gestacao_cio')) {
-                    $q = DB::table('gestacao_cio')->where('femea_id', $row->femea_id);
+                    $q = DB::table('gestacao_cio')->where('femea_id', $row->id);
                     if ($lastCob) {
                         $q->where('data', '>', $lastCob->toDateString());
                     }
@@ -98,16 +124,32 @@ class GestacaoCioController extends Controller
 
                 return [
                     'id' => (int) $row->id,
+                    'cio_id' => (int) $row->cio_id,
                     'matriz' => (string) $row->id_primaria,
+                    'id_primaria' => $row->id_primaria,
                     'matriz_secundaria' => $row->id_secundaria === null ? null : (string) $row->id_secundaria,
+                    'id_secundaria' => $row->id_secundaria,
                     'data' => PigCycleService::formatDisplayDate($dataCio),
                     'dia_ciclo' => $diaPig,
                     'cio' => $numeroCio . 'º cio',
                     'peso' => $row->peso ? number_format($row->peso, 2, ',', '.') . ' kg' : '-',
                     'idade' => $idade !== null ? $idade . ' dias' : '-',
+                    'raca_id' => $row->raca_id,
+                    'localizacao' => $row->localizacao,
+                    'baia' => $row->baia,
+                    'raw_data' => $dataCio->toDateString(),
+                    'raw_peso' => $row->peso
                 ];
             })
             ->values();
+
+        // Filtro de número do cio (aplicado sobre a coleção mapeada)
+        if ($cioFiltro !== null && $cioFiltro !== '') {
+            $items = $items->filter(function($it) use ($cioFiltro) {
+                // A chave "cio" contém algo como "1º cio"
+                return strpos($it['cio'], $cioFiltro . 'º') === 0;
+            })->values();
+        }
 
         return response()->json([
             'items' => $items,

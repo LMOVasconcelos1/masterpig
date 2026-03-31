@@ -67,11 +67,19 @@ class FemeaCompraController extends Controller
         }
 
         if (!empty($dataInicial)) {
-            $query->whereDate('fm.data', '>=', $dataInicial);
+            // Converter de DD/MM/AAAA para AAAA-MM-DD
+            $dataInicialFormatada = $this->converterDataBrParaIso($dataInicial);
+            if ($dataInicialFormatada) {
+                $query->whereDate('fm.data', '>=', $dataInicialFormatada);
+            }
         }
 
         if (!empty($dataFinal)) {
-            $query->whereDate('fm.data', '<=', $dataFinal);
+            // Converter de DD/MM/AAAA para AAAA-MM-DD
+            $dataFinalFormatada = $this->converterDataBrParaIso($dataFinal);
+            if ($dataFinalFormatada) {
+                $query->whereDate('fm.data', '<=', $dataFinalFormatada);
+            }
         }
 
         $total = $query->count();
@@ -248,5 +256,28 @@ class FemeaCompraController extends Controller
             'message' => 'Compra registrada com sucesso!',
             'id' => $result->id,
         ], 201);
+    }
+
+    /**
+     * Converte data do formato brasileiro (DD/MM/AAAA) para ISO (AAAA-MM-DD)
+     */
+    private function converterDataBrParaIso($dataBr)
+    {
+        $dataBr = trim($dataBr);
+        if (empty($dataBr)) {
+            return null;
+        }
+
+        // Se já estiver no formato ISO, retorna como está
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dataBr)) {
+            return $dataBr;
+        }
+
+        // Converte de DD/MM/AAAA para AAAA-MM-DD
+        if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', $dataBr, $matches)) {
+            return "{$matches[3]}-{$matches[2]}-{$matches[1]}";
+        }
+
+        return null;
     }
 }

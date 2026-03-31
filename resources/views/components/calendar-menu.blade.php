@@ -61,7 +61,7 @@
                 </template>
 
                 <!-- Dias do mês -->
-                <template x-for="day in daysInMonth" :key="day.date">
+                <template x-for="(day, index) in daysInMonth" :key="index">
                     <div 
                         class="aspect-square flex flex-col items-center justify-center text-sm border border-gray-100 rounded-lg"
                         :class="{

@@ -1,7 +1,7 @@
 @component('mail::message')
 @if (!empty($logoCid))
 <div style="text-align:center; margin: 8px 0 18px;">
-    <img src="{{ $logoCid }}" alt="MasterPig" style="height: 64px; max-height: 64px; width: auto;">
+    <img src="{{ $logoCid }}" alt="Sui Control" style="height: 64px; max-height: 64px; width: auto;">
 </div>
 @endif
 
@@ -16,7 +16,7 @@ Verificar e-mail
 Se você não criou uma conta, basta ignorar este e-mail.
 
 Atenciosamente,
-MasterPig
+Sui Control
 
 @slot('subcopy')
 Se estiver com dificuldade para clicar no botão, copie e cole este link no seu navegador:

@@ -128,6 +128,8 @@ Route::get('/api/plantel/femeas/descartes', [FemeaMovimentoController::class, 'd
 Route::get('/api/plantel/femeas/vendas', [FemeaMovimentoController::class, 'vendas']);
 Route::middleware('auth')->get('/api/plantel/femeas/acompanhamento', [AcompanhamentoFemeasController::class, 'index']);
 Route::middleware('auth')->get('/api/plantel/femeas/acompanhamento/{id}', [AcompanhamentoFemeasController::class, 'show'])->whereNumber('id');
+Route::middleware('auth')->get('/api/plantel/femeas/ficha/{id}', [\App\Http\Controllers\FichaMatrizController::class, 'show'])->whereNumber('id');
+Route::middleware('auth')->get('/api/plantel/femeas/retencao', [\App\Http\Controllers\RetencaoFemeasController::class, 'index']);
 Route::get('/api/plantel/machos/compras', [MachoCompraController::class, 'index']);
 Route::get('/api/plantel/machos', [PlantelApiController::class, 'machos']);
 Route::get('/api/plantel/machos/mortes', [MachoMovimentoController::class, 'mortes']);

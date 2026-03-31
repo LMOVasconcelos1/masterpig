@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Ficha da Ração - MasterPig</title>
+    <title>Ficha da Ração - Sui Control</title>
     <style>
         body { font-family: sans-serif; font-size: 12px; color: #111827; }
         .header { border-bottom: 2px solid #3b82f6; padding-bottom: 10px; margin-bottom: 18px; }
@@ -21,7 +21,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="brand">MasterPig</div>
+        <div class="brand">Sui Control</div>
         <div class="subtitle">Ficha Técnica da Ração</div>
         <div class="meta">
             Emitido em: {{ $data_emissao }} | Código: {{ $racao->codigo }}
@@ -127,7 +127,7 @@
     </div>
 
     <div class="footer">
-        © {{ date('Y') }} MasterPig - Sistema de Gestão de Suinocultura
+        © {{ date('Y') }} Sui Control - Sistema de Gestão de Suinocultura
     </div>
 </body>
 </html>

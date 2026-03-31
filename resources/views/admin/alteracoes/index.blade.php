@@ -5,28 +5,28 @@
 
 @section('content')
 <div class="space-y-6">
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-            <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Registro de alterações</h6>
-            <div class="text-sm text-gray-500 mt-1">Resumo das mudanças realizadas no sistema.</div>
+    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
+            <h6 class="font-bold text-primary-700 dark:text-primary-400 uppercase text-xs tracking-wider">Registro de alterações</h6>
+            <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Resumo das mudanças realizadas no sistema.</div>
         </div>
-        <div class="p-6">
+        <div class="p-6 bg-white dark:bg-gray-900">
             @if(empty($entries))
-                <div class="text-sm text-gray-500">Nenhuma alteração registrada.</div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">Nenhuma alteração registrada.</div>
             @else
                 <div class="space-y-4">
                     @foreach($entries as $entry)
-                        <div class="rounded-2xl border border-gray-100 bg-white p-5">
+                        <div class="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 p-5">
                             <div class="flex items-start justify-between gap-4">
                                 <div class="min-w-0">
-                                    <div class="text-sm font-bold text-gray-900">{{ $entry['title'] }}</div>
-                                    <div class="text-xs text-gray-500 mt-1">
+                                    <div class="text-sm font-bold text-gray-900 dark:text-gray-100">{{ $entry['title'] }}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                         {{ $entry['date'] ? \Illuminate\Support\Carbon::parse($entry['date'])->format('d/m/Y') : '-' }}
                                     </div>
                                 </div>
                             </div>
                             @if(!empty($entry['items']))
-                                <ul class="mt-3 space-y-2 text-sm text-gray-700 list-disc pl-5">
+                                <ul class="mt-3 space-y-2 text-sm text-gray-700 dark:text-gray-300 list-disc pl-5">
                                     @foreach($entry['items'] as $it)
                                         @if(is_string($it) && trim($it) !== '')
                                             <li>{{ $it }}</li>

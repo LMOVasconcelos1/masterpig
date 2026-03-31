@@ -309,8 +309,8 @@
     </div>
 </div>
 
-<!-- Scripts para o Gráfico -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Scripts para o Gráfico (local) -->
+<script src="{{ asset('js/vendor/chart.min.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('performanceChart').getContext('2d');
