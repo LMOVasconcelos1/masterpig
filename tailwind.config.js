@@ -10,6 +10,10 @@ export default {
         './resources/views/**/*.blade.php',
     ],
 
+    safelist: [
+        { pattern: /^dark:/ },
+    ],
+
     theme: {
         extend: {
             fontFamily: {
@@ -26,7 +30,7 @@ export default {
                     600: '#2563eb',
                     700: '#1d4ed8',
                     800: '#1e3a8a',
-                    900: '#0D1B3E', // Primary color
+                    900: '#0D1B3E',
                 },
                 secondary: {
                     50: '#fff7ed',
@@ -34,7 +38,7 @@ export default {
                     200: '#fed7aa',
                     300: '#fdba74',
                     400: '#fb923c',
-                    500: '#E8A83E', // Secondary color
+                    500: '#E8A83E',
                     600: '#d97706',
                     700: '#b45309',
                     800: '#92400e',

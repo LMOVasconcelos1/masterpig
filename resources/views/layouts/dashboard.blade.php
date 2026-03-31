@@ -34,21 +34,21 @@
     
     @stack('styles')
 </head>
-<body class="bg-gray-50 font-sans text-gray-900 antialiased">
+<body class="bg-gray-50 dark:bg-gray-950 font-sans text-gray-900 dark:text-gray-100 antialiased transition-colors duration-200">
     <div class="flex h-screen overflow-hidden" 
          x-data="{ 
             sidebarOpen: true, 
             mobileSidebarOpen: false,
-            darkMode: localStorage.getItem('theme') === 'dark'
+            darkMode: localStorage.getItem('darkMode') === 'true'
          }" 
          x-init="
             $watch('darkMode', val => {
                 if (val) {
                     document.documentElement.classList.add('dark');
-                    localStorage.setItem('theme', 'dark');
+                    localStorage.setItem('darkMode', 'true');
                 } else {
                     document.documentElement.classList.remove('dark');
-                    localStorage.setItem('theme', 'light');
+                    localStorage.setItem('darkMode', 'false');
                 }
             });
             if (darkMode) document.documentElement.classList.add('dark');
