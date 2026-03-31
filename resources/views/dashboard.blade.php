@@ -40,7 +40,7 @@
     x-transition:leave="transition ease-in duration-300"
     x-transition:leave-start="opacity-100 scale-100"
     x-transition:leave-end="opacity-0 scale-90"
-    class="fixed top-5 right-5 z-[100] max-w-sm w-full bg-white shadow-2xl rounded-xl pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden border-l-4"
+    class="fixed top-5 right-5 z-[100] max-w-sm w-full bg-white dark:bg-gray-800 shadow-2xl rounded-xl pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden border-l-4"
     :class="toastType === 'success' ? 'border-green-500' : 'border-red-500'"
     x-cloak
 >
@@ -56,7 +56,7 @@
                 </template>
             </div>
             <div class="ml-3 w-0 flex-1 pt-0.5">
-                <p class="text-sm font-medium text-gray-900" x-text="toastMessage"></p>
+                <p class="text-sm font-medium text-gray-900 dark:text-gray-100" x-text="toastMessage"></p>
             </div>
             <div class="ml-4 flex-shrink-0 flex">
                 <button @click="toastOpen = false" class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
@@ -67,129 +67,136 @@
         </div>
     </div>
 </div>
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div class="min-w-0">
-            <div class="flex items-center gap-3">
-                <div class="text-xs font-bold text-primary-700 uppercase tracking-wider">Plantel Reprodutivo</div>
-            </div>
-            <div class="text-sm text-gray-500 mt-1">Visão geral, lançamentos e relatórios</div>
-        </div>
-        <div class="w-full sm:w-auto grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-1">
-            <button type="button" @click="tab = 'visao'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="tab === 'visao' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
-                Plantel
-            </button>
-            <button type="button" @click="tab = 'lancamentos'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="tab === 'lancamentos' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
-                Lançamentos
-            </button>
-            <button type="button" @click="tab = 'acompanhamento'; $dispatch('acompanhamento-open')" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="tab === 'acompanhamento' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
-                Acompanhamento
-            </button>
-            <button type="button" @click="tab = 'analise'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="tab === 'analise' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
-                Análise
-            </button>
-            <button type="button" @click="tab = 'relatorios'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="tab === 'relatorios' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
-                Relatórios
-            </button>
-        </div>
+<!-- Header & Topbar -->
+<div class="mb-6 -mx-3 sm:-mx-6 px-3 sm:px-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+    <div class="pt-4 pb-2">
+        <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Plantel Reprodutivo</h2>
+        <p class="text-sm text-gray-500">Visão geral, lançamentos e relatórios</p>
     </div>
+    <nav class="-mb-px flex space-x-6 overflow-x-auto">
+        <button type="button" @click="tab = 'visao'" 
+            :class="tab === 'visao' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
+            class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+            Visão Geral
+        </button>
+        <button type="button" @click="tab = 'lancamentos'" 
+            :class="tab === 'lancamentos' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+            class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+            Lançamentos
+        </button>
+        <button type="button" @click="tab = 'acompanhamento'; $dispatch('acompanhamento-open')" 
+            :class="tab === 'acompanhamento' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+            class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+            Acompanhamento
+        </button>
+        <button type="button" @click="tab = 'analise'" 
+            :class="tab === 'analise' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+            class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+            Análise
+        </button>
+        <button type="button" @click="tab = 'relatorios'" 
+            :class="tab === 'relatorios' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+            class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+            Relatórios
+        </button>
+    </nav>
 </div>
 
 <div x-show="tab === 'visao'" x-cloak>
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <div class="bg-white border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-5 group">
+    <div class="bg-white dark:bg-gray-900 border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-5 group">
         <div class="flex items-center justify-between">
             <div>
                 <div class="text-xs font-bold text-primary-500 uppercase tracking-wider mb-1">Estoque Total (Animais)</div>
-                <div class="text-2xl font-bold text-gray-800 tracking-tight group-hover:scale-105 transition-transform origin-left">
+                <div class="text-2xl font-bold text-gray-800 dark:text-gray-100 tracking-tight group-hover:scale-105 transition-transform origin-left">
                     {{ $estoqueTotalAnimais ?? 0 }}
                 </div>
             </div>
-            <div class="p-3 bg-primary-50 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
+            <div class="p-3 bg-primary-50 dark:bg-primary-900/40 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
                 <i class="fa-solid fa-warehouse text-2xl"></i>
             </div>
         </div>
-        <div class="mt-4 flex items-center text-sm text-gray-500">
+        <div class="mt-4 flex items-center text-sm text-gray-500 dark:text-gray-400">
             <i class="fa-solid fa-piggy-bank mr-2"></i>
             <span class="font-medium">Leitoas + Matrizes + Machos</span>
         </div>
     </div>
 
-    <div class="bg-white border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-5 group">
+    <div class="bg-white dark:bg-gray-900 border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-5 group">
         <div class="flex items-center justify-between">
             <div>
                 <div class="text-xs font-bold text-primary-500 uppercase tracking-wider mb-1">Leitoas Ativas</div>
-                <div class="text-2xl font-bold text-gray-800 tracking-tight group-hover:scale-105 transition-transform origin-left">
+                <div class="text-2xl font-bold text-gray-800 dark:text-gray-100 tracking-tight group-hover:scale-105 transition-transform origin-left">
                     {{ $leitoasAtivas ?? 0 }}
                 </div>
             </div>
-            <div class="p-3 bg-primary-50 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
+            <div class="p-3 bg-primary-50 dark:bg-primary-900/40 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
                 <i class="fa-solid fa-piggy-bank text-2xl"></i>
             </div>
         </div>
-        <div class="mt-4 flex items-center justify-between text-sm text-gray-500">
+        <div class="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <div class="flex items-center">
                 <i class="fa-solid fa-skull-crossbones mr-2 text-red-500"></i>
                 <span class="font-medium">Mortes</span>
             </div>
-            <span class="font-semibold text-gray-800">{{ $saidasLeitoas['morte'] ?? 0 }}</span>
+            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ $saidasLeitoas['morte'] ?? 0 }}</span>
         </div>
-        <div class="mt-2 flex items-center justify-between text-sm text-gray-500">
+        <div class="mt-2 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <div class="flex items-center">
                 <i class="fa-solid fa-ban mr-2 text-amber-600"></i>
                 <span class="font-medium">Descartes</span>
             </div>
-            <span class="font-semibold text-gray-800">{{ $saidasLeitoas['descarte'] ?? 0 }}</span>
+            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ $saidasLeitoas['descarte'] ?? 0 }}</span>
         </div>
-        <div class="mt-2 flex items-center justify-between text-sm text-gray-500">
+        <div class="mt-2 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <div class="flex items-center">
                 <i class="fa-solid fa-hand-holding-dollar mr-2 text-emerald-600"></i>
                 <span class="font-medium">Vendas</span>
             </div>
-            <span class="font-semibold text-gray-800">{{ $saidasLeitoas['venda'] ?? 0 }}</span>
+            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ $saidasLeitoas['venda'] ?? 0 }}</span>
         </div>
     </div>
 
-    <div class="bg-white border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-5 group">
+    <div class="bg-white dark:bg-gray-900 border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-5 group">
         <div class="flex items-center justify-between">
             <div>
                 <div class="text-xs font-bold text-primary-500 uppercase tracking-wider mb-1">Matrizes Ativas</div>
-                <div class="text-2xl font-bold text-gray-800 tracking-tight group-hover:scale-105 transition-transform origin-left">
+                <div class="text-2xl font-bold text-gray-800 dark:text-gray-100 tracking-tight group-hover:scale-105 transition-transform origin-left">
                     {{ $matrizesAtivas ?? 0 }}
                 </div>
             </div>
-            <div class="p-3 bg-primary-50 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
+            <div class="p-3 bg-primary-50 dark:bg-primary-900/40 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
                 <i class="fa-solid fa-piggy-bank text-2xl"></i>
             </div>
         </div>
-        <div class="mt-4 flex items-center justify-between text-sm text-gray-500">
+        <div class="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <div class="flex items-center">
                 <i class="fa-solid fa-skull-crossbones mr-2 text-red-500"></i>
                 <span class="font-medium">Mortes</span>
             </div>
-            <span class="font-semibold text-gray-800">{{ $saidasMatrizes['morte'] ?? 0 }}</span>
+            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ $saidasMatrizes['morte'] ?? 0 }}</span>
         </div>
-        <div class="mt-2 flex items-center justify-between text-sm text-gray-500">
+        <div class="mt-2 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <div class="flex items-center">
                 <i class="fa-solid fa-ban mr-2 text-amber-600"></i>
                 <span class="font-medium">Descartes</span>
             </div>
-            <span class="font-semibold text-gray-800">{{ $saidasMatrizes['descarte'] ?? 0 }}</span>
+            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ $saidasMatrizes['descarte'] ?? 0 }}</span>
         </div>
-        <div class="mt-2 flex items-center justify-between text-sm text-gray-500">
+        <div class="mt-2 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <div class="flex items-center">
                 <i class="fa-solid fa-hand-holding-dollar mr-2 text-emerald-600"></i>
                 <span class="font-medium">Vendas</span>
             </div>
-            <span class="font-semibold text-gray-800">{{ $saidasMatrizes['venda'] ?? 0 }}</span>
+            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ $saidasMatrizes['venda'] ?? 0 }}</span>
         </div>
     </div>
 
-    <div class="bg-white border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-5 group">
+    <div class="bg-white dark:bg-gray-900 border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-5 group">
         <div class="flex items-center justify-between">
             <div>
                 <div class="text-xs font-bold text-primary-500 uppercase tracking-wider mb-1">Machos Ativos</div>
-                <div class="text-2xl font-bold text-gray-800 tracking-tight group-hover:scale-105 transition-transform origin-left">
+                <div class="text-2xl font-bold text-gray-800 dark:text-gray-100 tracking-tight group-hover:scale-105 transition-transform origin-left">
                     {{ $machosAtivos ?? 0 }}
                 </div>
             </div>
@@ -197,42 +204,42 @@
                 <i class="fa-solid fa-piggy-bank text-2xl"></i>
             </div>
         </div>
-        <div class="mt-4 flex items-center justify-between text-sm text-gray-500">
+        <div class="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <div class="flex items-center">
                 <i class="fa-solid fa-skull-crossbones mr-2 text-red-500"></i>
                 <span class="font-medium">Mortes</span>
             </div>
-            <span class="font-semibold text-gray-800">{{ $saidasMachos['morte'] ?? 0 }}</span>
+            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ $saidasMachos['morte'] ?? 0 }}</span>
         </div>
-        <div class="mt-2 flex items-center justify-between text-sm text-gray-500">
+        <div class="mt-2 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <div class="flex items-center">
                 <i class="fa-solid fa-ban mr-2 text-amber-600"></i>
                 <span class="font-medium">Descartes</span>
             </div>
-            <span class="font-semibold text-gray-800">{{ $saidasMachos['descarte'] ?? 0 }}</span>
+            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ $saidasMachos['descarte'] ?? 0 }}</span>
         </div>
-        <div class="mt-2 flex items-center justify-between text-sm text-gray-500">
+        <div class="mt-2 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <div class="flex items-center">
                 <i class="fa-solid fa-hand-holding-dollar mr-2 text-emerald-600"></i>
                 <span class="font-medium">Vendas</span>
             </div>
-            <span class="font-semibold text-gray-800">{{ $saidasMachos['venda'] ?? 0 }}</span>
+            <span class="font-semibold text-gray-800 dark:text-gray-200">{{ $saidasMachos['venda'] ?? 0 }}</span>
         </div>
     </div>
 </div>
 
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+<div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
             <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Inconsistências do Plantel</h6>
-            <a href="{{ route('admin.plantel.femeas.index', [], false) }}" class="inline-flex items-center rounded-xl border border-gray-200 shadow-sm px-3 py-2 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50">
+            <a href="{{ route('admin.plantel.femeas.index', [], false) }}" class="inline-flex items-center rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-3 py-2 bg-white dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                 <i class="fa-solid fa-list mr-2"></i>
                 Cadastro de fêmeas
             </a>
         </div>
         <div class="p-6">
-            <div class="overflow-x-auto border border-gray-100 rounded-xl">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+            <div class="overflow-x-auto border border-gray-100 dark:border-gray-800 rounded-xl">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                    <thead class="bg-gray-50 dark:bg-gray-800/50">
                         <tr>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Identificação</th>
@@ -329,6 +336,8 @@
         femeasFilterFornecedor: '',
         femeasFilterLocalizacao: '',
         femeasFilterBaia: '',
+        femeasFilterDataInicial: '',
+        femeasFilterDataFinal: '',
 
         // Paginação e busca de machos
         machosPage: 1,
@@ -338,6 +347,12 @@
         machosSearch: '',
         machosFilterLocalizacao: '',
         machosFilterBaia: '',
+
+        // Filtros de cio
+        cioFilterDataInicial: '',
+        cioFilterDataFinal: '',
+        cioFilterSearch: '',
+        cioFilterNumero: '',
 
         // Edição rápida de fêmea
         openEditFemea: false,
@@ -357,6 +372,7 @@
             data: '',
             peso: ''
         },
+        openEditCioModal: false,
 
         openEdit(f) {
             this.editFemeaData = {
@@ -394,6 +410,74 @@
                 window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Fêmea atualizada com sucesso!', type: 'success' } }));
                 this.openEditFemea = false;
                 this.ensureFemeasAtivas();
+            })
+            .catch(e => {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message, type: 'error' } }));
+            })
+            .finally(() => this.saving = false);
+        },
+        openEditCio(row) {
+            this.editCioData = {
+                id: row.cio_id,
+                femea_id: row.id_primaria + (row.id_secundaria ? ' / ' + row.id_secundaria : ''),
+                data: this.calendarType === '1000_dias' ? (row.raw_data_pig || '') : this.formatBrDate(row.raw_data),
+                peso: row.raw_peso || ''
+            };
+            this.openEditCioModal = true;
+        },
+        saveCioEdit() {
+            if (!this.editCioData.data) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe a data', type: 'error' } }));
+                return;
+            }
+            this.saving = true;
+            const payload = {
+                data: this.calendarType === '1000_dias' ? this.editCioData.data : this.parseBrDate(this.editCioData.data),
+                peso: this.editCioData.peso === '' ? null : Number(this.editCioData.peso)
+            };
+            fetch(`/api/plantel/femeas/cios/${this.editCioData.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(async r => {
+                const data = await r.json();
+                if (!r.ok) throw new Error(data.message || 'Erro ao salvar alteração');
+                return data;
+            })
+            .then(data => {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Registro atualizado com sucesso!', type: 'success' } }));
+                this.openEditCioModal = false;
+                this.loadCioFemeas();
+            })
+            .catch(e => {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message, type: 'error' } }));
+            })
+            .finally(() => this.saving = false);
+        },
+        deleteCioRecord(id) {
+            if (!confirm('Tem certeza que deseja excluir este registro de cio?')) return;
+            
+            this.saving = true;
+            fetch(`/api/gestacao/cio/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                }
+            })
+            .then(async r => {
+                const data = await r.json();
+                if (!r.ok) throw new Error(data.message || 'Erro ao excluir registro');
+                return data;
+            })
+            .then(data => {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Registro excluído com sucesso!', type: 'success' } }));
+                this.loadCioFemeas();
             })
             .catch(e => {
                 window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message, type: 'error' } }));
@@ -475,6 +559,9 @@
                    this.idadeCompraDias() >= this.criterioMaturidadeMin;
         },
         normalizeDateInput(value) {
+            if (this.calendarType === '1000_dias') {
+                return String(value || '').replace(/\D/g, '');
+            }
             const digits = String(value || '').replace(/\D/g, '').slice(0, 8);
             const d = digits.slice(0, 2);
             const m = digits.slice(2, 4);
@@ -613,7 +700,7 @@
                 });
         },
         ensureFemeasAtivas(force = false) {
-            if (!force && this.femeasAtivas.length > 0 && this.femeasMode === 'ativas' && !this.femeasSearch && !this.femeasFilterRaca && !this.femeasFilterFornecedor && !this.femeasFilterLocalizacao && !this.femeasFilterBaia) return;
+            if (!force && this.femeasAtivas.length > 0 && this.femeasMode === 'ativas' && !this.femeasSearch && !this.femeasFilterRaca && !this.femeasFilterFornecedor && !this.femeasFilterLocalizacao && !this.femeasFilterBaia && !this.femeasFilterDataInicial && !this.femeasFilterDataFinal) return;
             this.lancamentosLoading = true;
             this.lancamentosError = '';
             const params = new URLSearchParams({
@@ -623,7 +710,9 @@
                 raca_id: this.femeasFilterRaca,
                 fornecedor_id: this.femeasFilterFornecedor,
                 localizacao: this.femeasFilterLocalizacao,
-                baia: this.femeasFilterBaia
+                baia: this.femeasFilterBaia,
+                data_inicial: this.femeasFilterDataInicial,
+                data_final: this.femeasFilterDataFinal
             });
             fetch(`${API_BASE_URL}/plantel/femeas?${params.toString()}`)
                 .then(async r => {
@@ -1024,6 +1113,7 @@
             const mm = String(base.getMonth() + 1).padStart(2, '0');
             const dd = String(base.getDate()).padStart(2, '0');
             this.dataCio = `${dd}/${mm}/${yyyy}`;
+            this.dataCio = `${dd}/${mm}/${yyyy}`;
         },
         openNovoCio() {
             this.resetForm();
@@ -1036,7 +1126,16 @@
         loadCioFemeas() {
             this.lancamentosLoading = true;
             this.lancamentosError = '';
-            fetch('/api/gestacao/cio?limit=200')
+            
+            const params = new URLSearchParams({
+                limit: 200,
+                search: this.cioFilterSearch,
+                data_inicial: this.cioFilterDataInicial,
+                data_final: this.cioFilterDataFinal,
+                cio: this.cioFilterNumero
+            });
+
+            fetch(`/api/gestacao/cio?${params.toString()}`)
                 .then(r => r.json())
                 .then(data => {
                     this.cioFemeas = Array.isArray(data.items) ? data.items : [];
@@ -1599,86 +1698,34 @@
                 </div>
             </div>
             <div class="p-6">
-                <div class="bg-white border border-gray-100 rounded-2xl p-4">
-                    <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">1) Item</div>
-                    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <button type="button" @click="item = 'femeas'; mov = 'compra'; compraFemeasTipo = 'leitoa';" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="item === 'femeas' ? 'border-primary-200 bg-primary-50' : 'border-gray-100 bg-white hover:border-gray-200'">
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm font-semibold text-gray-900">Fêmeas</div>
-                                <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="item === 'femeas' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'">
-                                    <i class="fa-solid fa-piggy-bank"></i>
-                                </div>
-                            </div>
-                            <div class="mt-2 text-xs text-gray-500">Matrizes / fêmeas do plantel.</div>
+                <div class="flex flex-col gap-4">
+                    <div class="flex items-center gap-2 bg-gray-100 p-1.5 rounded-xl self-start overflow-x-auto max-w-full">
+                        <button type="button" @click="item = 'femeas'; mov = 'compra'; compraFemeasTipo = 'leitoa';" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all" :class="item === 'femeas' ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-900/5' : 'text-gray-500 hover:text-gray-700'">
+                            <i class="fa-solid fa-piggy-bank text-primary-600"></i> Fêmeas
                         </button>
-                        <button type="button" @click="item = 'machos'; mov = 'compra'; loadComprasMachos()" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="item === 'machos' ? 'border-primary-200 bg-primary-50' : 'border-gray-100 bg-white hover:border-gray-200'">
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm font-semibold text-gray-900">Machos</div>
-                                <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="item === 'machos' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'">
-                                    <i class="fa-solid fa-piggy-bank"></i>
-                                </div>
-                            </div>
-                            <div class="mt-2 text-xs text-gray-500">Reprodutores / machos do plantel.</div>
+                        <button type="button" @click="item = 'machos'; mov = 'compra'; loadComprasMachos()" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all" :class="item === 'machos' ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-900/5' : 'text-gray-500 hover:text-gray-700'">
+                            <i class="fa-solid fa-piggy-bank text-primary-600"></i> Machos
                         </button>
-                        <button type="button" @click="item = 'semen'; mov = null" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="item === 'semen' ? 'border-primary-200 bg-primary-50' : 'border-gray-100 bg-white hover:border-gray-200'">
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm font-semibold text-gray-900">Sêmen</div>
-                                <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="item === 'semen' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'">
-                                    <i class="fa-solid fa-vial"></i>
-                                </div>
-                            </div>
-                            <div class="mt-2 text-xs text-gray-500">Doses/lot(es) de sêmen.</div>
+                        <button type="button" @click="item = 'semen'; mov = null" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all" :class="item === 'semen' ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-900/5' : 'text-gray-500 hover:text-gray-700'">
+                            <i class="fa-solid fa-vial text-primary-600"></i> Sêmen
                         </button>
                     </div>
-                </div>
 
-                <div class="bg-white border border-gray-100 rounded-2xl p-4 mt-4">
-                    <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">2) Movimentação</div>
-                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4" :class="item === 'femeas' ? 'md:grid-cols-5' : 'md:grid-cols-4'">
-                        <button type="button" @click="mov = 'compra'; loadComprasFemeas(); loadComprasMachos()" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="mov === 'compra' ? 'border-primary-200 bg-primary-50' : 'border-gray-100 bg-white hover:border-gray-200'">
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm font-semibold text-gray-900">Compra</div>
-                                <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="mov === 'compra' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-600'">
-                                    <i class="fa-solid fa-cart-shopping"></i>
-                                </div>
-                            </div>
-                            <div class="mt-2 text-xs text-gray-500">Entrada.</div>
+                    <div class="flex flex-wrap items-center gap-2" x-show="item !== 'semen'" x-cloak>
+                        <button type="button" @click="mov = 'compra'; if(item === 'femeas') loadComprasFemeas(); else loadComprasMachos();" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border" :class="mov === 'compra' ? 'bg-primary-50 border-primary-200 text-primary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'">
+                            <i class="fa-solid fa-cart-shopping w-4"></i> Compra
                         </button>
-                        <button type="button" x-show="item === 'femeas'" x-cloak @click="mov = 'cio'; loadCioFemeas()" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="mov === 'cio' ? 'border-pink-200 bg-pink-50' : 'border-gray-100 bg-white hover:border-gray-200'">
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm font-semibold text-gray-900">Cio</div>
-                                <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="mov === 'cio' ? 'bg-pink-600 text-white' : 'bg-gray-100 text-gray-600'">
-                                    <i class="fa-solid fa-venus"></i>
-                                </div>
-                            </div>
-                            <div class="mt-2 text-xs text-gray-500">Registro de cio.</div>
+                        <button x-show="item === 'femeas'" x-cloak type="button" @click="mov = 'cio'; loadCioFemeas()" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border" :class="mov === 'cio' ? 'bg-pink-50 border-pink-200 text-pink-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'">
+                            <i class="fa-solid fa-venus w-4"></i> Cio
                         </button>
-                        <button type="button" @click="mov = 'morte'; loadMortesFemeas(); loadMortesMachos()" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="mov === 'morte' ? 'border-red-200 bg-red-50' : 'border-gray-100 bg-white hover:border-gray-200'">
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm font-semibold text-gray-900">Morte</div>
-                                <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="mov === 'morte' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-600'">
-                                    <i class="fa-solid fa-skull-crossbones"></i>
-                                </div>
-                            </div>
-                            <div class="mt-2 text-xs text-gray-500">Saída.</div>
+                        <button type="button" @click="mov = 'morte'; if(item === 'femeas') loadMortesFemeas(); else loadMortesMachos();" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border" :class="mov === 'morte' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'">
+                            <i class="fa-solid fa-skull-crossbones w-4"></i> Morte
                         </button>
-                        <button type="button" @click="mov = 'descarte'; loadDescartesFemeas(); loadDescartesMachos()" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="mov === 'descarte' ? 'border-amber-200 bg-amber-50' : 'border-gray-100 bg-white hover:border-gray-200'">
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm font-semibold text-gray-900">Descarte</div>
-                                <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="mov === 'descarte' ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-600'">
-                                    <i class="fa-solid fa-ban"></i>
-                                </div>
-                            </div>
-                            <div class="mt-2 text-xs text-gray-500">Saída.</div>
+                        <button type="button" @click="mov = 'descarte'; if(item === 'femeas') loadDescartesFemeas(); else loadDescartesMachos();" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border" :class="mov === 'descarte' ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'">
+                            <i class="fa-solid fa-ban w-4"></i> Descarte
                         </button>
-                        <button type="button" @click="mov = 'venda'; loadVendasFemeas(); loadVendasMachos()" class="p-4 rounded-2xl border transition-all text-left hover:shadow-sm" :class="mov === 'venda' ? 'border-emerald-200 bg-emerald-50' : 'border-gray-100 bg-white hover:border-gray-200'">
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm font-semibold text-gray-900">Venda</div>
-                                <div class="w-10 h-10 rounded-xl flex items-center justify-center" :class="mov === 'venda' ? 'bg-emerald-600 text-white' : 'bg-gray-100 text-gray-600'">
-                                    <i class="fa-solid fa-hand-holding-dollar"></i>
-                                </div>
-                            </div>
-                            <div class="mt-2 text-xs text-gray-500">Saída.</div>
+                        <button type="button" @click="mov = 'venda'; if(item === 'femeas') loadVendasFemeas(); else loadVendasMachos();" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border" :class="mov === 'venda' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'">
+                            <i class="fa-solid fa-hand-holding-dollar w-4"></i> Venda
                         </button>
                     </div>
                 </div>
@@ -1772,37 +1819,37 @@
                             <div class="text-sm font-bold text-gray-700 uppercase tracking-wider">Status das Fêmeas (Última Operação)</div>
                         </div>
 
-                        <div class="bg-gray-50/50 border border-gray-100 rounded-2xl p-4 mb-4">
-                            <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
+                        <div class="bg-gray-50/50 border border-gray-100 rounded-xl p-3 mb-4">
+                            <div class="grid grid-cols-1 md:grid-cols-6 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Data inicial</label>
+                                    <input type="text" x-model="femeasFilterDataInicial" @input="femeasFilterDataInicial = normalizeDateInput($event.target.value)" class="block w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-primary-500 focus:border-primary-500" :placeholder="calendarType === '1000_dias' ? '' : 'DD/MM/AAAA'" inputmode="numeric" autocomplete="off">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Data final</label>
+                                    <input type="text" x-model="femeasFilterDataFinal" @input="femeasFilterDataFinal = normalizeDateInput($event.target.value)" class="block w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-primary-500 focus:border-primary-500" :placeholder="calendarType === '1000_dias' ? '' : 'DD/MM/AAAA'" inputmode="numeric" autocomplete="off">
+                                </div>
                                 <div class="md:col-span-2">
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Buscar ID</label>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Buscar ID</label>
                                     <div class="relative">
-                                        <input type="text" x-model="femeasSearch" @keydown.enter="femeasPage = 1; ensureFemeasAtivas(true)" class="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500" placeholder="ID primária ou secundária...">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <i class="fa-solid fa-magnifying-glass text-gray-400 text-xs"></i>
+                                        <input type="text" x-model="femeasSearch" @keydown.enter="femeasPage = 1; ensureFemeasAtivas(true)" class="block w-full pl-8 pr-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-primary-500 focus:border-primary-500">
+                                        <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                            <i class="fa-solid fa-magnifying-glass text-gray-400 text-[10px]"></i>
                                         </div>
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Raça</label>
-                                    <select x-model="femeasFilterRaca" class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500">
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Raça</label>
+                                    <select x-model="femeasFilterRaca" class="block w-full pl-2 pr-8 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-primary-500 focus:border-primary-500">
                                         <option value="">Todas</option>
                                         <template x-for="r in racas" :key="r.id">
                                             <option :value="r.id" x-text="r.nome"></option>
                                         </template>
                                     </select>
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Data inicial</label>
-                                    <input type="text" x-model="femeasFilterDataInicial" @input="femeasFilterDataInicial = normalizeDateInput($event.target.value)" class="block w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Data final</label>
-                                    <input type="text" x-model="femeasFilterDataFinal" @input="femeasFilterDataFinal = normalizeDateInput($event.target.value)" class="block w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
-                                </div>
                                 <div class="flex items-end">
-                                    <button type="button" @click="femeasPage = 1; ensureFemeasAtivas(true)" class="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-semibold rounded-xl shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                                        <i class="fa-solid fa-filter mr-2 text-xs"></i>
+                                    <button type="button" @click="femeasPage = 1; ensureFemeasAtivas(true)" class="w-full inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                        <i class="fa-solid fa-filter mr-1 text-[10px]"></i>
                                         Filtrar
                                     </button>
                                 </div>
@@ -1826,7 +1873,7 @@
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Peso</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                     <template x-for="f in femeasAtivas" :key="f.id">
                                         <tr class="hover:bg-gray-50 transition-colors group">
                                             <td class="px-4 py-3">
@@ -1915,7 +1962,7 @@
                                 <div class="md:col-span-2">
                                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Buscar ID</label>
                                     <div class="relative">
-                                        <input type="text" x-model="machosSearch" @keydown.enter="machosPage = 1; ensureMachosAtivos(true)" class="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500" placeholder="ID primária ou secundária...">
+                                        <input type="text" x-model="machosSearch" @keydown.enter="machosPage = 1; ensureMachosAtivos(true)" class="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500" placeholder="ID prim./sec.">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <i class="fa-solid fa-magnifying-glass text-gray-400 text-xs"></i>
                                         </div>
@@ -1959,7 +2006,7 @@
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Baia</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                     <template x-for="m in machosAtivos" :key="m.id">
                                         <tr class="hover:bg-gray-50 transition-colors group">
                                             <td class="px-4 py-3 text-sm font-bold text-primary-700" x-text="m.id_primaria"></td>
@@ -2025,6 +2072,33 @@
                             <div class="text-xs text-gray-500" x-show="lancamentosLoading">Carregando...</div>
                         </div>
 
+                        <div class="bg-gray-50/50 border border-gray-100 rounded-xl p-3 mb-4">
+                            <div class="grid grid-cols-1 md:grid-cols-5 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Data inicial</label>
+                                    <input type="text" x-model="cioFilterDataInicial" @input="cioFilterDataInicial = normalizeDateInput($event.target.value)" class="block w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-primary-500 focus:border-primary-500" :placeholder="calendarType === '1000_dias' ? '' : 'DD/MM/AAAA'" inputmode="numeric" autocomplete="off">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Data final</label>
+                                    <input type="text" x-model="cioFilterDataFinal" @input="cioFilterDataFinal = normalizeDateInput($event.target.value)" class="block w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-primary-500 focus:border-primary-500" :placeholder="calendarType === '1000_dias' ? '' : 'DD/MM/AAAA'" inputmode="numeric" autocomplete="off">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Buscar Fêmea</label>
+                                    <input type="text" x-model="cioFilterSearch" @keydown.enter="loadCioFemeas()" class="block w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-primary-500 focus:border-primary-500" placeholder="ID prim./sec.">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Nº do Cio</label>
+                                    <input type="number" x-model="cioFilterNumero" @keydown.enter="loadCioFemeas()" class="block w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 1">
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="button" @click="loadCioFemeas()" class="w-full inline-flex items-center justify-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                                        <i class="fa-solid fa-filter mr-1 text-[10px]"></i>
+                                        Filtrar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         <div x-show="lancamentosError" class="mb-4 bg-amber-50 border border-amber-100 text-amber-800 rounded-xl px-4 py-3 text-sm" x-text="lancamentosError" x-cloak></div>
 
                         <div class="overflow-x-auto border border-gray-100 rounded-xl">
@@ -2040,22 +2114,27 @@
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Idade</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <template x-for="row in cioFemeas" :key="row.id">
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-4 py-3 text-sm text-gray-700">
+                                <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
+
+                                    <template x-for="row in cioFemeas" :key="row.cio_id">
+                                        <tr class="hover:bg-gray-50 cursor-pointer" @click="window.location.href = `/admin/plantel/femeas/${row.id}`">
+                                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300" @click.stop>
                                                 <div class="flex items-center gap-2">
-                                                    <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" title="Abrir cadastro" @click="window.location.href = `/admin/plantel/femeas/${row.femea_id}`">
-                                                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                                    <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 hover:text-primary-600 transition-colors" title="Editar registro" @click.stop="openEditCio(row)">
+                                                        <i class="fa-solid fa-pen-to-square"></i>
                                                     </button>
-                                                    <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteCioRecord(row.id)">
+                                                    <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" title="Excluir registro" @click.stop="deleteCioRecord(row.cio_id)">
                                                         <i class="fa-solid fa-trash"></i>
                                                     </button>
                                                 </div>
                                             </td>
                                             <td class="px-4 py-3 text-sm text-gray-700" x-text="calendarType === '1000_dias' ? (row.dia_ciclo !== null ? row.dia_ciclo : '-') : row.data"></td>
-                                            <td class="px-4 py-3 text-sm font-semibold text-gray-900" x-text="row.matriz"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-700" x-text="row.matriz_secundaria || '-'"></td>
+                                            <td class="px-4 py-3 text-sm font-semibold text-gray-900">
+                                                <a :href="`/admin/plantel/femeas/${row.id}`" x-text="row.matriz" class="text-primary-600 hover:text-primary-800 hover:underline transition-colors"></a>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                                                <a :href="`/admin/plantel/femeas/${row.id}`" x-text="row.matriz_secundaria || '-'" class="hover:text-primary-600 hover:underline transition-colors"></a>
+                                            </td>
                                             <td class="px-4 py-3 text-sm text-gray-700" x-text="row.cio || '-'"></td>
                                             <td class="px-4 py-3 text-sm text-gray-700" x-text="row.peso || '-'"></td>
                                             <td class="px-4 py-3 text-sm text-gray-700" x-text="row.idade || '-'"></td>
@@ -2069,61 +2148,7 @@
                         </div>
                     </div>
                 </template>
-                <template x-if="!(item === 'femeas' && mov === 'compra') && !(item === 'femeas' && mov === 'morte') && !(item === 'femeas' && mov === 'descarte') && !(item === 'femeas' && mov === 'venda') && !(item === 'femeas' && mov === 'cio')">
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div class="text-sm font-bold text-gray-700 uppercase tracking-wider">Status das Fêmeas (Última Operação)</div>
-                            <div class="text-xs text-gray-500" x-show="femeasLoading">Carregando...</div>
-                        </div>
-                        
-                        <div class="overflow-x-auto border border-gray-100 rounded-2xl">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase w-20">Ação</th>
-                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase" x-text="calendarType === '1000_dias' ? 'Dia PIG' : 'Data'"></th>
-                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Tipo</th>
-                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Primária</th>
-                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Secundária</th>
-                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Raça</th>
-                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Idade</th>
-                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Fornecedor</th>
-                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Peso</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <template x-for="f in femeasAtivas" :key="f.id">
-                                        <tr class="hover:bg-gray-50 transition-colors group">
-                                            <td class="px-4 py-3">
-                                                <div class="flex items-center gap-1">
-                                                    <button @click.stop="openEdit(f)" class="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition-all" title="Editar fêmea">
-                                                        <i class="fa-solid fa-pencil"></i>
-                                                    </button>
-                                                    <button @click.stop="deleteFemeaRecord(f.id)" class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all" title="Excluir fêmea">
-                                                        <i class="fa-solid fa-trash-can"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                            <td class="px-4 py-3 text-sm font-mono text-gray-600" x-text="f.ultima_data_formatada"></td>
-                                            <td class="px-4 py-3 text-xs font-semibold text-gray-500 uppercase" x-text="f.tipo"></td>
-                                            <td class="px-4 py-3 cursor-pointer" @click="window.location.href = `/admin/plantel/femeas/${f.id}`">
-                                                <div class="flex items-center gap-2">
-                                                    <div class="text-sm font-bold text-primary-700 group-hover:underline" x-text="f.id_primaria"></div>
-                                                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-gray-300 group-hover:text-primary-400"></i>
-                                                </div>
-                                            </td>
-                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.id_secundaria || '-'"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.raca"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.idade_dias !== null ? f.idade_dias + ' d' : '-'"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.fornecedor"></td>
-                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="f.peso_atual ? (Number(f.peso_atual).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg') : '-'"></td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </template>
+                {{-- Tabela genérica 'Status das Fêmeas' removida pois exibia indevidamente em abas não relacionadas (ex: Machos) --}}
                 <template x-if="item === 'femeas' && mov === 'morte'">
                     <div>
                         <div class="mb-4 flex items-center justify-between">
@@ -2142,10 +2167,10 @@
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Causa</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                     <template x-for="row in mortesFemeas" :key="row.id">
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-4 py-3 text-sm text-gray-700">
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                                                 <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteLancamento(row.id)">
                                                     <i class="fa-solid fa-trash"></i>
                                                 </button>
@@ -2184,10 +2209,10 @@
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Causa</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                     <template x-for="row in mortesFemeas" :key="row.id">
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-4 py-3 text-sm text-gray-700">
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                                                 <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteLancamento(row.id)">
                                                     <i class="fa-solid fa-trash"></i>
                                                 </button>
@@ -2224,10 +2249,10 @@
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Causa</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                     <template x-for="row in descartesFemeas" :key="row.id">
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-4 py-3 text-sm text-gray-700">
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                                                 <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteLancamento(row.id)">
                                                     <i class="fa-solid fa-trash"></i>
                                                 </button>
@@ -2266,10 +2291,10 @@
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Causa</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                     <template x-for="row in descartesFemeas" :key="row.id">
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-4 py-3 text-sm text-gray-700">
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                                                 <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteLancamento(row.id)">
                                                     <i class="fa-solid fa-trash"></i>
                                                 </button>
@@ -2306,11 +2331,11 @@
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Causa</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                     <template x-for="row in vendasFemeas" :key="row.id">
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-4 py-3 text-sm text-gray-700">
-                                                <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteLancamento(row.id)">
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                                                <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" title="Excluir" @click.prevent="deleteLancamento(row.id)">
                                                     <i class="fa-solid fa-trash"></i>
                                                 </button>
                                             </td>
@@ -2348,10 +2373,10 @@
                                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Causa</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
+                                <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                                     <template x-for="row in vendasFemeas" :key="row.id">
-                                        <tr class="hover:bg-gray-50">
-                                            <td class="px-4 py-3 text-sm text-gray-700">
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                                            <td class="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                                                 <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteLancamento(row.id)">
                                                     <i class="fa-solid fa-trash"></i>
                                                 </button>
@@ -2422,7 +2447,7 @@
                                     <input type="text" x-model="dataMorte" @input="dataMorte = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Causa da morte</label>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Causa da morte</label>
                                     <select x-model="causaMorteId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                                         <option value="">Selecione...</option>
                                         <template x-for="c in causasMorte" :key="c.id">
@@ -2512,7 +2537,7 @@
                         </template>
                         <template x-if="item === 'femeas' && mov === 'venda'">
                             <div class="space-y-4">
-                                <div class="bg-amber-50 border border-amber-100 text-amber-900 rounded-xl px-4 py-3 text-sm">
+                                <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-900/30 text-amber-900 dark:text-amber-200 rounded-xl px-4 py-3 text-sm">
                                     É importante fazer o descarte primeiro e depois a venda. A venda marca que o animal deixou de ser produtivo no ato da venda. Se ele já estiver descartado há algum tempo, isso pode atrapalhar as análises do sistema.
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2610,34 +2635,38 @@
                         </template>
 
                         <template x-if="item === 'femeas' && mov === 'cio'">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div class="sm:col-span-2">
-                                    <label class="block text-sm font-medium text-gray-700">Fêmea (Leitoa / Matriz vazia)</label>
-                                    <select x-model="femeaCioId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
-                                        <option value="">Selecione...</option>
-                                        <template x-for="f in femeasAtivas" :key="f.id">
-                                            <option :value="String(f.id)" x-text="f.id_primaria + (f.id_secundaria ? ' / ' + f.id_secundaria : '')"></option>
-                                        </template>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700" x-text="calendarType === '1000_dias' ? 'Dia do Ciclo' : 'Data do cio'"></label>
-                                    <template x-if="calendarType !== '1000_dias'">
-                                        <input type="text" x-model="dataCio" @input="dataCio = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
-                                    </template>
-                                    <template x-if="calendarType === '1000_dias'">
-                                        <div class="flex items-center gap-2 mt-1">
-                                            <span class="text-gray-500 text-sm">Dia</span>
-                                            <input type="number" x-model="diaCicloCio" @input="updateDateFromCycleDay($event.target.value)" class="w-24 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 114">
-                                            <span class="text-xs text-gray-400" x-text="dataCio ? '(' + dataCio + ')' : ''"></span>
+                            <div class="space-y-4">
+                                <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                                    <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Novo Lançamento de Cio</div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div class="sm:col-span-2">
+                                            <label class="block text-xs font-semibold text-gray-700 mb-1">Selecionar Fêmea</label>
+                                            <select x-model="femeaCioId" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 py-2.5">
+                                                <option value="">Selecione a fêmea...</option>
+                                                <template x-for="f in femeasAtivas" :key="f.id">
+                                                    <option :value="String(f.id)" x-text="f.id_primaria + (f.id_secundaria ? ' / ' + f.id_secundaria : '')"></option>
+                                                </template>
+                                            </select>
                                         </div>
-                                    </template>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Peso (opcional)</label>
-                                    <div class="mt-1 relative">
-                                        <input type="number" step="0.01" x-model="pesoCio" class="w-full pr-12 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="0,00">
-                                        <span class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400">kg</span>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-gray-700 mb-1">Data do Cio</label>
+                                            <template x-if="calendarType !== '1000_dias'">
+                                                <input type="text" x-model="dataCio" @input="dataCio = normalizeDateInput($event.target.value)" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 py-2.5" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
+                                            </template>
+                                            <template x-if="calendarType === '1000_dias'">
+                                                <div class="flex items-center gap-2">
+                                                    <input type="number" x-model="diaCicloCio" @input="updateDateFromCycleDay($event.target.value)" class="flex-1 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 py-2.5" placeholder="Ex: 114">
+                                                    <span class="text-[10px] text-gray-400 font-medium" x-text="dataCio ? '(' + dataCio + ')' : ''"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-gray-700 mb-1">Peso da Leitoa (kg)</label>
+                                            <div class="relative">
+                                                <input type="number" step="0.01" x-model="pesoCio" class="w-full pr-12 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 py-2.5" placeholder="0,00">
+                                                <span class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400">kg</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -2647,16 +2676,16 @@
                             <div class="space-y-4">
                                 <template x-if="openNovoTab === 'principal'">
                                     <div class="space-y-4">
-                                        <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                                        <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl p-4">
                                             <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Identificação e Datas</div>
                                             <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div>
-                                                    <label class="block text-sm font-medium text-gray-700">ID primária</label>
-                                                    <input type="text" x-model="idPrimaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 2001">
+                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">ID primária</label>
+                                                    <input type="text" x-model="idPrimaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 2001">
                                                 </div>
                                                 <div>
-                                                    <label class="block text-sm font-medium text-gray-700">ID secundária</label>
-                                                    <input type="text" x-model="idSecundaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Opcional">
+                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">ID secundária</label>
+                                                    <input type="text" x-model="idSecundaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Opcional">
                                                 </div>
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700">Data de compra</label>
@@ -2669,19 +2698,19 @@
                                             </div>
                                         </div>
 
-                                        <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                                        <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl p-4">
                                             <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Classificação</div>
                                             <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div>
-                                                    <label class="block text-sm font-medium text-gray-700">Raça</label>
+                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Raça</label>
                                                     <div class="mt-1 flex items-center space-x-2">
-                                                        <select x-model="racaId" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                                        <select x-model="racaId" class="w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                                                             <option value="">Selecione...</option>
                                                             <template x-for="r in racas" :key="r.id">
                                                                 <option :value="String(r.id)" x-text="r.nome"></option>
                                                             </template>
                                                         </select>
-                                                        <button type="button" @click="openNovaRaca = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 rounded-xl shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar raça">
+                                                        <button type="button" @click="openNovaRaca = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 dark:border-gray-700 rounded-xl shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar raça">
                                                             <i class="fa-solid fa-plus"></i>
                                                         </button>
                                                     </div>
@@ -2706,7 +2735,7 @@
                                 </template>
 
                                 <template x-if="openNovoTab === 'complementares'">
-                                    <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                                    <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl p-4">
                                         <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Complementares</div>
                                         <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
@@ -2754,7 +2783,7 @@
                         <div class="space-y-4">
                             <template x-if="openNovoTab === 'principal'">
                                 <div class="space-y-4">
-                                    <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                                    <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl p-4">
                                         <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Identificação e Datas</div>
                                         <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
@@ -2802,7 +2831,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                                    <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl p-4">
                                         <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Classificação</div>
                                         <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
@@ -2947,11 +2976,75 @@
             </div>
         </div>
 
+        <!-- Modal Edição de Cio Moderno -->
+        <div x-show="openEditCioModal" 
+             class="fixed inset-0 z-[120] overflow-y-auto"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-cloak @keydown.escape.window="openEditCioModal = false">
+            
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 transition-opacity bg-gray-900/60 backdrop-blur-sm" @click="openEditCioModal = false"></div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <div class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100 dark:border-gray-800"
+                     x-transition:enter="ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100">
+                    
+                    <div class="bg-gradient-to-r from-pink-600 to-rose-500 px-6 py-4 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Editar Registro de Cio</h3>
+                            <template x-if="editCioData.femea_id">
+                                <div class="text-[10px] text-pink-100 font-medium mt-0.5">Fêmea: <span x-text="editCioData.femea_id"></span></div>
+                            </template>
+                        </div>
+                        <button @click="openEditCioModal = false" class="text-white/80 hover:text-white transition-colors">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+
+                    <form @submit.prevent="saveCioEdit()" class="p-6 space-y-5">
+                        <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 space-y-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-wider">Data do Cio</label>
+                                <input type="text" x-model="editCioData.data" @input="editCioData.data = normalizeDateInput($event.target.value)" required
+                                       class="block w-full px-4 py-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all shadow-sm dark:text-gray-200"
+                                       :placeholder="calendarType === '1000_dias' ? 'Dia PIG' : 'DD/MM/AAAA'">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-wider">Peso da leitoa (kg)</label>
+                                <div class="relative">
+                                    <input type="number" step="0.01" x-model="editCioData.peso"
+                                           class="block w-full px-4 py-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all shadow-sm dark:text-gray-200"
+                                           placeholder="Opcional">
+                                    <span class="absolute inset-y-0 right-4 flex items-center text-xs text-gray-400">kg</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pt-2 flex gap-3">
+                            <button type="button" @click="openEditCioModal = false" 
+                                    class="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-700 text-sm font-semibold rounded-xl text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all">
+                                Cancelar
+                            </button>
+                            <button type="submit" :disabled="saving"
+                                    class="flex-1 px-4 py-3 bg-pink-600 text-sm font-semibold rounded-xl text-white hover:bg-pink-700 shadow-lg shadow-pink-600/20 disabled:opacity-50 transition-all flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-spinner fa-spin" x-show="saving"></i>
+                                <span x-text="saving ? 'Salvando...' : 'Salvar Alterações'"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!-- Modal de Edição Rápida de Fêmea -->
         <div x-show="openEditFemea" class="fixed inset-0 z-[110] overflow-y-auto" x-cloak>
             <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
                 <div x-show="openEditFemea" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 transition-opacity" aria-hidden="true" @click="openEditFemea = false">
-                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                    <div class="absolute inset-0 bg-gray-500/75 dark:bg-gray-950/80 backdrop-blur-sm"></div>
                 </div>
 
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
@@ -3238,19 +3331,19 @@
                         <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4" x-show="selected" x-cloak>
                             <div>
                                 <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Fase</div>
-                                <div class="mt-1 text-sm text-gray-900" x-text="selected.fase"></div>
-                                <div class="mt-1 text-xs text-gray-500" x-text="'Próxima: ' + selected.proxima_fase + ' | Prevista em: ' + selected.prevista_em"></div>
+                                <div class="mt-1 text-sm text-gray-900" x-text="selected ? selected.fase : ''"></div>
+                                <div class="mt-1 text-xs text-gray-500" x-text="'Próxima: ' + (selected ? selected.proxima_fase : '-') + ' | Prevista em: ' + (selected ? selected.prevista_em : '-')"></div>
                             </div>
                             <div>
                                 <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Dados</div>
-                                <div class="mt-1 text-sm text-gray-700" x-text="'Tipo: ' + selected.tipo"></div>
-                                <div class="mt-1 text-sm text-gray-700" x-text="'Nascimento: ' + (selected.data_nascimento || '-')"></div>
-                                <div class="mt-1 text-sm text-gray-700" x-text="'Compra: ' + (selected.data_compra || '-')"></div>
+                                <div class="mt-1 text-sm text-gray-700" x-text="'Tipo: ' + (selected ? selected.tipo : '-')"></div>
+                                <div class="mt-1 text-sm text-gray-700" x-text="'Nascimento: ' + ((selected && selected.data_nascimento) || '-')"></div>
+                                <div class="mt-1 text-sm text-gray-700" x-text="'Compra: ' + ((selected && selected.data_compra) || '-')"></div>
                             </div>
                             <div class="sm:col-span-2">
                                 <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Calendário (previsões)</div>
                                 <div class="mt-2 bg-gray-50 border border-gray-100 rounded-2xl p-4">
-                                    <template x-if="Array.isArray(selected.calendario) && selected.calendario.length > 0">
+                                    <template x-if="Array.isArray(selected && selected.calendario) && selected.calendario.length > 0">
                                         <ul class="space-y-2">
                                             <template x-for="(e, i) in selected.calendario" :key="'cal-' + i">
                                                 <li class="flex items-start justify-between gap-4 text-sm">
@@ -3260,7 +3353,7 @@
                                             </template>
                                         </ul>
                                     </template>
-                                    <template x-if="!Array.isArray(selected.calendario) || selected.calendario.length === 0">
+                                    <template x-if="!(Array.isArray(selected && selected.calendario)) || (selected && selected.calendario && selected.calendario.length === 0)">
                                         <div class="text-sm text-gray-500">Sem previsões (sem cobertura registrada).</div>
                                     </template>
                                 </div>
@@ -3280,6 +3373,7 @@
 
 <div x-show="tab === 'analise'" x-cloak>
     <div x-data="{
+        analiseSubTab: 'desempenho',
         loading: false,
         loaded: false,
         error: '',
@@ -3301,6 +3395,100 @@
             morte: { leitoa: [], matriz: [], leitao: [] },
             descarte: { leitoa: [], matriz: [], leitao: [] },
             venda: { leitoa: [], matriz: [], leitao: [] },
+        },
+        // Ficha da matriz
+        fichaModalOpen: false,
+        fichaLoading: false,
+        fichaError: '',
+        fichaFemeas: [],
+        fichaSelectedId: '',
+        fichaData: null,
+        // Retenção
+        retencaoExpanded: true,
+        retencaoLoading: false,
+        retencaoError: '',
+        retencaoData: null,
+        retencaoFiltroRaca: '',
+        retencaoFiltroTipo: 'leitoas',
+        retencaoDataInicial: '',
+        retencaoDataFinal: '',
+        racasRetencao: [],
+        loadFichaFemeas() {
+            if (this.fichaFemeas.length > 0) return;
+            fetch('/api/plantel/femeas?limit=1000&all=1', { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => {
+                    this.fichaFemeas = Array.isArray(data.items) ? data.items : [];
+                })
+                .catch(() => { this.fichaFemeas = []; });
+        },
+        openFichaModal() {
+            this.loadFichaFemeas();
+            this.fichaModalOpen = true;
+            this.fichaSelectedId = '';
+            this.fichaData = null;
+            this.fichaError = '';
+        },
+        loadFichaData() {
+            if (!this.fichaSelectedId) {
+                this.fichaData = null;
+                return;
+            }
+            this.fichaLoading = true;
+            this.fichaError = '';
+            fetch(`/api/plantel/femeas/ficha/${this.fichaSelectedId}`, { headers: { 'Accept': 'application/json' } })
+                .then(async r => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(data?.message || 'Erro ao carregar ficha');
+                    return data;
+                })
+                .then(data => {
+                    this.fichaData = data;
+                })
+                .catch(e => {
+                    this.fichaError = e.message;
+                    this.fichaData = null;
+                })
+                .finally(() => { this.fichaLoading = false; });
+        },
+        loadRetencaoData() {
+            if (!this.retencaoDataInicial || !this.retencaoDataFinal) {
+                this.retencaoError = 'Selecione o período para análise.';
+                return;
+            }
+            this.retencaoLoading = true;
+            this.retencaoError = '';
+            const params = new URLSearchParams({
+                data_inicial: this.retencaoDataInicial,
+                data_final: this.retencaoDataFinal,
+                raca_id: this.retencaoFiltroRaca,
+                tipo_entrada: this.retencaoFiltroTipo
+            });
+            fetch(`/api/plantel/femeas/retencao?${params.toString()}`, { headers: { 'Accept': 'application/json' } })
+                .then(async r => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(data?.message || 'Erro ao carregar dados');
+                    return data;
+                })
+                .then(data => {
+                    this.retencaoData = data;
+                })
+                .catch(e => {
+                    this.retencaoError = e.message;
+                    this.retencaoData = null;
+                })
+                .finally(() => { this.retencaoLoading = false; });
+        },
+        loadRacasRetencao() {
+            if (this.racasRetencao.length > 0) return;
+            fetch('/api/racas')
+                .then(r => r.json())
+                .then(data => {
+                    this.racasRetencao = Array.isArray(data) ? data : [];
+                })
+                .catch(() => {
+                    this.racasRetencao = [];
+                });
         },
         countByCausa(items) {
             const map = {};
@@ -3651,7 +3839,363 @@
             </button>
         </div>
 
+        <!-- Subcategorias de Análise -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                <div class="flex items-center gap-2">
+                    <button type="button" @click="analiseSubTab = 'desempenho'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors" :class="analiseSubTab === 'desempenho' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
+                        <i class="fa-solid fa-chart-line mr-2"></i>Desempenho
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conteúdo da subcategoria Desempenho -->
+        <div x-show="analiseSubTab === 'desempenho'" x-cloak>
+            <!-- Card Retenção de Fêmeas -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6 transition-all duration-300 hover:shadow-md">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-emerald-50 via-emerald-50/80 to-emerald-100/50 cursor-pointer select-none" @click="retencaoExpanded = !retencaoExpanded">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="group w-10 h-10 rounded-xl bg-white border-2 border-emerald-200 text-emerald-600 flex items-center justify-center transition-all duration-300 shadow-sm hover:bg-emerald-500 hover:text-white hover:border-emerald-500">
+                                <i class="fa-solid fa-chevron-down text-sm transition-transform duration-300 ease-in-out" :class="retencaoExpanded ? 'rotate-180' : ''"></i>
+                            </div>
+                            <div>
+                                <h6 class="font-bold text-emerald-700 uppercase text-xs tracking-wider">
+                                    Retenção de Fêmeas
+                                </h6>
+                                <div class="text-sm text-gray-500 mt-1.5">Taxa de retenção ao longo do tempo de vida reprodutiva.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div x-show="retencaoExpanded" x-collapse.duration.500ms>
+                    <div class="p-6">
+                        <!-- Filtros -->
+                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-6">
+                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Filtros de Análise</div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Data Inicial</label>
+                                    <input type="text" x-model="retencaoDataInicial" @input="retencaoDataInicial = normalizeDateInput($event.target.value)" @focus="loadRacasRetencao()" class="block w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 shadow-sm hover:border-emerald-300" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Data Final</label>
+                                    <input type="text" x-model="retencaoDataFinal" @input="retencaoDataFinal = normalizeDateInput($event.target.value)" class="block w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 shadow-sm hover:border-emerald-300" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Raça</label>
+                                    <select x-model="retencaoFiltroRaca" class="block w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 shadow-sm hover:border-emerald-300 appearance-none cursor-pointer">
+                                        <option value="">Todas</option>
+                                        <template x-for="r in racasRetencao" :key="r.id">
+                                            <option :value="String(r.id)" x-text="r.nome"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo de Entrada</label>
+                                    <select x-model="retencaoFiltroTipo" class="block w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 shadow-sm hover:border-emerald-300 appearance-none cursor-pointer">
+                                        <option value="leitoas">Somente leitoas</option>
+                                        <option value="ciclo1">Fêmeas com entrada no ciclo 1</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-end">
+                                <button type="button" @click="loadRetencaoData()" :disabled="retencaoLoading" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white transition-all duration-300 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <i class="fa-solid fa-chart-line text-xs"></i>
+                                    <template x-if="!retencaoLoading"><span>Analisar</span></template>
+                                    <template x-if="retencaoLoading"><span>Carregando...</span></template>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div x-show="retencaoLoading" class="text-center py-8">
+                            <i class="fa-solid fa-spinner fa-spin text-emerald-500 text-3xl"></i>
+                            <div class="text-sm text-gray-500 mt-3">Carregando dados de retenção...</div>
+                        </div>
+
+                        <div x-show="retencaoError" class="bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm mb-4" x-text="retencaoError"></div>
+
+                        <div x-show="retencaoData && !retencaoLoading">
+                            <!-- Cards de Indicadores -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                                <div class="bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl p-4 border border-emerald-200">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center">
+                                            <i class="fa-solid fa-piggy-bank"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Total Entradas</div>
+                                            <div class="text-2xl font-bold text-emerald-900" x-text="retencaoData?.total_entradas ?? '-'"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border border-blue-200">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-blue-500 text-white flex items-center justify-center">
+                                            <i class="fa-solid fa-check-circle"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-blue-700 uppercase tracking-wider">Retidas</div>
+                                            <div class="text-2xl font-bold text-blue-900" x-text="retencaoData?.retidas ?? '-'"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-4 border border-amber-200">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-amber-500 text-white flex items-center justify-center">
+                                            <i class="fa-solid fa-percentage"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-amber-700 uppercase tracking-wider">Taxa Retenção</div>
+                                            <div class="text-2xl font-bold text-amber-900" x-text="(retencaoData?.taxa_retencao ?? '-') + '%'"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-4 border border-purple-200">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-purple-500 text-white flex items-center justify-center">
+                                            <i class="fa-solid fa-list-ol"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-purple-700 uppercase tracking-wider">Média Ciclos</div>
+                                            <div class="text-2xl font-bold text-purple-900" x-text="retencaoData?.media_ciclos ?? '-'"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tabela de Retenção por Ordem de Parto -->
+                            <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                                <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Retenção por Ordem de Parto</div>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-white">
+                                            <tr>
+                                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Ordem</th>
+                                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Entradas</th>
+                                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Retidas</th>
+                                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Taxa</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-gray-100">
+                                            <template x-for="row in (retencaoData?.por_ordem_parto ?? [])" :key="row.ordem">
+                                                <tr class="hover:bg-gray-50">
+                                                    <td class="px-4 py-3 text-sm font-semibold text-gray-900" x-text="'Ciclo ' + row.ordem"></td>
+                                                    <td class="px-4 py-3 text-sm text-gray-700" x-text="row.entradas"></td>
+                                                    <td class="px-4 py-3 text-sm text-gray-700" x-text="row.retidas"></td>
+                                                    <td class="px-4 py-3 text-sm font-semibold" :class="row.taxa >= 80 ? 'text-emerald-600' : (row.taxa >= 60 ? 'text-amber-600' : 'text-red-600')" x-text="row.taxa + '%'"></td>
+                                                </tr>
+                                            </template>
+                                            <tr x-show="!retencaoData?.por_ordem_parto || retencaoData.por_ordem_parto.length === 0">
+                                                <td colspan="4" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem dados para o período selecionado.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mensagem quando não há dados -->
+                        <div x-show="!retencaoData && !retencaoLoading && !retencaoError" class="text-center py-8">
+                            <i class="fa-solid fa-chart-pie text-4xl text-gray-300 mb-3"></i>
+                            <div class="text-sm text-gray-500">Selecione o período e clique em "Analisar" para visualizar a taxa de retenção.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Ficha da Matriz -->
+            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden mb-6 transition-all duration-300 hover:shadow-md" x-data="{ fichaExpanded: true }">
+                <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-primary-50/50 dark:from-primary-900/20 via-primary-50/30 dark:via-primary-900/10 to-primary-100/20 dark:to-primary-900/5">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <button type="button" @click="fichaExpanded = !fichaExpanded" class="group w-10 h-10 rounded-xl bg-white border-2 border-primary-200 text-primary-600 hover:bg-primary-600 hover:border-primary-600 hover:text-white flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95">
+                                <i class="fa-solid fa-chevron-down text-sm transition-transform duration-300 ease-in-out" :class="fichaExpanded ? 'rotate-180' : ''"></i>
+                            </button>
+                            <div>
+                                <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">
+                                    Ficha da Matriz
+                                </h6>
+                                <div class="text-sm text-gray-500 dark:text-gray-400 mt-1.5">Análise de informações e índices gerais de todos os ciclos reprodutivos.</div>
+                            </div>
+                        </div>
+                        <div class="w-full sm:w-72 relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-magnifying-glass text-gray-400 text-sm"></i>
+                            </div>
+                            <select x-model="fichaSelectedId" @change="loadFichaData()" @focus="loadFichaFemeas()" class="block w-full pl-10 pr-10 py-3 text-sm border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 shadow-sm hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-md appearance-none cursor-pointer">
+                                <option value="">Selecione uma fêmea...</option>
+                                <template x-for="f in fichaFemeas" :key="f.id">
+                                    <option :value="String(f.id)" x-text="f.id_primaria + (f.id_secundaria ? ' (' + f.id_secundaria + ')' : '')"></option>
+                                </template>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-chevron-down text-gray-400 text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div x-show="fichaExpanded" x-collapse>
+                    <div class="p-6">
+                        <div x-show="fichaLoading" class="text-center py-4">
+                            <i class="fa-solid fa-spinner fa-spin text-primary-500 text-2xl"></i>
+                            <div class="text-sm text-gray-500 mt-2">Carregando dados...</div>
+                        </div>
+
+                        <div x-show="fichaError" class="bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm mb-4" x-text="fichaError"></div>
+
+                        <div x-show="fichaData && !fichaLoading">
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div class="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border border-blue-200">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-blue-500 text-white flex items-center justify-center">
+                                            <i class="fa-solid fa-calendar-days"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Dias de Gestação</div>
+                                            <div class="text-2xl font-bold text-blue-900 dark:text-blue-100" x-text="fichaData?.dias_gestacao ?? '-'"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-gradient-to-br from-pink-50 dark:from-pink-900/20 to-pink-100/50 dark:to-pink-900/10 rounded-xl p-4 border border-pink-200 dark:border-pink-900/30">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-pink-500 text-white flex items-center justify-center">
+                                            <i class="fa-solid fa-baby"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-pink-700 uppercase tracking-wider">Dias de Lactação</div>
+                                            <div class="text-2xl font-bold text-pink-900" x-text="fichaData?.dias_lactacao ?? '-'"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-gradient-to-br from-green-50 dark:from-green-900/20 to-green-100/50 dark:to-green-100/10 rounded-xl p-4 border border-green-200 dark:border-green-900/30">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-green-500 text-white flex items-center justify-center">
+                                            <i class="fa-solid fa-egg"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-green-700 uppercase tracking-wider">Nascidos Totais</div>
+                                            <div class="text-2xl font-bold text-green-900" x-text="fichaData?.nascidos_totais ?? '-'"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl p-4 border border-emerald-200">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center">
+                                            <i class="fa-solid fa-heart-pulse"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Nascidos Vivos</div>
+                                            <div class="text-2xl font-bold text-emerald-900" x-text="fichaData?.nascidos_vivos ?? '-'"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-4 border border-amber-200">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-amber-500 text-white flex items-center justify-center">
+                                            <i class="fa-solid fa-child"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-amber-700 uppercase tracking-wider">Desmamados</div>
+                                            <div class="text-2xl font-bold text-amber-900" x-text="fichaData?.desmamados ?? '-'"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-gradient-to-br from-red-50 dark:from-red-900/20 to-red-100/50 dark:to-red-900/10 rounded-xl p-4 border border-red-200 dark:border-red-900/30">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-lg bg-red-500 text-white flex items-center justify-center">
+                                            <i class="fa-solid fa-skull-crossbones"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-xs font-bold text-red-700 uppercase tracking-wider">Mortalidade</div>
+                                            <div class="text-2xl font-bold text-red-900" x-text="fichaData?.mortalidade ?? '-'"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Informações adicionais da fêmea selecionada -->
+                            <div class="mt-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                                <div class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">Informações da Fêmea Selecionada</div>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-gray-500">ID Primária:</span>
+                                        <span class="font-semibold text-gray-900 ml-1" x-text="fichaData?.id_primaria ?? '-'"></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-500">ID Secundária:</span>
+                                        <span class="font-semibold text-gray-900 ml-1" x-text="fichaData?.id_secundaria ?? '-'"></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-500">Total de Ciclos:</span>
+                                        <span class="font-semibold text-gray-900 ml-1" x-text="fichaData?.total_ciclos ?? '-'"></span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-500">Status:</span>
+                                        <span class="font-semibold text-gray-900 ml-1" x-text="fichaData?.status ?? '-'"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mensagem quando não há fêmea selecionada -->
+                        <div x-show="!fichaData && !fichaLoading && !fichaError" class="text-center py-8">
+                            <i class="fa-solid fa-piggy-bank text-4xl text-gray-300 mb-3"></i>
+                            <div class="text-sm text-gray-500">Selecione uma fêmea para visualizar a ficha completa com índices de desempenho.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div x-show="error" class="bg-amber-50 border border-amber-100 text-amber-800 rounded-xl px-4 py-3 text-sm" x-text="error" x-cloak></div>
+
+        <!-- Modal de Seleção de Fêmea para Ficha -->
+        <div x-show="fichaModalOpen" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" x-cloak>
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div x-show="fichaModalOpen" @click="fichaModalOpen = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div x-show="fichaModalOpen" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-flex flex-col align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100">
+                    <div class="bg-gradient-to-r from-primary-700 to-primary-600 px-6 py-5">
+                        <div class="flex items-start justify-between">
+                            <div class="text-left">
+                                <h3 class="text-lg leading-6 font-semibold text-white">Selecionar Fêmea para Ficha</h3>
+                                <p class="mt-1 text-xs text-primary-100">Escolha a fêmea para visualizar a análise de desempenho dos ciclos reprodutivos.</p>
+                            </div>
+                            <button type="button" @click="fichaModalOpen = false" class="text-white/80 hover:text-white transition-colors">
+                                <i class="fa-solid fa-xmark text-lg"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-white px-6 py-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Selecione a Fêmea</label>
+                                <select x-model="fichaSelectedId" @change="loadFichaData()" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="">Escolha uma fêmea...</option>
+                                    <template x-for="f in fichaFemeas" :key="f.id">
+                                        <option :value="String(f.id)" x-text="f.id_primaria + (f.id_secundaria ? ' (' + f.id_secundaria + ')' : '')"></option>
+                                    </template>
+                                </select>
+                            </div>
+
+                            <div x-show="fichaLoading" class="text-center py-4">
+                                <i class="fa-solid fa-spinner fa-spin text-primary-500 text-2xl"></i>
+                                <div class="text-sm text-gray-500 mt-2">Carregando dados...</div>
+                            </div>
+
+                            <div x-show="fichaError" class="bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm" x-text="fichaError"></div>
+                        </div>
+                    </div>
+                    <div class="bg-white border-t border-gray-100 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3">
+                        <button type="button" @click="fichaModalOpen = false" class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:w-auto">
+                            Fechar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -3680,37 +4224,37 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                        <div class="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/20 p-4">
                             <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Top causas (morte)</div>
                             <div class="mt-3 space-y-2">
                                 <template x-for="row in top.femeas.morte" :key="row.causa">
                                     <div class="flex items-center justify-between gap-3 text-sm">
-                                        <div class="min-w-0 truncate text-gray-700" x-text="row.causa"></div>
-                                        <div class="font-semibold text-gray-900" x-text="row.total"></div>
+                                        <div class="min-w-0 truncate text-gray-700 dark:text-gray-300" x-text="row.causa"></div>
+                                        <div class="font-semibold text-gray-900 dark:text-gray-100" x-text="row.total"></div>
                                     </div>
                                 </template>
                                 <div x-show="top.femeas.morte.length === 0" class="text-sm text-gray-500">Sem registros.</div>
                             </div>
                         </div>
-                        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                        <div class="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/20 p-4">
                             <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Top causas (descarte)</div>
                             <div class="mt-3 space-y-2">
                                 <template x-for="row in top.femeas.descarte" :key="row.causa">
                                     <div class="flex items-center justify-between gap-3 text-sm">
-                                        <div class="min-w-0 truncate text-gray-700" x-text="row.causa"></div>
-                                        <div class="font-semibold text-gray-900" x-text="row.total"></div>
+                                        <div class="min-w-0 truncate text-gray-700 dark:text-gray-300" x-text="row.causa"></div>
+                                        <div class="font-semibold text-gray-900 dark:text-gray-100" x-text="row.total"></div>
                                     </div>
                                 </template>
                                 <div x-show="top.femeas.descarte.length === 0" class="text-sm text-gray-500">Sem registros.</div>
                             </div>
                         </div>
-                        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                        <div class="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/20 p-4">
                             <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Top causas (venda)</div>
                             <div class="mt-3 space-y-2">
                                 <template x-for="row in top.femeas.venda" :key="row.causa">
                                     <div class="flex items-center justify-between gap-3 text-sm">
-                                        <div class="min-w-0 truncate text-gray-700" x-text="row.causa"></div>
-                                        <div class="font-semibold text-gray-900" x-text="row.total"></div>
+                                        <div class="min-w-0 truncate text-gray-700 dark:text-gray-300" x-text="row.causa"></div>
+                                        <div class="font-semibold text-gray-900 dark:text-gray-100" x-text="row.total"></div>
                                     </div>
                                 </template>
                                 <div x-show="top.femeas.venda.length === 0" class="text-sm text-gray-500">Sem registros.</div>
@@ -3746,37 +4290,37 @@
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                        <div class="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/20 p-4">
                             <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Top causas (morte)</div>
                             <div class="mt-3 space-y-2">
                                 <template x-for="row in top.machos.morte" :key="row.causa">
                                     <div class="flex items-center justify-between gap-3 text-sm">
-                                        <div class="min-w-0 truncate text-gray-700" x-text="row.causa"></div>
-                                        <div class="font-semibold text-gray-900" x-text="row.total"></div>
+                                        <div class="min-w-0 truncate text-gray-700 dark:text-gray-300" x-text="row.causa"></div>
+                                        <div class="font-semibold text-gray-900 dark:text-gray-100" x-text="row.total"></div>
                                     </div>
                                 </template>
                                 <div x-show="top.machos.morte.length === 0" class="text-sm text-gray-500">Sem registros.</div>
                             </div>
                         </div>
-                        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                        <div class="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/20 p-4">
                             <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Top causas (descarte)</div>
                             <div class="mt-3 space-y-2">
                                 <template x-for="row in top.machos.descarte" :key="row.causa">
                                     <div class="flex items-center justify-between gap-3 text-sm">
-                                        <div class="min-w-0 truncate text-gray-700" x-text="row.causa"></div>
-                                        <div class="font-semibold text-gray-900" x-text="row.total"></div>
+                                        <div class="min-w-0 truncate text-gray-700 dark:text-gray-300" x-text="row.causa"></div>
+                                        <div class="font-semibold text-gray-900 dark:text-gray-100" x-text="row.total"></div>
                                     </div>
                                 </template>
                                 <div x-show="top.machos.descarte.length === 0" class="text-sm text-gray-500">Sem registros.</div>
                             </div>
                         </div>
-                        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                        <div class="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/20 p-4">
                             <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Top causas (venda)</div>
                             <div class="mt-3 space-y-2">
                                 <template x-for="row in top.machos.venda" :key="row.causa">
                                     <div class="flex items-center justify-between gap-3 text-sm">
-                                        <div class="min-w-0 truncate text-gray-700" x-text="row.causa"></div>
-                                        <div class="font-semibold text-gray-900" x-text="row.total"></div>
+                                        <div class="min-w-0 truncate text-gray-700 dark:text-gray-300" x-text="row.causa"></div>
+                                        <div class="font-semibold text-gray-900 dark:text-gray-100" x-text="row.total"></div>
                                     </div>
                                 </template>
                                 <div x-show="top.machos.venda.length === 0" class="text-sm text-gray-500">Sem registros.</div>

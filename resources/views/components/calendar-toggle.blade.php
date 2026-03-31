@@ -20,7 +20,7 @@ document.addEventListener('alpine:init', () => {
             const currentType = this.calendarType === 'gregoriano' ? 'Gregoriano' : '1000 dias';
             const targetType = newType === 'gregoriano' ? 'Gregoriano' : '1000 dias';
             
-            if (confirm(`Deseja alterar o calendário de ${currentType} para ${targetType}?\\n\\nEsta alteração será aplicada em todo o sistema e a página será recarregada.`)) {
+            if (confirm('Deseja alterar o calendário de 1000 dias para Gregoriano?\\n\\nEsta alteração será aplicada em todo o sistema e a página será recarregada.')) {
                 this.calendarType = newType;
                 localStorage.setItem('masterpig_calendar_type', newType);
                 

@@ -42,6 +42,8 @@ class PlantelApiController extends Controller
             $fornecedorId = request()->input('fornecedor_id');
             $localizacao = request()->input('localizacao');
             $baia = request()->input('baia');
+            $dataInicInput = request()->input('data_inicial');
+            $dataFimInput = request()->input('data_final');
 
             $select = [
                 'femea.id',
@@ -128,6 +130,17 @@ class PlantelApiController extends Controller
 
             if (!empty($baia)) {
                 $query->where('femea.baia', 'like', "%{$baia}%");
+            }
+
+            // Filtros de data (baseados no último movimento fm.data)
+            $parsedInic = PigCycleService::parseFilterDate($dataInicInput);
+            if ($parsedInic && Schema::hasTable('femea_movimento')) {
+                $query->where('fm.data', '>=', $parsedInic->toDateString());
+            }
+
+            $parsedFim = PigCycleService::parseFilterDate($dataFimInput);
+            if ($parsedFim && Schema::hasTable('femea_movimento')) {
+                $query->where('fm.data', '<=', $parsedFim->toDateString());
             }
 
             $total = $query->count();
@@ -274,6 +287,8 @@ class PlantelApiController extends Controller
             $search = request()->input('search');
             $localizacao = request()->input('localizacao');
             $baia = request()->input('baia');
+            $dataInicInput = request()->input('data_inicial');
+            $dataFimInput = request()->input('data_final');
 
             $query = DB::table('macho')->orderBy('macho.id_primaria')->select([
                 'macho.id',
@@ -320,6 +335,17 @@ class PlantelApiController extends Controller
                 $query->where('macho.baia', 'like', "%{$baia}%");
             }
 
+            // Filtros de data (baseados no último movimento mm.data)
+            $parsedInic = PigCycleService::parseFilterDate($dataInicInput);
+            if ($parsedInic && Schema::hasTable('macho_movimento')) {
+                $query->where('mm.data', '>=', $parsedInic->toDateString());
+            }
+
+            $parsedFim = PigCycleService::parseFilterDate($dataFimInput);
+            if ($parsedFim && Schema::hasTable('macho_movimento')) {
+                $query->where('mm.data', '<=', $parsedFim->toDateString());
+            }
+
             $total = $query->count();
             $offset = ($page - 1) * $limit;
 
@@ -347,6 +373,9 @@ class PlantelApiController extends Controller
             $limit = request()->integer('limit', 50);
             $page = request()->integer('page', 1);
             $search = request()->input('search');
+            $dataInicInput = request()->input('data_inicial');
+            $dataFimInput = request()->input('data_final');
+            $cioNumero = request()->input('cio');
 
             $query = DB::table('gestacao_cio')
                 ->join('femea', 'femea.id', '=', 'gestacao_cio.femea_id')
@@ -356,7 +385,6 @@ class PlantelApiController extends Controller
                     'gestacao_cio.femea_id',
                     'femea.id_primaria',
                     'femea.id_secundaria',
-                    'gestacao_cio.cio',
                     'gestacao_cio.peso',
                     'femea.data_nascimento'
                 ])
@@ -367,6 +395,23 @@ class PlantelApiController extends Controller
                     $q->where('femea.id_primaria', 'like', "%{$search}%")
                         ->orWhere('femea.id_secundaria', 'like', "%{$search}%");
                 });
+            }
+
+            // Filtros de data
+            $parsedInic = PigCycleService::parseFilterDate($dataInicInput);
+            if ($parsedInic) {
+                $query->where('gestacao_cio.data', '>=', $parsedInic->toDateString());
+            }
+
+            $parsedFim = PigCycleService::parseFilterDate($dataFimInput);
+            if ($parsedFim) {
+                $query->where('gestacao_cio.data', '<=', $parsedFim->toDateString());
+            }
+
+            // Filtro número do cio (exato)
+            $cioVal = request()->input('cio');
+            if ($cioVal !== null && $cioVal !== '') {
+                $query->where('gestacao_cio.cio', '=', $cioVal);
             }
 
             $total = $query->count();
@@ -396,15 +441,33 @@ class PlantelApiController extends Controller
     {
         try {
             $validated = $request->validate([
-                'data' => 'required|date',
+                'data' => 'required|string',
                 'peso' => 'nullable|numeric',
             ]);
 
-            DB::table('gestacao_cio')->where('id', $id)->update([
-                'data' => $validated['data'],
-                'peso' => $validated['peso'],
-                'updated_at' => now(),
+            $parsedDate = \App\Services\PigCycleService::parseFilterDate($validated['data']);
+            if (!$parsedDate) {
+                return response()->json(['message' => 'Data ou Dia PIG inválido'], 422);
+            }
+
+            $cio = DB::table('gestacao_cio')->where('id', $id)->first();
+            if (!$cio) {
+                return response()->json(['message' => 'Registro de cio não encontrado'], 404);
+            }
+
+            DB::statement("UPDATE gestacao_cio SET data = ?, peso = ? WHERE id = ?", [
+                $parsedDate->toDateString(),
+                $validated['peso'],
+                $id
             ]);
+
+            // Sincroniza o peso na ficha da fêmea (usando SQL puro por segurança)
+            if ($validated['peso']) {
+                DB::statement("UPDATE femea SET peso_atual = ? WHERE id = ?", [
+                    $validated['peso'],
+                    $cio->femea_id
+                ]);
+            }
 
             return response()->json(['message' => 'Cio atualizado com sucesso']);
         } catch (\Exception $e) {

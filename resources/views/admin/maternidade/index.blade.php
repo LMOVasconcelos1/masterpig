@@ -30,17 +30,21 @@
         // ...
     }
 }">
-    <!-- Abas -->
-    <div class="border-b border-gray-200 mb-6">
-        <nav class="-mb-px flex space-x-8">
-            <button @click="tab = 'visao-geral'" 
-                :class="tab === 'visao-geral' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+    <!-- Header & Topbar -->
+    <div class="mb-6 -mx-3 sm:-mx-6 px-3 sm:px-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+        <div class="pt-4 pb-2">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Maternidade</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Visão geral e lançamentos operacionais</p>
+        </div>
+        <nav class="-mb-px flex space-x-6 overflow-x-auto">
+            <button type="button" @click="tab = 'visao-geral'" 
+                :class="tab === 'visao-geral' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700'"
+                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
                 Visão Geral
             </button>
-            <button @click="tab = 'lancamentos'" 
-                :class="tab === 'lancamentos' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-                class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+            <button type="button" @click="tab = 'lancamentos'" 
+                :class="tab === 'lancamentos' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700'"
+                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
                 Lançamentos
             </button>
         </nav>
@@ -50,22 +54,22 @@
     <div x-show="tab === 'visao-geral'">
         <!-- Indicadores -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-800">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-500">Fêmeas Lactantes</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ $femeasLactantes }}</p>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Fêmeas Lactantes</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $femeasLactantes }}</p>
                     </div>
                     <div class="p-3 bg-blue-50 rounded-lg">
                         <i class="fa-solid fa-baby-carriage text-blue-600 text-xl"></i>
                     </div>
                 </div>
             </div>
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-800">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-500">Mães de Leite</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ $maesLeite }}</p>
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Mães de Leite</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $maesLeite }}</p>
                     </div>
                     <div class="p-3 bg-purple-50 rounded-lg">
                         <i class="fa-solid fa-hand-holding-heart text-purple-600 text-xl"></i>
@@ -75,9 +79,9 @@
         </div>
 
         <!-- Inconsistências -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                <h3 class="text-lg font-semibold text-gray-800">Inconsistências da Maternidade</h3>
+        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Inconsistências da Maternidade</h3>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
@@ -92,15 +96,15 @@
                             <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ações</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                         @forelse($inconsistencias as $inc)
-                        <tr class="hover:bg-gray-50/50 transition-colors">
-                            <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $inc['femea'] }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-500">{{ $inc['lote'] }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-500">{{ $inc['localizacao'] }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-500">{{ $inc['idade_leitoes'] }} dias</td>
-                            <td class="px-6 py-4 text-sm text-gray-500">{{ $inc['previsao_desmame'] }}</td>
-                            <td class="px-6 py-4 text-sm text-red-600 font-medium">{{ $inc['problema'] }}</td>
+                        <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $inc['femea'] }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $inc['lote'] }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $inc['localizacao'] }}</td>
+                            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $inc['idade_leitoes'] }} dias</td>
+                            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $inc['previsao_desmame'] }}</td>
+                            <td class="px-6 py-4 text-sm text-red-600 dark:text-red-400 font-medium">{{ $inc['problema'] }}</td>
                             <td class="px-6 py-4 text-sm">
                                 <button @click="selectedPartoId = {{ $inc['parto_id'] }}; showDesmameModal = true" 
                                     class="inline-flex items-center px-3 py-1.5 bg-primary-600 text-white text-xs font-semibold rounded-lg hover:bg-primary-700 transition-colors">
@@ -130,8 +134,8 @@
             </button>
         </div>
         
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <p class="text-gray-500 text-sm">Selecione uma ação acima para realizar lançamentos operacionais na maternidade.</p>
+        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+            <p class="text-gray-500 dark:text-gray-400 text-sm">Selecione uma ação acima para realizar lançamentos operacionais na maternidade.</p>
         </div>
     </div>
 
@@ -146,11 +150,11 @@
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showPartoModal = false"></div>
+            <div class="fixed inset-0 bg-gray-900/50 dark:bg-black/60 transition-opacity" @click="showPartoModal = false"></div>
 
-            <div class="relative bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-gray-800">Registrar Parto</h3>
+            <div class="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl max-w-lg w-full overflow-hidden border border-gray-100 dark:border-gray-800">
+                <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Registrar Parto</h3>
                     <button @click="showPartoModal = false" class="text-gray-400 hover:text-gray-500">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
@@ -161,8 +165,8 @@
                     <input type="hidden" name="cobertura_id" x-model="partoForm.cobertura_id">
                     
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Fêmea (Matriz) *</label>
-                        <select name="femea_id" required x-model="partoForm.femea_id" @change="updatePartoPrevisao($event.target.value)" class="w-full rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500 text-sm">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fêmea (Matriz) *</label>
+                        <select name="femea_id" required x-model="partoForm.femea_id" @change="updatePartoPrevisao($event.target.value)" class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500 text-sm">
                             <option value="">Selecione a fêmea</option>
                             <template x-for="f in matrizesAptas" :key="f.id">
                                 <option :value="f.id" x-text="f.identificacao"></option>
@@ -172,24 +176,24 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Lote</label>
-                        <input type="text" name="lote" class="w-full rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500 text-sm" placeholder="Opcional...">
+                        <input type="text" name="lote" class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500 text-sm" placeholder="Opcional...">
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Data do Parto *</label>
-                            <input type="date" name="data" required x-model="partoForm.data" class="w-full rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500 text-sm">
+                            <input type="date" name="data" required x-model="partoForm.data" class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500 text-sm">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Hora Início</label>
-                            <input type="time" name="hora_inicio" class="w-full rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500 text-sm">
+                            <input type="time" name="hora_inicio" class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500 text-sm">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-3 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Vivos</label>
-                            <input type="number" name="total_vivos" value="0" min="0" required class="w-full rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500 text-sm">
+                            <input type="number" name="total_vivos" value="0" min="0" required class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500 text-sm">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Mortos</label>
@@ -203,11 +207,11 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Observações</label>
-                        <textarea name="observacao" rows="3" class="w-full rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500 text-sm" placeholder="Opcional..."></textarea>
+                        <textarea name="observacao" rows="3" class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500 text-sm" placeholder="Opcional..."></textarea>
                     </div>
 
                     <div class="mt-6 flex justify-end gap-3">
-                        <button type="button" @click="showPartoModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+                        <button type="button" @click="showPartoModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Cancelar</button>
                         <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700">Salvar Parto</button>
                     </div>
                 </form>
@@ -226,11 +230,11 @@
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0">
         <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showDesmameModal = false"></div>
+            <div class="fixed inset-0 bg-gray-900/50 dark:bg-black/60 transition-opacity" @click="showDesmameModal = false"></div>
 
-            <div class="relative bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-gray-800">Registrar Desmame</h3>
+            <div class="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl max-w-lg w-full overflow-hidden border border-gray-100 dark:border-gray-800">
+                <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Registrar Desmame</h3>
                     <button @click="showDesmameModal = false" class="text-gray-400 hover:text-gray-500">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
@@ -258,11 +262,11 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Observações</label>
-                        <textarea name="observacao" rows="3" class="w-full rounded-lg border-gray-300 focus:ring-primary-500 focus:border-primary-500 text-sm" placeholder="Opcional..."></textarea>
+                        <textarea name="observacao" rows="3" class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500 text-sm" placeholder="Opcional..."></textarea>
                     </div>
 
                     <div class="mt-6 flex justify-end gap-3">
-                        <button type="button" @click="showDesmameModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+                        <button type="button" @click="showDesmameModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Cancelar</button>
                         <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700">Salvar Desmame</button>
                     </div>
                 </form>

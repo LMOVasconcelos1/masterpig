@@ -31,6 +31,41 @@ class PigCycleService
         return (int) $base->diffInDays($date->startOfDay(), false) + 1;
     }
 
+    /**
+     * Converte um número de Dia PIG de volta para um objeto Carbon.
+     */
+    public static function fromPigDay(int $day): Carbon
+    {
+        return Carbon::parse(self::PIG_BASE_DATE)->startOfDay()->addDays($day - 1);
+    }
+
+    /**
+     * Realiza o parse de uma string de data vinda do filtro, 
+     * tratando como Dia PIG ou data DD/MM/AAAA conforme a config.
+     */
+    public static function parseFilterDate(?string $input): ?Carbon
+    {
+        if (!$input || trim($input) === '') return null;
+
+        $type = self::getCalendarType();
+
+        if ($type === self::CALENDAR_1000_DAYS) {
+            $day = (int) preg_replace('/\D/', '', $input);
+            if ($day <= 0) return null;
+            return self::fromPigDay($day);
+        }
+
+        // Tenta parse de data gregoriana no formato brasileiro
+        try {
+            if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $input)) {
+                return Carbon::createFromFormat('d/m/Y', $input)->startOfDay();
+            }
+            return Carbon::parse($input)->startOfDay();
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
     public static function getCycleDurations(): array
     {
         $type = self::getCalendarType();

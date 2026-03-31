@@ -121,14 +121,14 @@
             fetch('/api/plantel/femeas?previsao_cio=1')
                 .then(r => r.json())
                 .then(data => {
-                    const items = Array.isArray(data) ? data : [];
+                    const items = Array.isArray(data?.items) ? data.items : [];
                     this.matrizes = items.filter(f => ['leitoa', 'matriz_vazia'].includes(String(f.tipo || '')));
                 });
 
             fetch('/api/plantel/machos?all=1')
                 .then(r => r.json())
                 .then(data => {
-                    this.machos = Array.isArray(data) ? data : [];
+                    this.machos = Array.isArray(data?.items) ? data.items : [];
                 });
 
             fetch('/api/usuarios', { headers: { 'Accept': 'application/json' } })
@@ -549,37 +549,38 @@
     }"
     class="space-y-6"
 >
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div class="min-w-0">
-                <div class="text-xs font-bold text-primary-700 uppercase tracking-wider">Gestação</div>
-                <div class="text-sm text-gray-500 mt-1">Coberturas, perdas reprodutivas e metas</div>
-            </div>
-            <div class="w-full sm:w-auto grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-1">
-                <button type="button" @click="tab = 'lancamentos'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="tab === 'lancamentos' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
-                    Lançamentos
-                </button>
-            </div>
+    <!-- Header & Topbar -->
+    <div class="mb-6 -mx-3 sm:-mx-6 px-3 sm:px-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+        <div class="pt-4 pb-2">
+            <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Gestação</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Coberturas, perdas reprodutivas e metas</p>
         </div>
+        <nav class="-mb-px flex space-x-6 overflow-x-auto">
+            <button type="button" @click="tab = 'lancamentos'" 
+                :class="tab === 'lancamentos' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700'"
+                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                Lançamentos
+            </button>
+        </nav>
     </div>
 
     <div x-show="tab === 'lancamentos'" x-cloak class="space-y-6">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between">
                 <div>
-                    <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Lançamentos</h6>
-                    <div class="text-sm text-gray-500 mt-1">Coberturas e perdas reprodutivas.</div>
+                    <h6 class="font-bold text-primary-700 dark:text-primary-400 uppercase text-xs tracking-wider">Lançamentos</h6>
+                    <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Coberturas e perdas reprodutivas.</div>
                 </div>
             </div>
-            <div class="px-6 py-4 border-b border-gray-100 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div class="w-full sm:w-auto grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-1">
-                    <button type="button" @click="lancTab = 'cobertura'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="lancTab === 'cobertura' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-1.5 rounded-xl self-start overflow-x-auto max-w-full border border-gray-200/50 dark:border-gray-700/50">
+                    <button type="button" @click="lancTab = 'cobertura'" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all" :class="lancTab === 'cobertura' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-100/10' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'">
                         Coberturas
                     </button>
-                    <button type="button" @click="lancTab = 'perda'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="lancTab === 'perda' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
+                    <button type="button" @click="lancTab = 'perda'" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all" :class="lancTab === 'perda' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-100/10' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'">
                         Perdas
                     </button>
-                    <button type="button" @click="lancTab = 'salta_cio'" class="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-semibold transition-colors text-center" :class="lancTab === 'salta_cio' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
+                    <button type="button" @click="lancTab = 'salta_cio'" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all" :class="lancTab === 'salta_cio' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-100/10' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'">
                         Salta cio
                     </button>
                 </div>
@@ -603,9 +604,9 @@
                         <button type="button" @click="loadCoberturas()" class="text-sm text-primary-600 hover:text-primary-700">Atualizar</button>
                     </div>
                     <div class="p-5 overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-100">
+                        <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
                             <thead>
-                                <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <tr class="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     <th class="py-2 pr-4">Ações</th>
                                     <th class="py-2 pr-4">Matriz</th>
                                     <th class="py-2 pr-4">Macho/Sêmen</th>
@@ -613,11 +614,11 @@
                                     <th class="py-2 pr-4">Hora</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100">
+                            <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                                 <template x-for="c in coberturas" :key="c.id">
-                                    <tr class="text-sm text-gray-700">
+                                    <tr class="text-sm text-gray-700 dark:text-gray-300">
                                         <td class="py-2 pr-4">
-                                            <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteCobertura(c.id)">
+                                            <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20" title="Excluir" @click.prevent="deleteCobertura(c.id)">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </td>
@@ -643,9 +644,9 @@
                         <button type="button" @click="loadPerdas()" class="text-sm text-primary-600 hover:text-primary-700">Atualizar</button>
                     </div>
                     <div class="p-5 overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-100">
+                        <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
                             <thead>
-                                <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <tr class="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     <th class="py-2 pr-4">Matriz</th>
                                     <th class="py-2 pr-4">Tipo</th>
                                     <th class="py-2 pr-4">Data</th>
@@ -677,9 +678,9 @@
                         <button type="button" @click="loadSaltaCio()" class="text-sm text-primary-600 hover:text-primary-700">Atualizar</button>
                     </div>
                     <div class="p-5 overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-100">
+                        <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
                             <thead>
-                                <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                <tr class="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                     <th class="py-2 pr-4">Ações</th>
                                     <th class="py-2 pr-4">Fêmea</th>
                                     <th class="py-2 pr-4">Data</th>
@@ -710,13 +711,13 @@
 
     <div x-show="openCobertura" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div x-show="openCobertura" @click="openCobertura = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
+            <div x-show="openCobertura" @click="openCobertura = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900/50 dark:bg-black/60 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div x-show="openCobertura" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-100">
-                <div class="bg-white px-6 pt-6 pb-4">
+            <div x-show="openCobertura" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-100 dark:border-gray-800">
+                <div class="bg-white dark:bg-gray-900 px-6 pt-6 pb-4">
                     <div class="flex items-start justify-between">
-                        <h3 class="text-lg leading-6 font-semibold text-gray-900">Registrar cobertura</h3>
-                        <button type="button" @click="openCobertura = false" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50" title="Fechar">
+                        <h3 class="text-lg leading-6 font-semibold text-gray-900 dark:text-gray-100">Registrar cobertura</h3>
+                        <button type="button" @click="openCobertura = false" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700" title="Fechar">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
@@ -735,7 +736,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700">Matriz</label>
-                                <select x-model="cobertura.femeaId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                <select x-model="cobertura.femeaId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500">
                                     <option value="">Selecione...</option>
                                     <template x-for="f in matrizes" :key="f.id">
                                         <option :value="String(f.id)" x-text="f.id_primaria"></option>
@@ -744,7 +745,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Data</label>
-                                <input type="text" inputmode="numeric" placeholder="dd/mm/aaaa" x-model="cobertura.data" @blur="cobertura.data = normalizeBrDate(cobertura.data)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                <input type="text" inputmode="numeric" placeholder="dd/mm/aaaa" x-model="cobertura.data" @blur="cobertura.data = normalizeBrDate(cobertura.data)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Hora</label>
@@ -818,12 +819,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="bg-white border-t border-gray-100 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3">
+                <div class="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3">
                     <button type="button" @click="saveCobertura()" :disabled="saving" class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 sm:w-auto disabled:opacity-50">
                         <template x-if="!saving"><span>Salvar</span></template>
                         <template x-if="saving"><span>Gravando...</span></template>
                     </button>
-                    <button type="button" @click="openCobertura = false" :disabled="saving" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 shadow-sm px-5 py-2.5 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto disabled:opacity-50">
+                    <button type="button" @click="openCobertura = false" :disabled="saving" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-5 py-2.5 bg-white dark:bg-gray-800 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 sm:mt-0 sm:w-auto disabled:opacity-50">
                         Cancelar
                     </button>
                 </div>
@@ -922,9 +923,9 @@
 
     <div x-show="openPerda" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div x-show="openPerda" @click="openPerda = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
+            <div x-show="openPerda" @click="openPerda = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900/50 dark:bg-black/60 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div x-show="openPerda" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-100">
+            <div x-show="openPerda" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-100 dark:border-gray-800">
                 <div class="bg-white px-6 pt-6 pb-4">
                     <div class="flex items-start justify-between">
                         <h3 class="text-lg leading-6 font-semibold text-gray-900">Registrar perda reprodutiva</h3>
@@ -935,7 +936,7 @@
                     <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700">Matriz</label>
-                            <select x-model="perda.femeaId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                            <select x-model="perda.femeaId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500">
                                 <option value="">Selecione...</option>
                                 <template x-for="f in matrizes" :key="`p-${f.id}`">
                                     <option :value="String(f.id)" x-text="f.id_primaria"></option>
@@ -961,7 +962,7 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Data</label>
-                            <input type="text" inputmode="numeric" placeholder="dd/mm/aaaa" x-model="perda.data" @blur="perda.data = normalizeBrDate(perda.data)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                            <input type="text" inputmode="numeric" placeholder="dd/mm/aaaa" x-model="perda.data" @blur="perda.data = normalizeBrDate(perda.data)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Hora (opcional)</label>
@@ -977,7 +978,7 @@
                         </div>
                         <div class="md:col-span-2">
                             <label class="block text-sm font-medium text-gray-700">Observações</label>
-                            <textarea x-model="perda.observacoes" rows="3" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500"></textarea>
+                            <textarea x-model="perda.observacoes" rows="3" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500"></textarea>
                         </div>
                     </div>
                 </div>
@@ -986,7 +987,7 @@
                         <template x-if="!saving"><span>Salvar</span></template>
                         <template x-if="saving"><span>Gravando...</span></template>
                     </button>
-                    <button type="button" @click="openPerda = false" :disabled="saving" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 shadow-sm px-5 py-2.5 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto disabled:opacity-50">
+                    <button type="button" @click="openPerda = false" :disabled="saving" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-5 py-2.5 bg-white dark:bg-gray-800 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 sm:mt-0 sm:w-auto disabled:opacity-50">
                         Cancelar
                     </button>
                 </div>
@@ -996,9 +997,9 @@
 
     <div x-show="openSaltaCio" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div x-show="openSaltaCio" @click="openSaltaCio = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
+            <div x-show="openSaltaCio" @click="openSaltaCio = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900/50 dark:bg-black/60 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div x-show="openSaltaCio" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-gray-100">
+            <div x-show="openSaltaCio" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-gray-100 dark:border-gray-800">
                 <div class="bg-white px-6 pt-6 pb-4">
                     <div class="flex items-start justify-between">
                         <h3 class="text-lg leading-6 font-semibold text-gray-900">Registrar salta cio</h3>

@@ -237,7 +237,7 @@
         x-transition:leave="transition ease-in duration-300"
         x-transition:leave-start="opacity-100 scale-100"
         x-transition:leave-end="opacity-0 scale-90"
-        class="fixed top-5 right-5 z-[100] max-w-sm w-full bg-white shadow-2xl rounded-xl pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden border-l-4"
+        class="fixed top-5 right-5 z-[100] max-w-sm w-full bg-white dark:bg-gray-800 shadow-2xl rounded-xl pointer-events-auto ring-1 ring-black ring-opacity-5 dark:ring-white dark:ring-opacity-10 overflow-hidden border-l-4"
         :class="toastType === 'success' ? 'border-green-500' : 'border-red-500'"
         x-cloak
     >
@@ -252,10 +252,10 @@
                     </template>
                 </div>
                 <div class="ml-3 w-0 flex-1 pt-0.5">
-                    <p class="text-sm font-medium text-gray-900" x-text="toastMessage"></p>
+                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100" x-text="toastMessage"></p>
                 </div>
                 <div class="ml-4 flex-shrink-0 flex">
-                    <button @click="showToast = false" class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    <button @click="showToast = false" class="bg-white dark:bg-gray-800 rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                         <span class="sr-only">Fechar</span>
                         <i class="fa-solid fa-xmark"></i>
                     </button>
@@ -265,14 +265,14 @@
     </div>
 
     <div class="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
-        <form action="{{ route('admin.racoes.index', [], false) }}" method="GET" class="flex flex-1 flex-wrap lg:flex-nowrap items-center gap-3 bg-white p-3 rounded-xl shadow-sm border border-gray-100">
+        <form action="{{ route('admin.racoes.index', [], false) }}" method="GET" class="flex flex-1 flex-wrap lg:flex-nowrap items-center gap-3 bg-white dark:bg-gray-900 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
             <div class="w-full lg:min-w-[220px] flex-1">
-                <input type="text" name="codigo" value="{{ request('codigo') }}" placeholder="Código..." class="w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
+                <input type="text" name="codigo" value="{{ request('codigo') }}" placeholder="Código..." class="w-full pl-3 pr-3 py-2 text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
             </div>
             <div class="w-full lg:min-w-[220px] flex-1">
-                <input type="text" name="nome" value="{{ request('nome') }}" placeholder="Nome..." class="w-full pl-3 pr-3 py-2 text-sm border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
+                <input type="text" name="nome" value="{{ request('nome') }}" placeholder="Nome..." class="w-full pl-3 pr-3 py-2 text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
             </div>
-            <button type="submit" class="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors" title="Filtrar">
+            <button type="submit" class="p-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Filtrar">
                 <i class="fa-solid fa-magnifying-glass"></i>
             </button>
             @if(request()->anyFilled(['codigo', 'nome']))
@@ -302,62 +302,62 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-            <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Lista de Rações</h6>
+    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
+            <h6 class="font-bold text-primary-700 dark:text-primary-400 uppercase text-xs tracking-wider">Lista de Rações</h6>
         </div>
         <div class="p-4 sm:p-6">
             <div class="space-y-3 md:hidden">
                 @forelse($racoes as $racao)
-                    <button type="button" class="w-full text-left rounded-xl border border-gray-100 bg-white p-4 shadow-sm" @click="viewRacao({{ $racao->id }})">
+                    <button type="button" class="w-full text-left rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800/50 p-4 shadow-sm" @click="viewRacao({{ $racao->id }})">
                         <div class="flex items-start justify-between gap-3">
                             <div class="min-w-0">
-                                <div class="text-sm font-bold text-gray-900 truncate">{{ $racao->codigo }}</div>
-                                <div class="text-xs text-gray-500 mt-1 truncate">{{ $racao->nome }}</div>
+                                <div class="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">{{ $racao->codigo }}</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">{{ $racao->nome }}</div>
                             </div>
                             <div class="flex items-center gap-2 flex-shrink-0">
-                                <button type="button" @click.stop="openStockModal({{ $racao->id }})" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors" title="Atualizar estoque">
+                                <button type="button" @click.stop="openStockModal({{ $racao->id }})" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" title="Atualizar estoque">
                                     <i class="fa-solid fa-boxes-stacked"></i>
                                 </button>
-                                <div class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-400">
+                                <div class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-400">
                                     <i class="fa-solid fa-chevron-right"></i>
                                 </div>
                             </div>
                         </div>
                     </button>
                 @empty
-                    <div class="rounded-xl border border-gray-100 bg-white p-4 text-sm text-gray-500 text-center italic">
+                    <div class="rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 text-sm text-gray-500 dark:text-gray-400 text-center italic">
                         Nenhuma ração cadastrada.
                     </div>
                 @endforelse
             </div>
 
             <div class="hidden md:block overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                <thead class="bg-gray-50 dark:bg-gray-800/80">
                     <tr>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Código</th>
                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
                         <th scope="col" class="relative px-6 py-3"><span class="sr-only">Ver</span></th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
                     @forelse($racoes as $racao)
-                    <tr class="hover:bg-gray-50 transition-colors cursor-pointer" @click="viewRacao({{ $racao->id }})">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $racao->codigo }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $racao->nome }}</td>
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer" @click="viewRacao({{ $racao->id }})">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">{{ $racao->codigo }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $racao->nome }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex items-center justify-end space-x-2">
-                                <button type="button" @click.stop="openStockModal({{ $racao->id }})" class="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Atualizar estoque">
+                                <button type="button" @click.stop="openStockModal({{ $racao->id }})" class="w-9 h-9 inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Atualizar estoque">
                                     <i class="fa-solid fa-boxes-stacked"></i>
                                 </button>
-                                <i class="fa-solid fa-chevron-right text-gray-300"></i>
+                                <i class="fa-solid fa-chevron-right text-gray-300 dark:text-gray-600"></i>
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="3" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center italic">Nenhuma ração cadastrada.</td>
+                        <td colspan="3" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center italic">Nenhuma ração cadastrada.</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -368,9 +368,9 @@
 
     <div x-show="openCreate" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" x-cloak>
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div x-show="openCreate" @click="openCreate = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <div x-show="openCreate" @click="openCreate = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div x-show="openCreate" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full border border-gray-100">
+            <div x-show="openCreate" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full border border-gray-100 dark:border-gray-800">
                 <form action="{{ route('admin.racoes.store', [], false) }}" method="POST">
                     @csrf
                     <div class="bg-gradient-to-r from-primary-700 to-primary-600 px-6 py-5">
@@ -390,127 +390,127 @@
                         </div>
                     </div>
 
-                    <div class="bg-white px-6 pt-5">
-                        <div class="flex items-center justify-between border-b border-gray-100">
+                    <div class="bg-white dark:bg-gray-900 px-6 pt-5">
+                        <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
                             <div class="flex space-x-1">
-                                <button type="button" @click="createTab = 'geral'" class="px-4 py-3 text-sm font-semibold rounded-t-lg transition-colors" :class="createTab === 'geral' ? 'text-primary-700 bg-primary-50 border border-b-0 border-primary-100' : 'text-gray-500 hover:text-gray-700'">
+                                <button type="button" @click="createTab = 'geral'" class="px-4 py-3 text-sm font-semibold rounded-t-lg transition-colors border-b-2" :class="createTab === 'geral' ? 'text-primary-700 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 border-primary-600' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-transparent'">
                                     <i class="fa-solid fa-list-check mr-2"></i>Geral
                                 </button>
-                                <button type="button" @click="createTab = 'nutricao'" class="px-4 py-3 text-sm font-semibold rounded-t-lg transition-colors" :class="createTab === 'nutricao' ? 'text-primary-700 bg-primary-50 border border-b-0 border-primary-100' : 'text-gray-500 hover:text-gray-700'">
+                                <button type="button" @click="createTab = 'nutricao'" class="px-4 py-3 text-sm font-semibold rounded-t-lg transition-colors border-b-2" :class="createTab === 'nutricao' ? 'text-primary-700 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 border-primary-600' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-transparent'">
                                     <i class="fa-solid fa-flask mr-2"></i>Nutrição
                                 </button>
-                                <button type="button" @click="createTab = 'comercial'" class="px-4 py-3 text-sm font-semibold rounded-t-lg transition-colors" :class="createTab === 'comercial' ? 'text-primary-700 bg-primary-50 border border-b-0 border-primary-100' : 'text-gray-500 hover:text-gray-700'">
+                                <button type="button" @click="createTab = 'comercial'" class="px-4 py-3 text-sm font-semibold rounded-t-lg transition-colors border-b-2" :class="createTab === 'comercial' ? 'text-primary-700 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 border-primary-600' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 border-transparent'">
                                     <i class="fa-solid fa-tags mr-2"></i>Comercial
                                 </button>
                             </div>
-                            <div class="text-xs text-gray-400 pb-3">Campos obrigatórios marcados com *</div>
+                            <div class="text-xs text-gray-400 dark:text-gray-500 pb-3">Campos obrigatórios marcados com *</div>
                         </div>
                     </div>
 
-                    <div class="bg-white px-6 pb-6">
+                    <div class="bg-white dark:bg-gray-900 px-6 pb-6">
                         <div x-show="createTab === 'geral'" x-cloak class="pt-6">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Código da ração *</label>
-                                    <input type="text" name="codigo" value="{{ old('codigo') }}" placeholder="Ex: R001" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" required>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    <input type="text" name="codigo" value="{{ old('codigo') }}" placeholder="Ex: R001" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500" required>
                                     @error('codigo')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Nome *</label>
-                                    <input type="text" name="nome" value="{{ old('nome') }}" placeholder="Ex: Ração Crescimento Premium" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" required>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome *</label>
+                                    <input type="text" name="nome" value="{{ old('nome') }}" placeholder="Ex: Ração Crescimento Premium" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500" required>
                                     @error('nome')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Classificação *</label>
-                                    <input type="text" name="classificacao" value="{{ old('classificacao') }}" placeholder="Ex: Crescimento" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" required>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Classificação *</label>
+                                    <input type="text" name="classificacao" value="{{ old('classificacao') }}" placeholder="Ex: Crescimento" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500" required>
                                     @error('classificacao')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Estoque *</label>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Estoque *</label>
                                     <div class="mt-1 relative">
-                                        <input type="number" step="0.01" name="estoque" value="{{ old('estoque', 0) }}" placeholder="0,00" class="w-full pr-12 shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" required>
-                                        <span class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400">kg</span>
+                                        <input type="number" step="0.01" name="estoque" value="{{ old('estoque', 0) }}" placeholder="0,00" class="w-full pr-12 shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500" required>
+                                        <span class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400 dark:text-gray-500">kg</span>
                                     </div>
                                     @error('estoque')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700">Tipo de ração *</label>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tipo de ração *</label>
                                     <div class="mt-1 flex items-center space-x-2">
-                                        <select x-model="selectedTipoRacao" name="tipo_racao_id" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" required>
+                                        <select x-model="selectedTipoRacao" name="tipo_racao_id" class="w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500" required>
                                             <option value="">Selecione...</option>
                                             <template x-for="t in tiposRacao" :key="t.id">
                                                 <option :value="String(t.id)" x-text="t.nome"></option>
                                             </template>
                                         </select>
-                                        <button type="button" @click="openTipoModal = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar Tipo de Ração">
+                                        <button type="button" @click="openTipoModal = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar Tipo de Ração">
                                             <i class="fa-solid fa-plus"></i>
                                         </button>
                                     </div>
                                     @error('tipo_racao_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                                 </div>
                                 <div class="sm:col-span-2">
-                                    <label class="block text-sm font-medium text-gray-700">Fase do animal *</label>
-                                    <input type="text" name="fase_animal" value="{{ old('fase_animal') }}" placeholder="Ex: Terminação" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500" required>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Fase do animal *</label>
+                                    <input type="text" name="fase_animal" value="{{ old('fase_animal') }}" placeholder="Ex: Terminação" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500" required>
                                     @error('fase_animal')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                                 </div>
                             </div>
                         </div>
 
                         <div x-show="createTab === 'nutricao'" x-cloak class="pt-6">
-                            <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                            <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 rounded-xl p-4">
                                 <div class="flex items-center justify-between">
-                                    <div class="text-sm font-semibold text-gray-700">Informações Nutricionais</div>
-                                    <div class="text-xs text-gray-500">Opcional</div>
+                                    <div class="text-sm font-semibold text-gray-700 dark:text-gray-300">Informações Nutricionais</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">Opcional</div>
                                 </div>
                                 <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Proteína bruta</label>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                         <div class="mt-1 relative">
-                                            <input type="number" step="0.01" name="proteina_bruta" value="{{ old('proteina_bruta') }}" placeholder="0,00" class="w-full pr-10 shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                            <input type="number" step="0.01" name="proteina_bruta" value="{{ old('proteina_bruta') }}" placeholder="0,00" class="w-full pr-10 shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500">
                                             <span class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400">%</span>
                                         </div>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Energia metabolizável</label>
-                                        <input type="number" step="0.01" name="energia_metabolizavel" value="{{ old('energia_metabolizavel') }}" placeholder="0,00" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                        <input type="number" step="0.01" name="energia_metabolizavel" value="{{ old('energia_metabolizavel') }}" placeholder="0,00" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Fibra</label>
-                                        <input type="number" step="0.01" name="fibra" value="{{ old('fibra') }}" placeholder="0,00" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                        <input type="number" step="0.01" name="fibra" value="{{ old('fibra') }}" placeholder="0,00" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Lisina</label>
-                                        <input type="number" step="0.01" name="lisina" value="{{ old('lisina') }}" placeholder="0,00" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                        <input type="number" step="0.01" name="lisina" value="{{ old('lisina') }}" placeholder="0,00" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Cálcio</label>
-                                        <input type="number" step="0.01" name="calcio" value="{{ old('calcio') }}" placeholder="0,00" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                        <input type="number" step="0.01" name="calcio" value="{{ old('calcio') }}" placeholder="0,00" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Fósforo</label>
-                                        <input type="number" step="0.01" name="fosforo" value="{{ old('fosforo') }}" placeholder="0,00" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                        <input type="number" step="0.01" name="fosforo" value="{{ old('fosforo') }}" placeholder="0,00" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div x-show="createTab === 'comercial'" x-cloak class="pt-6">
-                            <div class="bg-gray-50 border border-gray-100 rounded-xl p-4">
+                            <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 rounded-xl p-4">
                                 <div class="flex items-center justify-between">
-                                    <div class="text-sm font-semibold text-gray-700">Informações Comerciais</div>
-                                    <div class="text-xs text-gray-500">Opcional</div>
+                                    <div class="text-sm font-semibold text-gray-700 dark:text-gray-300">Informações Comerciais</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">Opcional</div>
                                 </div>
                                 <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div class="sm:col-span-2">
-                                        <label class="block text-sm font-medium text-gray-700">Fornecedor</label>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                         <div class="mt-1 flex items-center space-x-2">
-                                            <select x-model="selectedFornecedor" name="fornecedor_id" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                            <select x-model="selectedFornecedor" name="fornecedor_id" class="w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500">
                                                 <option value="">Selecione...</option>
                                                 <template x-for="f in fornecedores" :key="f.id">
                                                     <option :value="String(f.id)" x-text="f.nome"></option>
                                                 </template>
                                             </select>
-                                            <button type="button" @click="openFornecedorModal = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 rounded-lg shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar Fornecedor">
+                                            <button type="button" @click="openFornecedorModal = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 dark:border-gray-700 rounded-lg shadow-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar Fornecedor">
                                                 <i class="fa-solid fa-plus"></i>
                                             </button>
                                         </div>
@@ -518,24 +518,24 @@
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Marca</label>
-                                        <input type="text" name="marca" value="{{ old('marca') }}" placeholder="Ex: Marca X" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                        <input type="text" name="marca" value="{{ old('marca') }}" placeholder="Ex: Marca X" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Custo por kg</label>
                                         <div class="mt-1 relative">
                                             <span class="absolute inset-y-0 left-3 flex items-center text-xs text-gray-400">R$</span>
-                                            <input type="number" step="0.01" name="custo_por_kg" value="{{ old('custo_por_kg') }}" placeholder="0,00" class="w-full pl-9 shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                            <input type="number" step="0.01" name="custo_por_kg" value="{{ old('custo_por_kg') }}" placeholder="0,00" class="w-full pl-9 shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500">
                                         </div>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Unidade de compra</label>
-                                        <input type="text" name="unidade_compra" value="{{ old('unidade_compra') }}" placeholder="Ex: Saco" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                        <input type="text" name="unidade_compra" value="{{ old('unidade_compra') }}" placeholder="Ex: Saco" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700">Peso da embalagem</label>
                                         <div class="mt-1 relative">
-                                            <input type="number" step="0.01" name="peso_embalagem" value="{{ old('peso_embalagem') }}" placeholder="0,00" class="w-full pr-10 shadow-sm sm:text-sm border-gray-300 rounded-lg focus:ring-primary-500 focus:border-primary-500">
-                                            <span class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400">kg</span>
+                                            <input type="number" step="0.01" name="peso_embalagem" value="{{ old('peso_embalagem') }}" placeholder="0,00" class="w-full pr-10 shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-primary-500 focus:border-primary-500">
+                                            <span class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400 dark:text-gray-500">kg</span>
                                         </div>
                                     </div>
                                 </div>
@@ -543,15 +543,15 @@
                         </div>
                     </div>
 
-                    <div class="bg-white border-t border-gray-100 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3">
+                    <div class="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3">
                         <button type="submit" class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:w-auto">
                             <i class="fa-solid fa-check mr-2"></i>
                             Salvar
                         </button>
-                        <button type="button" @click="openCreate = false" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 shadow-sm px-5 py-2.5 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto">
+                        <button type="button" @click="openCreate = false" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-5 py-2.5 bg-white dark:bg-gray-800 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto">
                             Cancelar
                         </button>
-                        <div class="mr-auto hidden sm:block text-xs text-gray-400">
+                        <div class="mr-auto hidden sm:block text-xs text-gray-400 dark:text-gray-500">
                             <span x-show="createTab === 'geral'">Preencha os dados obrigatórios para salvar.</span>
                             <span x-show="createTab === 'nutricao'">Você pode deixar em branco se não tiver os dados nutricionais.</span>
                             <span x-show="createTab === 'comercial'">Fornecedor e custos são opcionais.</span>
@@ -564,17 +564,17 @@
 
     <div x-show="openDetail" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" x-cloak>
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div x-show="openDetail" @click="openDetail = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <div x-show="openDetail" @click="openDetail = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div x-show="openDetail" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full border border-gray-100">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div x-show="openDetail" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full border border-gray-100 dark:border-gray-800">
+                <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="flex items-start justify-between">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Detalhes da Ração</h3>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">Detalhes da Ração</h3>
                         <div class="flex items-center space-x-2">
-                            <a :href="pdfUrl" target="_blank" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-primary-600 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Abrir PDF">
+                            <a :href="pdfUrl" target="_blank" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Abrir PDF">
                                 <i class="fa-solid fa-file-pdf"></i>
                             </a>
-                            <button type="button" @click="openDetail = false" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Fechar">
+                            <button type="button" @click="openDetail = false" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Fechar">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
                         </div>
@@ -586,8 +586,8 @@
                         <div x-show="!loadingDetail && selected" x-cloak class="space-y-6">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <div class="text-xs font-semibold text-gray-500 uppercase">Código</div>
-                                    <div class="text-sm text-gray-900" x-text="selected.codigo"></div>
+                                    <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+                                    <div class="text-sm text-gray-900 dark:text-gray-100" x-text="selected.codigo"></div>
                                 </div>
                                 <div>
                                     <div class="text-xs font-semibold text-gray-500 uppercase">Nome</div>
@@ -612,11 +612,11 @@
                             </div>
 
                             <div>
-                                <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Informações Nutricionais</div>
+                                <div class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">Informações Nutricionais</div>
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div>
-                                        <div class="text-xs text-gray-500 uppercase">Proteína bruta (%)</div>
-                                        <div class="text-sm text-gray-900" x-text="selected.proteina_bruta ?? '-'"></div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 uppercase">
+                                        <div class="text-sm text-gray-900 dark:text-gray-100" x-text="selected.proteina_bruta ?? '-'"></div>
                                     </div>
                                     <div>
                                         <div class="text-xs text-gray-500 uppercase">Energia metabolizável</div>
@@ -642,11 +642,11 @@
                             </div>
 
                             <div>
-                                <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Informações Comerciais</div>
+                                <div class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">Informações Comerciais</div>
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div>
-                                        <div class="text-xs text-gray-500 uppercase">Fornecedor</div>
-                                        <div class="text-sm text-gray-900" x-text="selected.fornecedor ? selected.fornecedor.nome : '-'"></div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400 uppercase">
+                                        <div class="text-sm text-gray-900 dark:text-gray-100" x-text="selected.fornecedor ? selected.fornecedor.nome : '-'"></div>
                                     </div>
                                     <div>
                                         <div class="text-xs text-gray-500 uppercase">Marca</div>
@@ -669,8 +669,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button type="button" @click="openDetail = false" class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:w-auto sm:text-sm">
+                <div class="bg-gray-50 dark:bg-gray-800/80 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100 dark:border-gray-800">
+                    <button type="button" @click="openDetail = false" class="w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-700 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:w-auto sm:text-sm">
                         Fechar
                     </button>
                 </div>
@@ -682,37 +682,37 @@
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div x-show="openStock" @click="openStock = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div x-show="openStock" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100">
-                <div class="bg-white px-6 pt-6 pb-4">
+            <div x-show="openStock" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100 dark:border-gray-800">
+                <div class="bg-white dark:bg-gray-900 px-6 pt-6 pb-4">
                     <div class="flex items-start justify-between">
                         <div class="text-left">
-                            <h3 class="text-lg leading-6 font-semibold text-gray-900">Atualizar estoque</h3>
-                            <p class="mt-1 text-xs text-gray-500">
-                                <span class="font-semibold" x-text="stockCodigo"></span>
+                            <h3 class="text-lg leading-6 font-semibold text-gray-900 dark:text-gray-100">Atualizar estoque</h3>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                <span class="font-semibold dark:text-gray-200" x-text="stockCodigo"></span>
                                 <span class="mx-1">-</span>
                                 <span x-text="stockNome"></span>
                             </p>
                         </div>
-                        <button type="button" @click="openStock = false" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Fechar">
+                        <button type="button" @click="openStock = false" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Fechar">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
 
                     <div class="mt-5">
-                        <label class="block text-sm font-medium text-gray-700">Estoque (kg)</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Estoque (kg)</label>
                         <div class="mt-1 relative">
-                            <input type="number" step="0.01" x-model="stockValor" class="w-full pr-12 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" :disabled="stockLoading">
-                            <span class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400">kg</span>
+                            <input type="number" step="0.01" x-model="stockValor" class="w-full pr-12 shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-xl focus:ring-primary-500 focus:border-primary-500" :disabled="stockLoading">
+                            <span class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400 dark:text-gray-500">kg</span>
                         </div>
-                        <div class="mt-2 text-xs text-gray-500" x-show="stockLoading">Carregando/salvando...</div>
+                        <div class="mt-2 text-xs text-gray-500 dark:text-gray-400" x-show="stockLoading">Carregando/salvando...</div>
                     </div>
                 </div>
-                <div class="bg-white border-t border-gray-100 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3">
+                <div class="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3">
                     <button type="button" @click="saveStock()" :disabled="stockLoading" class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
                         <template x-if="!stockLoading"><span>Salvar</span></template>
                         <template x-if="stockLoading"><span>Gravando...</span></template>
                     </button>
-                    <button type="button" @click="openStock = false" :disabled="stockLoading" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 shadow-sm px-5 py-2.5 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto disabled:opacity-50">
+                    <button type="button" @click="openStock = false" :disabled="stockLoading" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-5 py-2.5 bg-white dark:bg-gray-800 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto disabled:opacity-50">
                         Cancelar
                     </button>
                 </div>
@@ -724,25 +724,25 @@
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div x-show="openFornecedorModal" @click="openFornecedorModal = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div x-show="openFornecedorModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-200">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div x-show="openFornecedorModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-200 dark:border-gray-800">
+                <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="flex items-start justify-between">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Adicionar Fornecedor</h3>
-                        <button type="button" @click="openFornecedorModal = false" class="text-gray-400 hover:text-gray-600">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">Adicionar Fornecedor</h3>
+                        <button type="button" @click="openFornecedorModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-400">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
                     <div class="mt-4">
-                        <label class="block text-sm font-medium text-gray-700">Nome do fornecedor</label>
-                        <input type="text" x-model="newFornecedorNome" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="Ex: Empresa XYZ">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome do fornecedor</label>
+                        <input type="text" x-model="newFornecedorNome" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-md" placeholder="Ex: Empresa XYZ">
                     </div>
                 </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <div class="bg-gray-50 dark:bg-gray-800/80 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100 dark:border-gray-800">
                     <button type="button" @click="saveFornecedor()" :disabled="loadingFornecedor" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                         <template x-if="!loadingFornecedor"><span>Salvar</span></template>
                         <template x-if="loadingFornecedor"><span>Gravando...</span></template>
                     </button>
-                    <button type="button" @click="openFornecedorModal = false" :disabled="loadingFornecedor" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
+                    <button type="button" @click="openFornecedorModal = false" :disabled="loadingFornecedor" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-700 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
                         Cancelar
                     </button>
                 </div>
@@ -754,25 +754,25 @@
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div x-show="openTipoModal" @click="openTipoModal = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div x-show="openTipoModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-200">
-                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div x-show="openTipoModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-200 dark:border-gray-800">
+                <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div class="flex items-start justify-between">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Adicionar Tipo de Ração</h3>
-                        <button type="button" @click="openTipoModal = false" class="text-gray-400 hover:text-gray-600">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">Adicionar Tipo de Ração</h3>
+                        <button type="button" @click="openTipoModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-400">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
                     <div class="mt-4">
-                        <label class="block text-sm font-medium text-gray-700">Nome do tipo</label>
-                        <input type="text" x-model="newTipoNome" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-md" placeholder="Ex: Gestação">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nome do tipo</label>
+                        <input type="text" x-model="newTipoNome" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-md" placeholder="Ex: Gestação">
                     </div>
                 </div>
-                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <div class="bg-gray-50 dark:bg-gray-800/80 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100 dark:border-gray-800">
                     <button type="button" @click="saveTipoRacao()" :disabled="loadingTipo" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                         <template x-if="!loadingTipo"><span>Salvar</span></template>
                         <template x-if="loadingTipo"><span>Gravando...</span></template>
                     </button>
-                    <button type="button" @click="openTipoModal = false" :disabled="loadingTipo" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
+                    <button type="button" @click="openTipoModal = false" :disabled="loadingTipo" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-700 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50">
                         Cancelar
                     </button>
                 </div>
