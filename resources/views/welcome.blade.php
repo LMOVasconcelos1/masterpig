@@ -22,6 +22,13 @@
         @endif
 
         <!-- Theme Script -->
+        <script>
+            if (localStorage.getItem('darkMode') === 'true' || 
+                (!('darkMode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
         </script>
     </head>
     <body class="bg-[#FDFDFC] dark:bg-gray-950 text-[#1b1b18] dark:text-gray-100 flex p-6 lg:p-8 items-center lg:justify-center min-h-screen flex-col transition-colors duration-200">
