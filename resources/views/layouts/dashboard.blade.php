@@ -431,7 +431,7 @@
                                 x-transition:leave="transition ease-in duration-75"
                                 x-transition:leave-start="transform opacity-100 scale-100"
                                 x-transition:leave-end="transform opacity-0 scale-95"
-                                class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 z-50 border border-gray-100"
+                                class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg py-2 z-50 border border-gray-100 dark:border-gray-700"
                                 x-cloak
                             >
                                 <a href="{{ route('profile.edit', [], false) }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600 transition-colors">
@@ -455,10 +455,9 @@
             <!-- Content Area -->
             <main class="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-950 p-3 sm:p-6">
                 <div class="max-w-7xl mx-auto">
-                    @php($pageTitle = trim($__env->yieldContent('page_title', '')))
-                    @if($pageTitle !== '')
+                    @hasSection('page_title')
                         <div class="flex items-center justify-between mb-8">
-                            <h1 class="text-2xl font-bold text-gray-800">{{ $pageTitle }}</h1>
+                            <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100">@yield('page_title')</h1>
                         </div>
                     @endif
 
