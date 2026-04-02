@@ -140,9 +140,8 @@ document.addEventListener('alpine:init', () => {
                 const isToday = date.toDateString() === today.toDateString();
                 const isSelected = this.selectedDate && date.toDateString() === this.selectedDate.toDateString();
                 
-                // Calcular dias desde hoje (fixar dia atual como 901)
-                const daysDiff = Math.floor((date - today) / (1000 * 60 * 60 * 24));
-                const calendar1000Day = 901 + daysDiff;
+                // Calcular dia PIG usando a função corrigida
+                const calendar1000Day = toPigDay(date);
                 let range = '';
                 let tooltip = '';
                 

@@ -28,7 +28,11 @@ class PigCycleService
         if (!$date) return null;
         $base = Carbon::parse(self::PIG_BASE_DATE)->startOfDay();
         // Dia 1 = 01/01/1969. So diff in days + 1.
-        return (int) $base->diffInDays($date->startOfDay(), false) + 1;
+        $absoluteDay = (int) $base->diffInDays($date->startOfDay(), false) + 1;
+        
+        // Aplicar ciclo de 1000 dias com offset -1 para corresponder ao pig1000.com
+        // Fórmula: ((absoluto - 2) % 1000) + 1
+        return (($absoluteDay - 2) % 1000) + 1;
     }
 
     /**

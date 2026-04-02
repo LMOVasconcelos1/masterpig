@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\PigCycleService;
+use App\Services\CioCountingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -95,24 +96,21 @@ class GestacaoCioController extends Controller
                 $dataCio = Carbon::parse($row->data);
                 $lastCob = isset($lastCoberturas[$row->id]) ? Carbon::parse($lastCoberturas[$row->id]) : null;
                 
-                // Calcular dia PIG (dias desde 01/01/1969)
-                $pigBaseDate = Carbon::parse('1969-01-01');
-                $diaPig = (int) $pigBaseDate->diffInDays($dataCio) + 1;
+                // Calcular dia PIG usando o método corrigido com ciclo de 1000 dias
+                $diaPig = PigCycleService::toPigDay($dataCio);
                 
                 $diaCiclo = null;
                 if ($lastCob) {
                     $diaCiclo = $lastCob->diffInDays($dataCio, false);
                 }
 
-                // Calcular número do cio
-                $numeroCio = 1;
-                if (Schema::hasTable('gestacao_cio')) {
-                    $q = DB::table('gestacao_cio')->where('femea_id', $row->id);
-                    if ($lastCob) {
-                        $q->where('data', '>', $lastCob->toDateString());
-                    }
-                    $q->where('data', '<=', $dataCio->toDateString());
-                    $numeroCio = $q->count();
+                // Calcular número do cio - Usando CioCountingService para lógica consistente
+                $numeroCio = CioCountingService::calcularNumeroCioPorData($row->id, $dataCio, $lastCob);
+                
+                // Debug: Log para verificar contagem (pode ser removido em produção)
+                if (config('app.debug')) {
+                    \Log::info("Cio ID: {$row->cio_id}, Fêmea ID: {$row->id}, Última cobertura: " . ($lastCob ? $lastCob->toDateString() : 'N/A') . 
+                              ", Data cio: {$dataCio->toDateString()}, Número cio: {$numeroCio}");
                 }
 
                 // Calcular idade no momento do cio

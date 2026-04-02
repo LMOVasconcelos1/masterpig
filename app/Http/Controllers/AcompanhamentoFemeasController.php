@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\PigCycleService;
+use App\Services\CioCountingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -127,15 +128,17 @@ class AcompanhamentoFemeasController extends Controller
 
         // Número do cio é baseado APENAS em registros reais de CIO (gestacao_cio).
         // Salta cio não incrementa o número do cio.
-        $countCios = 0;
-        if (Schema::hasTable('gestacao_cio')) {
-            $q = DB::table('gestacao_cio')->where('femea_id', $fId);
-            if ($lastCobertura) {
-                $q->where('data', '>', $lastCobertura->toDateString());
-            }
-            $countCios = (int) $q->count();
+        // Usando CioCountingService para lógica centralizada e consistente
+        $countCios = CioCountingService::calcularNumeroCioAtual($fId, $lastCobertura) - 1;
+        
+        // Debug: Log para verificar contagem (pode ser removido em produção)
+        if (config('app.debug')) {
+            \Log::info("Fêmea ID: {$fId}, Última cobertura: " . ($lastCobertura ? $lastCobertura->toDateString() : 'N/A') . 
+                      ", Cios contados: {$countCios}");
         }
 
+        // Correção: Se não tem cobertura e não tem cios, o primeiro cio será 1º
+        // Se tem cobertura e não tem cios após ela, o próximo cio será 1º pós-cobertura
         $cioAtualLabel = ($countCios <= 0 ? 1 : $countCios) . 'º cio';
         $cioProximoLabel = ($countCios + 1) . 'º cio';
         $coberturaCiclosMin = (int) ($cfg['cobertura_ciclos_min'] ?? 3);
