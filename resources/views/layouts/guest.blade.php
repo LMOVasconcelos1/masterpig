@@ -54,9 +54,15 @@
         </style>
     </head>
     <body class="font-sans text-gray-900 antialiased">
-        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gradient-to-br from-primary-50 to-white">
-
-            <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
+        <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 relative">
+            <!-- Wallpaper Background -->
+            <div class="absolute inset-0 z-0">
+                <img src="/login.png" alt="Background" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-black/20"></div>
+            </div>
+            
+            <!-- Content Overlay -->
+            <div class="relative z-10 w-full sm:max-w-md mt-6 px-6 py-4">
                 {{ $slot }}
             </div>
         </div>

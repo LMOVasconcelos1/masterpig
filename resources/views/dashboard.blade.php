@@ -4387,7 +4387,11 @@
         const end = new Date(date);
         end.setHours(0, 0, 0, 0);
         const diff = Math.floor((end.getTime() - start.getTime()) / 86400000);
-        return diff + 1;
+        const absoluteDay = diff + 1;
+        
+        // Aplicar ciclo de 1000 dias com offset -1 para corresponder ao pig1000.com
+        // Fórmula: ((absoluto - 2) % 1000) + 1
+        return ((absoluteDay - 2) % 1000) + 1;
     }
 
     function calculatePigCycle(coverageDate, referenceDate = new Date(), calendarType = 'gregoriano', config = {}) {
