@@ -555,16 +555,16 @@
             <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Gestação</h2>
             <p class="text-sm text-gray-500 dark:text-gray-400">Coberturas, perdas reprodutivas e metas</p>
         </div>
-        <nav class="-mb-px flex space-x-6 overflow-x-auto">
+        <nav class="-mb-px flex space-x-8 overflow-x-auto">
             <button type="button" @click="tab = 'lancamentos'" 
-                :class="tab === 'lancamentos' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700'"
-                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                :class="tab === 'lancamentos' ? 'border-transparent bg-gradient-to-r from-[#0A1128] to-[#C5A059] text-white' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
+                class="whitespace-nowrap pb-3 px-4 border-b-2 font-medium text-sm transition-all duration-300 rounded-t-lg">
                 Lançamentos
             </button>
         </nav>
     </div>
 
-    <div x-show="tab === 'lancamentos'" x-cloak class="space-y-6">
+    <div x-show="tab === 'lancamentos'" x-cloak class="space-y-8">
         <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between">
                 <div>
@@ -733,7 +733,7 @@
                     </div>
 
                     <div class="mt-4" x-show="coberturaTab === 'principal'" x-cloak>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700">Matriz</label>
                                 <select x-model="cobertura.femeaId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500">
@@ -780,7 +780,7 @@
                     </div>
 
                     <div class="mt-4" x-show="coberturaTab === 'complementar'" x-cloak>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700">Usuário</label>
                                 <select x-model="cobertura.usuarioId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
