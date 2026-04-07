@@ -4,8 +4,7 @@
 @section('page_title', '')
 
 @section('content')
-<div
-    x-data="{
+    <div x-data="{
         tab: 'lancamentos',
         lancTab: 'cobertura',
         coberturaTab: 'principal',
@@ -37,6 +36,50 @@
         criteriosConfirmPayload: null,
         criteriosAfterSaveOpen: false,
         criteriosAfterSaveWarnings: [],
+
+        // Formulário de Cobertura
+        openFormularioCobertura: false,
+        tipoFormulario: 'em_branco',
+        opcaoMatriz: 'todas',
+        opcaoLeitoa: 'todas',
+        ordenarPor: 'matriz',
+        quantidadeMontas: '10',
+        diasVaziasInicio: '',
+        diasVaziasFim: '',
+        idadeLeitoaInicio: '',
+        idadeLeitoaFim: '',
+
+        gerarFormulario() {
+            console.log('Gerando formulário com as configurações:', {
+                tipoFormulario: this.tipoFormulario,
+                opcaoMatriz: this.opcaoMatriz,
+                opcaoLeitoa: this.opcaoLeitoa,
+                ordenarPor: this.ordenarPor,
+                quantidadeMontas: this.quantidadeMontas,
+                diasVaziasInicio: this.diasVaziasInicio,
+                diasVaziasFim: this.diasVaziasFim,
+                idadeLeitoaInicio: this.idadeLeitoaInicio,
+                idadeLeitoaFim: this.idadeLeitoaFim
+            });
+            
+            // Gerar PDF com as configurações
+            const params = new URLSearchParams({
+                tipo: this.tipoFormulario,
+                matriz: this.opcaoMatriz,
+                leitoa: this.opcaoLeitoa,
+                ordenar: this.ordenarPor,
+                quantidade: this.quantidadeMontas,
+                dias_vazias_inicio: this.diasVaziasInicio,
+                dias_vazias_fim: this.diasVaziasFim,
+                idade_inicio: this.idadeLeitoaInicio,
+                idade_fim: this.idadeLeitoaFim
+            });
+            
+            // Abrir PDF em nova janela
+            window.open(`/gestacao/formulario-cobertura/pdf?${params.toString()}`, '_blank');
+            
+            this.openFormularioCobertura = false;
+        },
 
         cobertura: {
             femeaId: '',
@@ -557,9 +600,14 @@
         </div>
         <nav class="-mb-px flex space-x-8 overflow-x-auto">
             <button type="button" @click="tab = 'lancamentos'" 
-                :class="tab === 'lancamentos' ? 'border-transparent bg-gradient-to-r from-[#0A1128] to-[#C5A059] text-white' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'"
-                class="whitespace-nowrap pb-3 px-4 border-b-2 font-medium text-sm transition-all duration-300 rounded-t-lg">
+                :class="tab === 'lancamentos' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
+                class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
                 Lançamentos
+            </button>
+            <button type="button" @click="tab = 'analise'" 
+                :class="tab === 'analise' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
+                class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                Análise
             </button>
         </nav>
     </div>
@@ -1036,5 +1084,169 @@
         </div>
     </div>
 
-</div>
+    <!-- Aba Análise -->
+    <div x-show="tab === 'analise'" x-cloak class="space-y-8">
+        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between">
+                <div>
+                    <h6 class="font-bold text-primary-700 dark:text-primary-400 uppercase text-xs tracking-wider">Análise</h6>
+                    <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Formulário de coleta resumida de cobertura</div>
+                </div>
+                <button type="button" @click="openFormularioCobertura = true" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 transition-all duration-200 hover:scale-[1.02]">
+                    <i class="fa-solid fa-file-lines mr-2"></i>
+                    Formulário de Cobertura
+                </button>
+            </div>
+            
+            <div class="p-6">
+                <!-- Card Formulário de Cobertura Quadrado -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <button type="button" @click="openFormularioCobertura = true" class="group bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-[1.02] hover:border-primary-300 dark:hover:border-primary-600">
+                        <div class="p-6">
+                            <div class="flex flex-col items-center text-center space-y-4">
+                                <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-2xl flex items-center justify-center group-hover:bg-primary-200 dark:group-hover:bg-primary-900/50 transition-colors duration-200">
+                                    <i class="fa-solid fa-file-lines text-2xl text-primary-600 dark:text-primary-400"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors duration-200">
+                                        Formulário de Cobertura
+                                    </h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                        Gerar formulário para coleta resumida
+                                    </p>
+                                </div>
+                                <div class="w-full">
+                                    <span class="inline-flex items-center justify-center w-full px-4 py-2 bg-primary-600 text-white text-sm font-medium rounded-xl group-hover:bg-primary-700 transition-colors duration-200">
+                                        <i class="fa-solid fa-arrow-up-right-from-square mr-2"></i>
+                                        Abrir Formulário
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Formulário de Cobertura -->
+    <div x-show="openFormularioCobertura" x-cloak class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+        <div class="flex min-h-full items-center justify-center p-4">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="openFormularioCobertura = false"></div>
+            
+            <div class="relative bg-white dark:bg-gray-900 rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Formulário de Cobertura</h3>
+                        <button type="button" @click="openFormularioCobertura = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                            <i class="fa-solid fa-xmark text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-6 space-y-6">
+                    <!-- Tipo de Formulário -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de Formulário</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="flex items-center space-x-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <input type="radio" name="tipoFormulario" value="em_branco" x-model="tipoFormulario" class="text-primary-600">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Em branco</span>
+                            </label>
+                            <label class="flex items-center space-x-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <input type="radio" name="tipoFormulario" value="listar_matrizes" x-model="tipoFormulario" class="text-primary-600">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Listar matrizes que serão cobertas</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Opção de Incluir Matriz -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Opção de Incluir Matriz</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="flex items-center space-x-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <input type="radio" name="opcaoMatriz" value="todas" x-model="opcaoMatriz" class="text-primary-600">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Todas</span>
+                            </label>
+                            <label class="flex items-center space-x-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <input type="radio" name="opcaoMatriz" value="vazias_dias" x-model="opcaoMatriz" class="text-primary-600">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Vazias entre</span>
+                                    <input type="number" x-model="diasVaziasInicio" placeholder="0" class="w-16 px-2 py-1 border rounded text-sm">
+                                    <span class="text-sm text-gray-600">a</span>
+                                    <input type="number" x-model="diasVaziasFim" placeholder="0" class="w-16 px-2 py-1 border rounded text-sm">
+                                    <span class="text-sm text-gray-600">dias</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Opção de Incluir Leitoas -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Opção de Incluir Leitoas</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="flex items-center space-x-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <input type="radio" name="opcaoLeitoa" value="todas" x-model="opcaoLeitoa" class="text-primary-600">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Todas</span>
+                            </label>
+                            <label class="flex items-center space-x-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <input type="radio" name="opcaoLeitoa" value="idade_dias" x-model="opcaoLeitoa" class="text-primary-600">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">De</span>
+                                    <input type="number" x-model="idadeLeitoaInicio" placeholder="0" class="w-16 px-2 py-1 border rounded text-sm">
+                                    <span class="text-sm text-gray-600">a</span>
+                                    <input type="number" x-model="idadeLeitoaFim" placeholder="0" class="w-16 px-2 py-1 border rounded text-sm">
+                                    <span class="text-sm text-gray-600">dias</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Ordenar Formulário -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ordenar Formulário por</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <label class="flex items-center space-x-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <input type="radio" name="ordenarPor" value="matriz" x-model="ordenarPor" class="text-primary-600">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Matriz</span>
+                            </label>
+                            <label class="flex items-center space-x-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <input type="radio" name="ordenarPor" value="ciclo" x-model="ordenarPor" class="text-primary-600">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Ciclo</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Montas/Inseminações por Quantidade -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Montas/Inseminações por Quantidade</label>
+                        <div class="grid grid-cols-3 gap-4">
+                            <label class="flex items-center space-x-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <input type="radio" name="quantidade" value="10" x-model="quantidadeMontas" class="text-primary-600">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">10</span>
+                            </label>
+                            <label class="flex items-center space-x-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <input type="radio" name="quantidade" value="20" x-model="quantidadeMontas" class="text-primary-600">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">20</span>
+                            </label>
+                            <label class="flex items-center space-x-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <input type="radio" name="quantidade" value="30" x-model="quantidadeMontas" class="text-primary-600">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">30</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 dark:bg-gray-800 px-6 py-4 flex justify-end space-x-3">
+                    <button type="button" @click="openFormularioCobertura = false" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600">
+                        Cancelar
+                    </button>
+                    <button type="button" @click="gerarFormulario()" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-xl hover:bg-primary-700">
+                        Gerar Formulário
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endsection

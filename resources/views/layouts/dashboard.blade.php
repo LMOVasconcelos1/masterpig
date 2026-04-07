@@ -233,15 +233,15 @@
                     <div class="flex items-center space-x-2">
                         <i class="fa-solid fa-piggy-bank text-2xl text-primary-600"></i>
                         <div x-show="sidebarOpen" class="transition-opacity duration-300">
-                            <span class="text-xl font-bold tracking-wider uppercase text-gray-900">{{ \App\Models\Configuracao::getGranjaAtual() }}</span>
-                            <span class="text-xs text-gray-500 block">Sui Control</span>
+                            <span class="text-xl font-bold tracking-wider uppercase text-gray-900 dark:text-gray-100">{{ \App\Models\Configuracao::getGranjaAtual() }}</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400 block">Sui Control</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Nav Items -->
                 <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                    <div x-data="{ open: {{ (request()->routeIs('dashboard') || request()->routeIs('gestacao') || request()->routeIs('maternidade')) ? 'true' : 'false' }} }">
+                    <div x-data="{ open: {{ (request()->routeIs('dashboard') || request()->routeIs('gestacao') || request()->routeIs('maternidade') || request()->routeIs('creche') || request()->routeIs('terminacao')) ? 'true' : 'false' }} }">
                         <button @click="open = !open" class="flex items-center justify-between w-full px-4 py-3 text-gray-600 transition-colors rounded-lg hover:bg-gray-50 hover:text-gray-900 group">
                             <div class="flex items-center">
                                 <i class="fa-solid fa-leaf w-6 text-center"></i>
@@ -251,17 +251,25 @@
                         </button>
 
                         <div x-show="open && sidebarOpen" x-cloak class="mt-1 ml-4 pl-4 border-l border-gray-200 dark:border-gray-800 space-y-1">
-                            <a href="{{ route('dashboard', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('dashboard') ? 'text-white font-bold bg-[#0A1128]' : 'text-gray-500 dark:text-gray-400' }} transition-colors rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-[#0A1128] dark:hover:text-[#C5A059]">
+                            <a href="{{ route('dashboard', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('dashboard') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500 dark:text-gray-400' }} transition-colors rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-[#0A1128] dark:hover:text-[#C5A059]">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Plantel Reprodutivo
                             </a>
-                            <a href="{{ url('/gestacao') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('gestacao') ? 'text-white font-bold bg-[#0A1128]' : 'text-gray-500 dark:text-gray-400' }} transition-colors rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-[#0A1128] dark:hover:text-[#C5A059]">
+                            <a href="{{ url('/gestacao') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('gestacao') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500 dark:text-gray-400' }} transition-colors rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-[#0A1128] dark:hover:text-[#C5A059]">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Gestação
                             </a>
-                            <a href="{{ route('maternidade', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('maternidade') ? 'text-white font-bold bg-[#0A1128]' : 'text-gray-500 dark:text-gray-400' }} transition-colors rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-[#0A1128] dark:hover:text-[#C5A059]">
+                            <a href="{{ route('maternidade', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('maternidade') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500 dark:text-gray-400' }} transition-colors rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-[#0A1128] dark:hover:text-[#C5A059]">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Maternidade
+                            </a>
+                            <a href="{{ url('/creche') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('creche') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500 dark:text-gray-400' }} transition-colors rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-[#0A1128] dark:hover:text-[#C5A059]">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Creche
+                            </a>
+                            <a href="{{ url('/terminacao') }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('terminacao') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500 dark:text-gray-400' }} transition-colors rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-[#0A1128] dark:hover:text-[#C5A059]">
+                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                Terminação
                             </a>
                         </div>
                     </div>
@@ -277,23 +285,23 @@
                         </button>
                         
                         <div x-show="open && sidebarOpen" x-cloak class="mt-1 ml-4 pl-4 border-l border-gray-200 space-y-1">
-                            <a href="{{ route('admin.plantel.femeas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ (request()->routeIs('admin.plantel.femeas.index') || request()->routeIs('admin.plantel.femeas.show')) ? 'text-white font-bold bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
+                            <a href="{{ route('admin.plantel.femeas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ (request()->routeIs('admin.plantel.femeas.index') || request()->routeIs('admin.plantel.femeas.show')) ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Fêmeas (cadastro)
                             </a>
-                            <a href="{{ route('admin.causas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.causas.index') ? 'text-white font-bold bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
+                            <a href="{{ route('admin.causas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.causas.index') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Causas
                             </a>
-                            <a href="{{ route('admin.racoes.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.racoes.index') ? 'text-white font-bold bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
+                            <a href="{{ route('admin.racoes.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.racoes.index') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Rações
                             </a>
-                            <a href="{{ url('/admin/fornecedores') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/fornecedores*') ? 'text-white font-bold bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
+                            <a href="{{ url('/admin/fornecedores') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/fornecedores*') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Fornecedor
                             </a>
-                            <a href="{{ url('/admin/clientes') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/clientes*') ? 'text-white font-bold bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
+                            <a href="{{ url('/admin/clientes') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/clientes*') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Cliente
                             </a>
@@ -308,27 +316,27 @@
                             <i x-show="sidebarOpen" class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
                         </button>
                         <div x-show="open && sidebarOpen" x-cloak class="mt-1 ml-4 pl-4 border-l border-gray-200 space-y-1">
-                            <a href="{{ route('admin.usuarios.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.usuarios.index') ? 'text-white font-bold bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
+                            <a href="{{ route('admin.usuarios.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.usuarios.index') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Usuários
                             </a>
-                            <a href="{{ route('admin.metas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.metas.index') ? 'text-white font-bold bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
+                            <a href="{{ route('admin.metas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.metas.index') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Metas
                             </a>
-                            <a href="{{ url('/admin/criterios') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/criterios*') ? 'text-white font-bold bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
+                            <a href="{{ url('/admin/criterios') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/criterios*') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Critérios
                             </a>
-                            <a href="{{ url('/admin/criterios/logs') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/criterios/logs*') ? 'text-white font-bold bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
+                            <a href="{{ url('/admin/criterios/logs') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/criterios/logs*') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Logs de critérios
                             </a>
-                            <a href="{{ route('admin.zerar.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.zerar.index') ? 'text-white font-bold bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
+                            <a href="{{ route('admin.zerar.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.zerar.index') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Começar do zero
                             </a>
-                            <a href="{{ url('/admin/alteracoes') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/alteracoes*') ? 'text-white font-bold bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
+                            <a href="{{ url('/admin/alteracoes') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/alteracoes*') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Atualizações do sistema
                             </a>

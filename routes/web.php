@@ -46,7 +46,26 @@ Route::get('/', function () {
 
 Route::get('/dashboard', DashboardController::class)->middleware(['auth'])->name('dashboard');
 Route::get('/gestacao', GestacaoController::class)->middleware(['auth'])->name('gestacao');
+Route::get('/gestacao/formulario-cobertura/pdf', function() {
+    return response()->view('gestacao.formulario-cobertura', [
+        'tipo' => request('tipo', 'em_branco'),
+        'matriz' => request('matriz', 'todas'),
+        'leitoa' => request('leitoa', 'todas'),
+        'ordenar' => request('ordenar', 'matriz'),
+        'quantidade' => request('quantidade', 10),
+        'dias_vazias_inicio' => request('dias_vazias_inicio'),
+        'dias_vazias_fim' => request('dias_vazias_fim'),
+        'idade_inicio' => request('idade_inicio'),
+        'idade_fim' => request('idade_fim')
+    ])->header('Content-Type', 'text/html');
+})->middleware(['auth'])->name('gestacao.formulario.pdf');
 Route::get('/maternidade', [MaternidadeController::class, 'index'])->middleware(['auth'])->name('maternidade');
+Route::get('/creche', function() {
+    return view('creche');
+})->middleware(['auth'])->name('creche');
+Route::get('/terminacao', function() {
+    return view('terminacao');
+})->middleware(['auth'])->name('terminacao');
 Route::post('/maternidade/partos', [MaternidadeController::class, 'storeParto'])->middleware(['auth'])->name('maternidade.partos.store');
 Route::post('/maternidade/desmames', [MaternidadeController::class, 'storeDesmame'])->middleware(['auth'])->name('maternidade.desmames.store');
 
