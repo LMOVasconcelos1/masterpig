@@ -237,10 +237,9 @@ class GestacaoCoberturaController extends Controller
 
             $diff = $firstCioStart->diffInDays($dataCobertura);
             $cycles = intdiv($diff, $diasAteCio);
+            // Removido bloqueio por ciclos (permitindo cobertura independente da contagem)
             if ($cycles < $coberturaCiclosMin) {
-                return response()->json([
-                    'message' => "Cobertura permitida a partir de {$coberturaCiclosMin} ciclos.",
-                ], 422);
+                $warnings[] = "Atenção: Cobertura realizada no {$cycles}º ciclo (critério ideal: {$coberturaCiclosMin}).";
             }
             $cioWindowStart = (clone $firstCioStart)->addDays($cycles * $diasAteCio)->startOfDay();
             $cioWindowEnd = (clone $cioWindowStart)->addDays($cioDias)->startOfDay();
@@ -282,23 +281,15 @@ class GestacaoCoberturaController extends Controller
             ->where('femea_id', (int) $validated['femea_id'])
             ->where('data', '<=', $dataCobertura->toDateString());
 
-        if ($cioWindowStart) {
-            $cioQuery->where('data', '>=', $cioWindowStart->toDateString());
-        }
-
-        $lastCio = $cioQuery->max('data');
+        $lastCio = $cioQuery->orderByDesc('data')->first();
 
         if (! $lastCio) {
-            return response()->json([
-                'message' => 'A fêmea precisa estar em cio. Registre o cio antes da cobertura.',
-            ], 422);
-        }
-
-        $dataCio = Carbon::parse($lastCio)->startOfDay();
-        if ($dataCio->diffInDays($dataCobertura) > $cioDias) {
-            return response()->json([
-                'message' => 'A fêmea precisa estar em cio para registrar cobertura.',
-            ], 422);
+            $warnings[] = 'Atenção: Não foi encontrado um registro de cio anterior para esta cobertura. Recomenda-se registrar o cio na ficha da matriz.';
+        } else {
+            $dataCio = Carbon::parse($lastCio->data)->startOfDay();
+            if ($dataCio->diffInDays($dataCobertura) > 5) {
+                $warnings[] = 'Atenção: O último cio registrado para esta matriz foi há mais de 5 dias.';
+            }
         }
 
         $semen = trim((string) ($validated['semen'] ?? ''));
