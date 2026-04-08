@@ -85,34 +85,141 @@ class MaternidadeController extends Controller
             }
         }
 
-        // Matrizes aptas para parto (que tiveram cobertura mas não tiveram parto para essa cobertura)
+        // Matrizes aptas para parto: 
+        // 1. Tem registro de cobertura (manejo) OU no cadastro (data_cobertura)
+        // 2. Não tem parto registrado APÓS essa última cobertura
         $matrizesAptas = [];
-        if (Schema::hasTable('gestacao_cobertura')) {
-            $matrizesAptas = DB::table('femea as f')
-                ->join('gestacao_cobertura as gc', 'f.id', '=', 'gc.femea_id')
-                ->leftJoin('maternidade_parto as mp', 'gc.id', '=', 'mp.cobertura_id')
-                ->whereNull('mp.id')
+        if (Schema::hasTable('femea')) {
+            $queryAptas = DB::table('femea as f')
+                // Última cobertura (unificada: manejo ou cadastro)
+                ->leftJoin(DB::raw('(SELECT femea_id, MAX(data) as d, MAX(id) as last_id FROM gestacao_cobertura GROUP BY femea_id) as last_gc'), 'f.id', '=', 'last_gc.femea_id')
+                ->where(function($q) {
+                    $q->whereNotNull('last_gc.d')
+                      ->orWhereNotNull('f.data_cobertura');
+                })
+                // Filtra fêmeas ativas (sem morte/descarte)
+                ->whereNotExists(function ($q) {
+                    if (Schema::hasTable('femea_movimento')) {
+                        $q->select(DB::raw(1))
+                          ->from('femea_movimento as fm')
+                          ->whereColumn('fm.femea_id', 'f.id')
+                          ->whereIn('fm.acao', ['morte', 'descarte', 'venda']);
+                    } else {
+                        $q->select(DB::raw(0))->whereRaw('1=0');
+                    }
+                });
+
+            $rowsAptas = $queryAptas->select([
+                'f.id',
+                'f.id_primaria',
+                'f.id_secundaria',
+                'f.data_cobertura as cadastrada_em',
+                'last_gc.d as manejo_em',
+                'last_gc.last_id as cobertura_id'
+            ])->get();
+
+            $gestacaoDias = $this->metaInt('meta_gestacao_periodo_gestacao', 114);
+
+            foreach ($rowsAptas as $ra) {
+                $dataC = $ra->manejo_em ?: $ra->cadastrada_em;
+                if (!$dataC) continue;
+
+                $dataC = Carbon::parse($dataC);
+
+                // Verifica se existe parto após esta cobertura
+                $hasParto = DB::table('maternidade_parto')
+                    ->where('femea_id', $ra->id)
+                    ->where('data', '>=', $dataC->toDateString())
+                    ->exists();
+
+                if (!$hasParto) {
+                    $previsaoParto = (clone $dataC)->addDays($gestacaoDias);
+                    $matrizesAptas[] = [
+                        'id' => $ra->id,
+                        'identificacao' => (string) $ra->id_primaria . ($ra->id_secundaria ? " ({$ra->id_secundaria})" : ""),
+                        'previsao_parto' => $previsaoParto->toDateString(),
+                        'cobertura_id' => $ra->cobertura_id
+                    ];
+                }
+            }
+        }
+
+        $partosRegistrados = [];
+        if (Schema::hasTable('maternidade_parto')) {
+            $partosRegistrados = DB::table('maternidade_parto as mp')
+                ->join('femea as f', 'f.id', '=', 'mp.femea_id')
+                ->select([
+                    'mp.*',
+                    'f.id_primaria',
+                    'f.id_secundaria',
+                ])
+                ->orderByDesc('mp.data')
+                ->orderByDesc('mp.id')
+                ->limit(100)
+                ->get();
+        }
+
+        $morteCausas = [];
+        if (Schema::hasTable('maternidade_morte_leitao_causas')) {
+            $morteCausas = DB::table('maternidade_morte_leitao_causas')->orderBy('nome')->get();
+        }
+
+        $mortesLeitaoRegistradas = [];
+        if (Schema::hasTable('maternidade_morte_leitao')) {
+            $mortesLeitaoRegistradas = DB::table('maternidade_morte_leitao as mml')
+                ->join('femea as f', 'f.id', '=', 'mml.femea_id')
+                ->leftJoin('causa as c', 'c.id', '=', 'mml.causa_id')
+                ->select([
+                    'mml.*',
+                    'f.id_primaria',
+                    'f.id_secundaria',
+                    'c.nome as causa_nome'
+                ])
+                ->orderByDesc('mml.data')
+                ->limit(100)
+                ->get();
+        }
+
+        // Fêmeas com leitões disponíveis (Lactantes)
+        $femeasLactantesFull = [];
+        if (Schema::hasTable('maternidade_parto')) {
+            $femeasLactantesFull = DB::table('maternidade_parto as mp')
+                ->join('femea as f', 'f.id', '=', 'mp.femea_id')
+                ->leftJoin('maternidade_desmame as md', 'mp.id', '=', 'md.parto_id')
+                ->whereNull('md.id')
                 ->select([
                     'f.id',
                     'f.id_primaria',
                     'f.id_secundaria',
-                    'gc.data as data_cobertura',
-                    'gc.id as cobertura_id'
+                    'mp.id as parto_id',
+                    'mp.total_vivos'
                 ])
                 ->get()
-                ->map(function($row) {
-                    $gestacaoDias = $this->metaInt('criterio_dias_gestacao', 114);
-                    $previsaoParto = Carbon::parse($row->data_cobertura)->addDays($gestacaoDias);
-                    return [
-                        'id' => $row->id,
-                        'identificacao' => (string) $row->id_primaria . ($row->id_secundaria ? " ({$row->id_secundaria})" : ""),
-                        'previsao_parto' => $previsaoParto->toDateString(),
-                        'cobertura_id' => $row->cobertura_id
-                    ];
+                ->map(function ($row) {
+                    // Subtrair mortes registradas
+                    $mortes = 0;
+                    if (Schema::hasTable('maternidade_morte_leitao')) {
+                        $mortes = DB::table('maternidade_morte_leitao')
+                            ->where('parto_id', $row->parto_id)
+                            ->sum('quantidade');
+                    }
+                    
+                    $row->disponiveis = max(0, $row->total_vivos - $mortes);
+                    $row->identificacao = (string) $row->id_primaria . ($row->id_secundaria ? " ({$row->id_secundaria})" : "");
+                    return $row;
                 });
         }
 
-        return view('admin.maternidade.index', compact('femeasLactantes', 'maesLeite', 'inconsistencias', 'matrizesAptas'));
+        return view('admin.maternidade.index', compact(
+            'femeasLactantes', 
+            'maesLeite', 
+            'inconsistencias', 
+            'matrizesAptas', 
+            'partosRegistrados',
+            'morteCausas',
+            'mortesLeitaoRegistradas',
+            'femeasLactantesFull'
+        ));
     }
 
     public function storeParto(Request $request)
@@ -149,6 +256,68 @@ class MaternidadeController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Parto registrado com sucesso!');
+    }
+
+    public function storeMorteLeitao(Request $request)
+    {
+        $validated = $request->validate([
+            'femea_id' => 'required|exists:femea,id',
+            'parto_id' => 'required',
+            'data' => 'required|date',
+            'hora' => 'nullable',
+            'quantidade' => 'required|integer|min:1',
+            'causa_id' => 'nullable|exists:causa,id',
+            'funcionario' => 'nullable|string|max:255',
+            'observacao' => 'nullable|string',
+        ]);
+
+        DB::table('maternidade_morte_leitao')->insert([
+            'femea_id' => $validated['femea_id'],
+            'parto_id' => $validated['parto_id'],
+            'data' => $validated['data'],
+            'hora' => $validated['hora'] ?? null,
+            'quantidade' => $validated['quantidade'],
+            'causa_id' => $validated['causa_id'],
+            'funcionario' => $validated['funcionario'],
+            'observacao' => $validated['observacao'],
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Morte de leitão registrada com sucesso!');
+    }
+
+    public function storeCausa(Request $request)
+    {
+        $request->validate(['nome' => 'required|string|max:255']);
+
+        // Tenta encontrar um grupo de causa para Maternidade
+        $grupo = DB::table('grupo_causa')
+            ->where('nome', 'like', '%Maternidade%')
+            ->orWhere('nome', 'like', '%Mortalidade%')
+            ->first();
+
+        if (!$grupo) {
+            $grupo = DB::table('grupo_causa')->first();
+        }
+
+        if (!$grupo) {
+            return response()->json(['error' => 'Nenhum grupo de causa cadastrado no sistema.'], 422);
+        }
+
+        $id = DB::table('causa')->insertGetId([
+            'nome' => $request->nome,
+            'codigo' => 'MAT-' . strtoupper(uniqid()),
+            'situacao' => 1,
+            'grupo_causa_id' => $grupo->id,
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
+
+        return response()->json([
+            'id' => $id,
+            'nome' => $request->nome
+        ]);
     }
 
     public function storeDesmame(Request $request)

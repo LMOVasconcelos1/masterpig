@@ -68,6 +68,8 @@ Route::get('/terminacao', function() {
 })->middleware(['auth'])->name('terminacao');
 Route::post('/maternidade/partos', [MaternidadeController::class, 'storeParto'])->middleware(['auth'])->name('maternidade.partos.store');
 Route::post('/maternidade/desmames', [MaternidadeController::class, 'storeDesmame'])->middleware(['auth'])->name('maternidade.desmames.store');
+Route::post('/maternidade/mortes', [MaternidadeController::class, 'storeMorteLeitao'])->middleware(['auth'])->name('maternidade.mortes.store');
+Route::post('/maternidade/causas', [MaternidadeController::class, 'storeCausa'])->middleware(['auth'])->name('maternidade.causas.store');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
