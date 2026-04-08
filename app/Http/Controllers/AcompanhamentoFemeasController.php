@@ -121,7 +121,7 @@ class AcompanhamentoFemeasController extends Controller
         return [];
     }
 
-    private function computeFase(array $row, ?Carbon $lastCobertura, ?Carbon $lastCio, ?Carbon $lastSaltaCio, array $cfg): array
+    private function computeFase(array $row, ?Carbon $lastCobertura, ?Carbon $lastCio, ?Carbon $lastSaltaCio, ?Carbon $lastParto, array $cfg): array
     {
         $now = Carbon::today();
         $fId = $row['id'];
@@ -148,6 +148,21 @@ class AcompanhamentoFemeasController extends Controller
         if ($lastCobertura) {
             $cycle = PigCycleService::calculateCycle($lastCobertura);
 
+            // Se já passou da data prevista mas não houve parto registrado APÓS a cobertura,
+            // então ela continua em gestação (Parto atrasado/pendente).
+            if ($now->greaterThanOrEqualTo($cycle['expectedBirthDate'])) {
+                $hasPartoDepoisDaCobertura = $lastParto && $lastParto->greaterThanOrEqualTo($lastCobertura->startOfDay());
+                
+                if (!$hasPartoDepoisDaCobertura) {
+                    return [
+                        'fase_anterior' => 'Cobertura',
+                        'fase' => 'Gestação',
+                        'proxima_fase' => 'Parto (Pendente)',
+                        'prevista_em' => $cycle['displayExpectedBirth'],
+                    ];
+                }
+            }
+
             return [
                 'fase_anterior' => 'Cobertura',
                 'fase' => $cycle['currentPhaseLabel'],
@@ -173,7 +188,7 @@ class AcompanhamentoFemeasController extends Controller
                     'fase_anterior' => 'Cio',
                     'fase' => 'Salta cio',
                     'proxima_fase' => $cioProximoLabel,
-                    'prevista_em' => $nextCio->format('d/m/Y'),
+                    'prevista_em' => PigCycleService::formatDisplayDate($nextCio),
                 ];
             }
         }
@@ -187,7 +202,7 @@ class AcompanhamentoFemeasController extends Controller
                         'fase_anterior' => 'Maturidade reprodutiva',
                         'fase' => $cioAtualLabel,
                         'proxima_fase' => 'Cobertura',
-                        'prevista_em' => $lastCio->format('d/m/Y'),
+                        'prevista_em' => PigCycleService::formatDisplayDate($lastCio),
                     ];
                 }
 
@@ -198,7 +213,7 @@ class AcompanhamentoFemeasController extends Controller
                     'fase_anterior' => 'Maturidade reprodutiva',
                     'fase' => $cioAtualLabel,
                     'proxima_fase' => $nextLabel,
-                    'prevista_em' => $nextCio->format('d/m/Y'),
+                    'prevista_em' => PigCycleService::formatDisplayDate($nextCio),
                 ];
             }
         }
@@ -216,7 +231,7 @@ class AcompanhamentoFemeasController extends Controller
                     'fase_anterior' => $cioAtualLabel,
                     'fase' => $cioAtualLabel,
                     'proxima_fase' => 'Cobertura',
-                    'prevista_em' => $nextCio->format('d/m/Y'),
+                    'prevista_em' => PigCycleService::formatDisplayDate($nextCio),
                 ];
             }
 
@@ -224,7 +239,7 @@ class AcompanhamentoFemeasController extends Controller
                 'fase_anterior' => $cioAtualLabel,
                 'fase' => $cioAtualLabel,
                 'proxima_fase' => $cioProximoLabel,
-                'prevista_em' => $nextCio->format('d/m/Y'),
+                'prevista_em' => PigCycleService::formatDisplayDate($nextCio),
             ];
         }
 
@@ -236,7 +251,7 @@ class AcompanhamentoFemeasController extends Controller
                     'fase_anterior' => 'Nascimento',
                     'fase' => 'Leitoa',
                     'proxima_fase' => 'Maturidade reprodutiva',
-                    'prevista_em' => $prev->format('d/m/Y'),
+                    'prevista_em' => PigCycleService::formatDisplayDate($prev),
                 ];
             }
         }
@@ -251,7 +266,7 @@ class AcompanhamentoFemeasController extends Controller
                     'fase_anterior' => 'Leitoa',
                     'fase' => 'Maturidade reprodutiva',
                     'proxima_fase' => $cioProximoLabel,
-                    'prevista_em' => $nextCio->format('d/m/Y'),
+                    'prevista_em' => PigCycleService::formatDisplayDate($nextCio),
                 ];
             }
         }
@@ -269,7 +284,7 @@ class AcompanhamentoFemeasController extends Controller
         if ($nasc) {
             $maturityStart = (clone $nasc)->addDays($cfg['maturidade_min_dias']);
             $nextCio = (clone $maturityStart)->addDays(max(1, $cfg['dias_ate_cio']));
-            $previstaEm = $nextCio->format('d/m/Y');
+            $previstaEm = PigCycleService::formatDisplayDate($nextCio);
         }
 
         return [
@@ -364,17 +379,32 @@ class AcompanhamentoFemeasController extends Controller
                 ->toArray();
         }
 
-        $items = $rows->map(function ($row) use ($lastCoberturas, $lastCios, $lastSaltas, $cfg) {
+        $lastPartos = [];
+        if (! empty($ids) && Schema::hasTable('maternidade_parto')) {
+            $lastPartos = DB::table('maternidade_parto')
+                ->whereIn('femea_id', $ids)
+                ->selectRaw('femea_id, MAX(data) as last_data')
+                ->groupBy('femea_id')
+                ->pluck('last_data', 'femea_id')
+                ->toArray();
+        }
+
+        $items = $rows->map(function ($row) use ($lastCoberturas, $lastCios, $lastSaltas, $lastPartos, $cfg) {
             $id = (int) $row->id;
             $lastCob = isset($lastCoberturas[$id]) && $lastCoberturas[$id] ? Carbon::parse($lastCoberturas[$id]) : null;
+            if (!$lastCob && !empty($row->data_cobertura)) {
+                $lastCob = Carbon::parse($row->data_cobertura);
+            }
             $lastCio = isset($lastCios[$id]) && $lastCios[$id] ? Carbon::parse($lastCios[$id]) : null;
             $lastSalta = isset($lastSaltas[$id]) && $lastSaltas[$id] ? Carbon::parse($lastSaltas[$id]) : null;
+
+            $lastParto = isset($lastPartos[$id]) && $lastPartos[$id] ? Carbon::parse($lastPartos[$id]) : null;
 
             $fase = $this->computeFase([
                 'id' => $id,
                 'tipo_compra' => $row->tipo_compra,
                 'data_nascimento' => $row->data_nascimento,
-            ], $lastCob, $lastCio, $lastSalta, $cfg);
+            ], $lastCob, $lastCio, $lastSalta, $lastParto, $cfg);
 
             return [
                 'id' => $id,
@@ -411,6 +441,7 @@ class AcompanhamentoFemeasController extends Controller
                 'tipo_compra',
                 'data_nascimento',
                 'data_compra',
+                'data_cobertura',
                 'localizacao',
                 'baia',
             ])
@@ -441,6 +472,10 @@ class AcompanhamentoFemeasController extends Controller
             $lastCob = $d ? Carbon::parse($d) : null;
         }
 
+        if (!$lastCob && !empty($row->data_cobertura)) {
+            $lastCob = Carbon::parse($row->data_cobertura);
+        }
+
         $lastCio = null;
         if (Schema::hasTable('gestacao_cio')) {
             $d = DB::table('gestacao_cio')->where('femea_id', $id)->max('data');
@@ -453,11 +488,17 @@ class AcompanhamentoFemeasController extends Controller
             $lastSalta = $d ? Carbon::parse($d) : null;
         }
 
+        $lastParto = null;
+        if (Schema::hasTable('maternidade_parto')) {
+            $d = DB::table('maternidade_parto')->where('femea_id', $id)->max('data');
+            $lastParto = $d ? Carbon::parse($d) : null;
+        }
+
         $fase = $this->computeFase([
             'id' => (int) $row->id,
             'tipo_compra' => $row->tipo_compra,
             'data_nascimento' => $row->data_nascimento,
-        ], $lastCob, $lastCio, $lastSalta, $cfg);
+        ], $lastCob, $lastCio, $lastSalta, $lastParto, $cfg);
 
         $schedule = $this->buildSchedule($lastCob, $lastCio, $lastSalta, $cfg);
 

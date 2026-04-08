@@ -102,7 +102,24 @@
 </div>
 
 <script>
-document.addEventListener('alpine:init', () => {
+    // Definir constantes e funções globais para o componente
+    window.PIG_BASE_DATE = window.PIG_BASE_DATE || '1969-01-01';
+    var PIG_BASE_DATE = window.PIG_BASE_DATE;
+
+    function toPigDay(date) {
+        if (!date) return null;
+        const start = new Date(PIG_BASE_DATE + 'T00:00:00');
+        const end = new Date(date);
+        end.setHours(0, 0, 0, 0);
+        const diff = Math.floor((end.getTime() - start.getTime()) / 86400000);
+        const absoluteDay = diff + 1;
+        
+        // Aplicar ciclo de 1000 dias com offset -1 para corresponder ao pig1000.com
+        // Fórmula: ((absoluto - 2) % 1000) + 1
+        return ((absoluteDay - 2) % 1000) + 1;
+    }
+
+    document.addEventListener('alpine:init', () => {
     Alpine.data('calendarMenu', () => ({
         open: false,
         currentMonth: new Date().getMonth(),

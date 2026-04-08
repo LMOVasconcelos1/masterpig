@@ -148,7 +148,14 @@ class PlantelApiController extends Controller
 
             $rows = $query->offset($offset)->limit($limit)->get()->map(function ($row) {
                 $row->ultima_operacao_label = $row->ultima_acao ?? '-';
-                $row->ultima_data_formatada = $row->ultima_data ? PigCycleService::formatDisplayDate(Carbon::parse($row->ultima_data)) : '-';
+                
+                if (\App\Services\PigCycleService::getCalendarType() === \App\Services\PigCycleService::CALENDAR_1000_DAYS && $row->ultima_data) {
+                    $base = Carbon::parse(\App\Services\PigCycleService::PIG_BASE_DATE)->startOfDay();
+                    $dt = Carbon::parse($row->ultima_data)->startOfDay();
+                    $row->ultima_data_formatada = (string) ((int) $base->diffInDays($dt, false) + 1);
+                } else {
+                    $row->ultima_data_formatada = $row->ultima_data ? PigCycleService::formatDisplayDate(Carbon::parse($row->ultima_data)) : '-';
+                }
                 
                 $nasc = $row->data_nascimento ? Carbon::parse($row->data_nascimento) : null;
                 $row->idade_dias = $nasc ? (int) $nasc->diffInDays(now()) : null;

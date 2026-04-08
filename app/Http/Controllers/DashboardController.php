@@ -99,6 +99,7 @@ class DashboardController extends Controller
                 'f.id_secundaria',
                 'f.tipo_compra',
                 'f.localizacao',
+                'f.data_cobertura as data_cobertura_cadastro',
             ])
             ->orderBy('f.id_primaria')
             ->limit(2000);
@@ -161,6 +162,30 @@ class DashboardController extends Controller
             })->addSelect(['lsc.last_data as last_salta_cio']);
         } else {
             $query->addSelect([DB::raw('NULL as last_salta_cio')]);
+        }
+
+        $lastPartos = [];
+        if (Schema::hasTable('maternidade_parto')) {
+            // Pega o último parto de cada fêmea
+            $lastPartosQuery = DB::table('maternidade_parto')
+                ->select('id', 'femea_id', 'data')
+                ->whereIn('id', function($q) {
+                    $q->selectRaw('MAX(id)')
+                        ->from('maternidade_parto')
+                        ->groupBy('femea_id');
+                })
+                ->get();
+            
+            foreach ($lastPartosQuery as $lp) {
+                $lastPartos[$lp->femea_id] = $lp;
+            }
+        }
+
+        $desmames = [];
+        if (Schema::hasTable('maternidade_desmame')) {
+            $desmames = DB::table('maternidade_desmame')
+                ->pluck('parto_id', 'parto_id')
+                ->toArray();
         }
 
         $rows = $query->get();
@@ -266,9 +291,56 @@ class DashboardController extends Controller
                 ], $problema);
                 $logged++;
             }
+
+            // Verificação de Parto Atrasado
+            if (Schema::hasTable('maternidade_parto')) {
+                $cob = empty($row->last_cobertura) ? null : Carbon::parse($row->last_cobertura);
+                if (!$cob && !empty($row->data_cobertura_cadastro)) {
+                    $cob = Carbon::parse($row->data_cobertura_cadastro);
+                }
+
+                if ($cob) {
+                    $expected = (clone $cob)->addDays($cfg['gestacao_dias']);
+                    if ($today->gt($expected)) {
+                        $hasParto = isset($lastPartos[$femeaId]) && Carbon::parse($lastPartos[$femeaId]->data)->greaterThanOrEqualTo($cob->startOfDay());
+                        
+                        if (!$hasParto) {
+                            $items[] = [
+                                'tipo' => 'parto_atrasado',
+                                'femea_id' => $femeaId,
+                                'id_primaria' => (string) $row->id_primaria,
+                                'id_secundaria' => $row->id_secundaria === null ? null : (string) $row->id_secundaria,
+                                'localizacao' => $row->localizacao === null ? '-' : (string) $row->localizacao,
+                                'ultima_operacao' => empty($row->ultima_acao) ? '-' : (string) $row->ultima_acao . ' (' . PigCycleService::formatDisplayDate(Carbon::parse($row->ultima_data)) . ')',
+                                'problema' => "Parto previsto para " . $expected->format('d/m/Y') . " não registrado (" . $this->tipoLabel($row->tipo_compra) . ").",
+                            ];
+                        }
+                    }
+                }
+            }
+
+            // Verificação de Desmame Atrasado
+            if (isset($lastPartos[$femeaId])) {
+                $lp = $lastPartos[$femeaId];
+                if (!isset($desmames[$lp->id])) {
+                    $expectedDesmame = Carbon::parse($lp->data)->addDays($cfg['lactacao_min_dias']);
+                    if ($today->gt($expectedDesmame)) {
+                        $items[] = [
+                            'tipo' => 'desmame_atrasado',
+                            'femea_id' => $femeaId,
+                            'id_primaria' => (string) $row->id_primaria,
+                            'id_secundaria' => $row->id_secundaria === null ? null : (string) $row->id_secundaria,
+                            'localizacao' => $row->localizacao === null ? '-' : (string) $row->localizacao,
+                            'ultima_operacao' => 'Parto (' . PigCycleService::formatDisplayDate(Carbon::parse($lp->data)) . ')',
+                            'problema' => "Desmame previsto para " . $expectedDesmame->format('d/m/Y') . " não registrado (" . $this->tipoLabel($row->tipo_compra) . ").",
+                        ];
+                    }
+                }
+            }
         }
 
         return $items;
+
     }
 
     public function __invoke()
