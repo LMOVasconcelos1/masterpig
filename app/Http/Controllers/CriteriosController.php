@@ -26,7 +26,6 @@ class CriteriosController extends Controller
         $rows = DB::table('meta')->whereIn('chave', $keys)->pluck('valor', 'chave');
 
         $defaults = [
-            'criterio_registro_cio_automatico' => 'nao',
             'criterio_cobertura_idade_min_dias' => '210',
             'criterio_cobertura_idade_max_dias' => '240',
             'criterio_cobertura_ciclos_min' => '3',
@@ -117,7 +116,7 @@ class CriteriosController extends Controller
         return [
             'criterios_enabled' => ['nullable', 'boolean'],
 
-            'criterio_registro_cio_automatico' => ['nullable', 'in:sim,nao'],
+
             'criterio_cobertura_idade_min_dias' => ['nullable', 'integer', 'min:0', 'max:2000'],
             'criterio_cobertura_idade_max_dias' => ['nullable', 'integer', 'min:0', 'max:2000'],
             'criterio_cobertura_ciclos_min' => ['nullable', 'integer', 'min:0', 'max:100'],

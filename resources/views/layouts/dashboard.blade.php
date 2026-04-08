@@ -199,13 +199,9 @@
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Usuários
                             </a>
-                            <a href="{{ route('admin.metas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.metas.index') ? 'text-primary-700 font-bold bg-primary-50' : 'text-gray-500' }} transition-colors rounded-lg hover:bg-gray-50 hover:text-primary-600" @click="mobileSidebarOpen = false">
+                            <a href="{{ route('admin.metas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ (request()->routeIs('admin.metas.index') || request()->is('admin/criterios*')) ? 'text-primary-700 font-bold bg-primary-50' : 'text-gray-500' }} transition-colors rounded-lg hover:bg-gray-50 hover:text-primary-600" @click="mobileSidebarOpen = false">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
-                                Metas
-                            </a>
-                            <a href="{{ url('/admin/criterios') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/criterios*') ? 'text-primary-700 font-bold bg-primary-50' : 'text-gray-500' }} transition-colors rounded-lg hover:bg-gray-50 hover:text-primary-600" @click="mobileSidebarOpen = false">
-                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
-                                Critérios
+                                Metas e Critérios
                             </a>
                             <a href="{{ url('/admin/criterios/logs') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/criterios/logs*') ? 'text-primary-700 font-bold bg-primary-50' : 'text-gray-500' }} transition-colors rounded-lg hover:bg-gray-50 hover:text-primary-600" @click="mobileSidebarOpen = false">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
@@ -320,13 +316,9 @@
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                 Usuários
                             </a>
-                            <a href="{{ route('admin.metas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ request()->routeIs('admin.metas.index') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
+                            <a href="{{ route('admin.metas.index', [], false) }}" class="flex items-center px-4 py-2 text-sm {{ (request()->routeIs('admin.metas.index') || request()->is('admin/criterios*')) ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
-                                Metas
-                            </a>
-                            <a href="{{ url('/admin/criterios') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/criterios*') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
-                                <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
-                                Critérios
+                                Metas e Critérios
                             </a>
                             <a href="{{ url('/admin/criterios/logs') }}" class="flex items-center px-4 py-2 text-sm {{ request()->is('admin/criterios/logs*') ? 'text-[#0A1128] font-bold bg-[#0A1128]/10 dark:text-white dark:bg-[#0A1128]' : 'text-gray-500' }} transition-colors rounded-xl hover:bg-gray-50 hover:text-[#0A1128]">
                                 <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>

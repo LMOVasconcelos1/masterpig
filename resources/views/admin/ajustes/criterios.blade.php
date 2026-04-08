@@ -12,7 +12,6 @@
     locked: false,
     criterios: {
         criterios_enabled: false,
-        criterio_registro_cio_automatico: 'nao',
         criterio_cobertura_idade_min_dias: '210',
         criterio_cobertura_idade_max_dias: '240',
         criterio_cobertura_ciclos_min: '3',
@@ -38,7 +37,6 @@
             .then(data => {
                 const items = data.items || {};
                 this.criterios.criterios_enabled = Boolean(Number(items.criterios_enabled ?? 0));
-                this.criterios.criterio_registro_cio_automatico = (items.criterio_registro_cio_automatico === null || items.criterio_registro_cio_automatico === undefined || String(items.criterio_registro_cio_automatico).trim() === '') ? 'nao' : String(items.criterio_registro_cio_automatico);
                 this.criterios.criterio_cobertura_idade_min_dias = (items.criterio_cobertura_idade_min_dias === null || items.criterio_cobertura_idade_min_dias === undefined || String(items.criterio_cobertura_idade_min_dias).trim() === '' || Number(items.criterio_cobertura_idade_min_dias) === 0) ? '210' : String(items.criterio_cobertura_idade_min_dias);
                 this.criterios.criterio_cobertura_idade_max_dias = (items.criterio_cobertura_idade_max_dias === null || items.criterio_cobertura_idade_max_dias === undefined || String(items.criterio_cobertura_idade_max_dias).trim() === '' || Number(items.criterio_cobertura_idade_max_dias) === 0) ? '240' : String(items.criterio_cobertura_idade_max_dias);
                 this.criterios.criterio_cobertura_ciclos_min = (items.criterio_cobertura_ciclos_min === null || items.criterio_cobertura_ciclos_min === undefined || String(items.criterio_cobertura_ciclos_min).trim() === '') ? '3' : String(items.criterio_cobertura_ciclos_min);
@@ -69,7 +67,6 @@
 
         const payload = {
             criterios_enabled: Boolean(this.criterios.criterios_enabled),
-            criterio_registro_cio_automatico: this.criterios.criterio_registro_cio_automatico === '' ? null : String(this.criterios.criterio_registro_cio_automatico),
             criterio_cobertura_idade_min_dias: this.criterios.criterio_cobertura_idade_min_dias === '' ? null : Number(String(this.criterios.criterio_cobertura_idade_min_dias).trim()),
             criterio_cobertura_idade_max_dias: this.criterios.criterio_cobertura_idade_max_dias === '' ? null : Number(String(this.criterios.criterio_cobertura_idade_max_dias).trim()),
             criterio_cobertura_ciclos_min: this.criterios.criterio_cobertura_ciclos_min === '' ? null : Number(String(this.criterios.criterio_cobertura_ciclos_min).trim()),
@@ -186,14 +183,6 @@
             <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 rounded-2xl p-4">
                 <div class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Cio</div>
                 <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Registro de cio automático</label>
-                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Quando habilitado, o sistema pode registrar o cio automaticamente ao confirmar a fase de cio.</div>
-                        <select x-model="criterios.criterio_registro_cio_automatico" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500 rounded-xl">
-                            <option value="nao">Não (exige registro de cio)</option>
-                            <option value="sim">Sim (registra automaticamente quando está na fase cio)</option>
-                        </select>
-                    </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Dias até o próximo cio</label>
                         <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Intervalo médio entre um cio e o próximo. Usado nas previsões do acompanhamento. Padrão: 21.</div>

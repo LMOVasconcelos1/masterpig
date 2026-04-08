@@ -118,8 +118,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/relatorios/plantel/machos', [PlantelRelatorioController::class, 'machos'])->name('relatorios.plantel.machos');
     Route::get('/metas', [MetasController::class, 'page'])->name('metas.index');
     Route::post('/metas', [MetasController::class, 'store'])->name('metas.store');
-    Route::get('/criterios', [CriteriosController::class, 'page'])->name('criterios.index');
-    Route::post('/criterios', [CriteriosController::class, 'store'])->name('criterios.store');
+    Route::get('/criterios', function() { return redirect()->route('admin.metas.index'); })->name('criterios.index');
+    Route::post('/criterios', [MetasController::class, 'store'])->name('criterios.store');
     Route::get('/criterios/logs', [CriteriosLogsController::class, 'page'])->name('criterios.logs');
     Route::get('/zerar', [ZerarSistemaController::class, 'page'])->name('zerar.index');
     Route::post('/zerar', [ZerarSistemaController::class, 'store'])->name('zerar.store');

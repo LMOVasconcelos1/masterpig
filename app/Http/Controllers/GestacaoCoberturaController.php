@@ -156,14 +156,6 @@ class GestacaoCoberturaController extends Controller
         $coberturaCiclosMin = max(0, $metaInt('criterio_cobertura_ciclos_min', 3));
         $coberturaIdadeMin = max(0, $metaInt('criterio_cobertura_idade_min_dias', 210));
 
-        $cioAuto = 'nao';
-        if (Schema::hasTable('meta')) {
-            $raw = DB::table('meta')->where('chave', 'criterio_registro_cio_automatico')->value('valor');
-            if ($raw !== null && trim((string) $raw) !== '') {
-                $cioAuto = (string) $raw;
-            }
-        }
-        $cioAutoEnabled = in_array(mb_strtolower(trim((string) $cioAuto)), ['1', 'true', 'on', 'yes', 'sim'], true);
 
         $tipo = (string) ($femeaRow->tipo_compra ?? '');
         if (! in_array($tipo, ['leitoa', 'matriz_vazia'], true)) {
@@ -297,33 +289,9 @@ class GestacaoCoberturaController extends Controller
         $lastCio = $cioQuery->max('data');
 
         if (! $lastCio) {
-            if ($cioAutoEnabled && $cioWindowStart) {
-                $payload = [
-                    'femea_id' => (int) $validated['femea_id'],
-                    'data' => $dataCobertura->toDateString(),
-                ];
-                if (Schema::hasColumn('gestacao_cio', 'criado_em')) {
-                    $payload['criado_em'] = now();
-                }
-                if (Schema::hasColumn('gestacao_cio', 'atualizado_em')) {
-                    $payload['atualizado_em'] = now();
-                }
-
-                $exists = DB::table('gestacao_cio')
-                    ->where('femea_id', (int) $validated['femea_id'])
-                    ->where('data', $dataCobertura->toDateString())
-                    ->exists();
-
-                if (! $exists) {
-                    DB::table('gestacao_cio')->insert($payload);
-                }
-
-                $lastCio = $dataCobertura->toDateString();
-            } else {
-                return response()->json([
-                    'message' => 'A fêmea precisa estar em cio. Registre o cio antes da cobertura.',
-                ], 422);
-            }
+            return response()->json([
+                'message' => 'A fêmea precisa estar em cio. Registre o cio antes da cobertura.',
+            ], 422);
         }
 
         $dataCio = Carbon::parse($lastCio)->startOfDay();

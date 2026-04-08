@@ -228,9 +228,41 @@
     </div>
 </div>
 
-<div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+<div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
-            <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Inconsistências do Plantel</h6>
+            <div class="flex items-center gap-2">
+                <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Inconsistências do Plantel</h6>
+                
+                <!-- Tooltip Informativo -->
+                <div class="relative group">
+                    <i class="fa-solid fa-circle-info text-primary-400 cursor-help hover:text-primary-600 transition-colors text-base"></i>
+                    <div class="absolute z-50 left-1/2 mt-2 w-80 p-4 bg-gray-900 text-white text-[10px] rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 transform -translate-x-1/2">
+                        <div class="space-y-3">
+                            <div>
+                                <strong class="text-primary-400 block mb-1 uppercase tracking-tighter">Cio Previsto sem Registro</strong>
+                                <span class="text-gray-300">Fêmeas que atingiram a data esperada de cobertura ou ciclicidade (baseado em desmame ou cio anterior) sem novos lançamentos.</span>
+                            </div>
+                            <div>
+                                <strong class="text-amber-400 block mb-1 uppercase tracking-tighter">Parto Atrasado</strong>
+                                <span class="text-gray-300">Fêmeas cobertas que ultrapassaram o período de gestação (114 dias) sem registro de nascimento.</span>
+                            </div>
+                            <div>
+                                <strong class="text-emerald-400 block mb-1 uppercase tracking-tighter">Desmame Atrasado</strong>
+                                <span class="text-gray-300">Matrizes em lactação que ultrapassaram o período previsto para o desmame dos leitões.</span>
+                            </div>
+                            <div>
+                                <strong class="text-blue-400 block mb-1 uppercase tracking-tighter">Matriz Vazia Prolongada</strong>
+                                <span class="text-gray-300">Fêmeas ativas e vazias há mais de 250 dias (conforme critério de vazio máximo).</span>
+                            </div>
+                            <div>
+                                <strong class="text-red-400 block mb-1 uppercase tracking-tighter">Macho Parado</strong>
+                                <span class="text-gray-300">Machos ativos sem registros de cobertura nos últimos 60 dias.</span>
+                            </div>
+                        </div>
+                        <div class="absolute top-0 left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-b-gray-900"></div>
+                    </div>
+                </div>
+            </div>
             <a href="{{ route('admin.plantel.femeas.index', [], false) }}" class="inline-flex items-center rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-3 py-2 bg-white dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
                 <i class="fa-solid fa-list mr-2"></i>
                 Cadastro de fêmeas
@@ -377,6 +409,10 @@
                 this.dataNascimento = formatted;
             } else if (this.activePicker === 'cobertura') {
                 this.dataCobertura = formatted;
+            } else if (this.activePicker === 'cio') {
+                this.dataCio = formatted;
+            } else if (this.activePicker === 'editCio') {
+                this.editCioData.data = formatted;
             }
             this.activePicker = null;
         },
@@ -385,6 +421,8 @@
             if (this.activePicker === 'compra') raw = this.dataCompra;
             else if (this.activePicker === 'nascimento') raw = this.dataNascimento;
             else if (this.activePicker === 'cobertura') raw = this.dataCobertura;
+            else if (this.activePicker === 'cio') raw = this.dataCio;
+            else if (this.activePicker === 'editCio') raw = this.editCioData.data;
             
             const iso = this.parseBrDate(raw);
             if (!iso) return '';
@@ -485,7 +523,7 @@
             this.editCioData = {
                 id: row.cio_id,
                 femea_id: row.id_primaria + (row.id_secundaria ? ' / ' + row.id_secundaria : ''),
-                data: this.calendarType === '1000_dias' ? (row.raw_data_pig || '') : this.formatBrDate(row.raw_data),
+                data: this.formatBrDate(row.raw_data),
                 peso: row.raw_peso || ''
             };
             this.openEditCioModal = true;
@@ -497,7 +535,7 @@
             }
             this.saving = true;
             const payload = {
-                data: this.calendarType === '1000_dias' ? this.editCioData.data : this.parseBrDate(this.editCioData.data),
+                data: this.parseBrDate(this.editCioData.data),
                 peso: this.editCioData.peso === '' ? null : Number(this.editCioData.peso)
             };
             fetch(`/api/plantel/femeas/cios/${this.editCioData.id}`, {
@@ -2715,15 +2753,57 @@
                                         </div>
                                         <div>
                                             <label class="block text-xs font-semibold text-gray-700 mb-1">Data do Cio</label>
-                                            <template x-if="calendarType !== '1000_dias'">
-                                                <input type="text" x-model="dataCio" @input="dataCio = normalizeDateInput($event.target.value)" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 py-2.5" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
-                                            </template>
-                                            <template x-if="calendarType === '1000_dias'">
-                                                <div class="flex items-center gap-2">
-                                                    <input type="number" x-model="diaCicloCio" @input="updateDateFromCycleDay($event.target.value)" class="flex-1 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 py-2.5" placeholder="Ex: 114">
-                                                    <span class="text-[10px] text-gray-400 font-medium" x-text="dataCio ? '(' + dataCio + ')' : ''"></span>
+                                            <div class="mt-1 relative">
+                                                <input type="text" 
+                                                       x-model="dataCio" 
+                                                       @input="dataCio = normalizeDateInput($event.target.value)"
+                                                       @click="activePicker = 'cio'"
+                                                       class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 py-2.5 pr-10" 
+                                                       placeholder="DD/MM/AAAA" 
+                                                       inputmode="numeric" 
+                                                       autocomplete="off"
+                                                       readonly>
+                                                <button type="button" @click="activePicker = 'cio'" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                                    <i class="fa-solid fa-calendar"></i>
+                                                </button>
+                                                
+                                                <!-- Calendário PIG -->
+                                                <div x-show="activePicker === 'cio'" x-cloak class="absolute z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72" @click.away="activePicker = null">
+                                                    <div class="flex items-center justify-between mb-3">
+                                                        <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                            <i class="fa-solid fa-chevron-left"></i>
+                                                        </button>
+                                                        <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                        <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                            <i class="fa-solid fa-chevron-right"></i>
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                                                        <template x-for="day in ['D','S','T','Q','Q','S','S']">
+                                                            <div class="font-medium text-gray-500 dark:text-gray-400 py-1" x-text="day"></div>
+                                                        </template>
+                                                    </div>
+                                                    
+                                                    <div class="grid grid-cols-7 gap-1">
+                                                        <template x-for="day in getCalendarDays()" :key="day.date">
+                                                            <button type="button" 
+                                                                    @click.stop="selectCalendarDate(day.date)"
+                                                                    :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                                    :disabled="!day.isCurrentMonth"
+                                                                    class="p-2 text-sm rounded-lg transition-colors"
+                                                                    x-text="day.day">
+                                                            </button>
+                                                        </template>
+                                                    </div>
+                                                    
+                                                    <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                            <span x-text="calendarType === '1000_dias' ? 'Dia PIG: ' + getSelectedPigDay() : 'Data: ' + dataCio"></span>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </template>
+                                            </div>
                                         </div>
                                         <div>
                                             <label class="block text-xs font-semibold text-gray-700 mb-1">Peso da Leitoa (kg)</label>
@@ -3231,9 +3311,54 @@
                         <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 space-y-4">
                             <div>
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-wider">Data do Cio</label>
-                                <input type="text" x-model="editCioData.data" @input="editCioData.data = normalizeDateInput($event.target.value)" required
-                                       class="block w-full px-4 py-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all shadow-sm dark:text-gray-200"
-                                       :placeholder="calendarType === '1000_dias' ? 'Dia PIG' : 'DD/MM/AAAA'">
+                                <div class="relative">
+                                    <input type="text" x-model="editCioData.data" 
+                                           @input="editCioData.data = normalizeDateInput($event.target.value)"
+                                           @click="activePicker = 'editCio'"
+                                           required readonly
+                                           class="block w-full px-4 py-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl text-sm focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 outline-none transition-all shadow-sm dark:text-gray-200 pr-10"
+                                           placeholder="DD/MM/AAAA">
+                                    <button type="button" @click="activePicker = 'editCio'" class="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-gray-600">
+                                        <i class="fa-solid fa-calendar"></i>
+                                    </button>
+                                    
+                                    <!-- Calendário PIG -->
+                                    <div x-show="activePicker === 'editCio'" x-cloak class="absolute z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72" @click.away="activePicker = null">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                <i class="fa-solid fa-chevron-left"></i>
+                                            </button>
+                                            <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                            <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                <i class="fa-solid fa-chevron-right"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                                            <template x-for="day in ['D','S','T','Q','Q','S','S']">
+                                                <div class="font-medium text-gray-500 dark:text-gray-400 py-1" x-text="day"></div>
+                                            </template>
+                                        </div>
+                                        
+                                        <div class="grid grid-cols-7 gap-1">
+                                            <template x-for="day in getCalendarDays()" :key="day.date">
+                                                <button type="button" 
+                                                        @click.stop="selectCalendarDate(day.date)"
+                                                        :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                        :disabled="!day.isCurrentMonth"
+                                                        class="p-2 text-sm rounded-lg transition-colors"
+                                                        x-text="day.day">
+                                                </button>
+                                            </template>
+                                        </div>
+                                        
+                                        <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                <span x-text="calendarType === '1000_dias' ? 'Dia PIG: ' + getSelectedPigDay() : 'Data: ' + editCioData.data"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-wider">Peso da leitoa (kg)</label>

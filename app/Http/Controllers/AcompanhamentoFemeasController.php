@@ -128,28 +128,27 @@ class AcompanhamentoFemeasController extends Controller
 
         // Número do cio é baseado APENAS em registros reais de CIO (gestacao_cio).
         // Salta cio não incrementa o número do cio.
-        // Usando CioCountingService para lógica centralizada e consistente
-        $countCios = CioCountingService::calcularNumeroCioAtual($fId, $lastCobertura) - 1;
-        
-        // Debug: Log para verificar contagem (pode ser removido em produção)
-        if (config('app.debug')) {
-            \Log::info("Fêmea ID: {$fId}, Última cobertura: " . ($lastCobertura ? $lastCobertura->toDateString() : 'N/A') . 
-                      ", Cios contados: {$countCios}");
+        $numCiosRecords = DB::table('gestacao_cio')->where('femea_id', $fId);
+        if ($lastCobertura) {
+            $numCiosRecords->where('data', '>', $lastCobertura->toDateString());
         }
-
-        // Correção: Se não tem cobertura e não tem cios, o primeiro cio será 1º
-        // Se tem cobertura e não tem cios após ela, o próximo cio será 1º pós-cobertura
-        $cioAtualLabel = ($countCios <= 0 ? 1 : $countCios) . 'º cio';
-        $cioProximoLabel = ($countCios + 1) . 'º cio';
-        $coberturaCiclosMin = (int) ($cfg['cobertura_ciclos_min'] ?? 3);
+        $countCios = (int) $numCiosRecords->count();
+        
+        if ($countCios == 0) {
+            $cioAtualLabel = 'Maturidade Reprodutiva';
+            $cioProximoLabel = '1º cio';
+        } else {
+            $cioAtualLabel = $countCios . 'º cio';
+            $cioProximoLabel = ($countCios + 1) . 'º cio';
+        }
+        
+        // A partir do 3º cio a fêmea pode entrar em cobertura
+        $coberturaCiclosMin = 3; 
         $coberturaIdadeMinDias = (int) ($cfg['cobertura_idade_min_dias'] ?? 210);
-        $cioCoberturaNumero = $coberturaCiclosMin + 1;
 
         if ($lastCobertura) {
             $cycle = PigCycleService::calculateCycle($lastCobertura);
 
-            // Se já passou da data prevista mas não houve parto registrado APÓS a cobertura,
-            // então ela continua em gestação (Parto atrasado/pendente).
             if ($now->greaterThanOrEqualTo($cycle['expectedBirthDate'])) {
                 $hasPartoDepoisDaCobertura = $lastParto && $lastParto->greaterThanOrEqualTo($lastCobertura->startOfDay());
                 
@@ -157,7 +156,7 @@ class AcompanhamentoFemeasController extends Controller
                     return [
                         'fase_anterior' => 'Cobertura',
                         'fase' => 'Gestação',
-                        'proxima_fase' => 'Parto (Pendente)',
+                        'proxima_fase' => 'Parto',
                         'prevista_em' => $cycle['displayExpectedBirth'],
                     ];
                 }
@@ -174,9 +173,9 @@ class AcompanhamentoFemeasController extends Controller
         $tipo = (string) ($row['tipo_compra'] ?? '');
         $nasc = empty($row['data_nascimento']) ? null : Carbon::parse($row['data_nascimento']);
         $idade = $nasc ? $nasc->diffInDays($now) : null;
-        $idadeOkCobertura = $idade !== null && $idade >= $coberturaIdadeMinDias;
-        $cioOkCobertura = $countCios >= $cioCoberturaNumero;
-        $podeCobrirAgora = $idadeOkCobertura && $cioOkCobertura;
+        
+        // Pode cobrir se já teve pelo menos 2 cios (está no 3º) ou conforme a regra da granja
+        $podeCobrirAgora = $countCios >= $coberturaCiclosMin;
 
         if ($lastSaltaCio) {
             $durations = PigCycleService::getCycleDurations();
@@ -186,8 +185,8 @@ class AcompanhamentoFemeasController extends Controller
 
                 return [
                     'fase_anterior' => 'Cio',
-                    'fase' => 'Salta cio',
-                    'proxima_fase' => $cioProximoLabel,
+                    'fase' => 'Salta cio (' . $cioAtualLabel . ')',
+                    'proxima_fase' => $podeCobrirAgora ? 'Cobertura' : $cioProximoLabel,
                     'prevista_em' => PigCycleService::formatDisplayDate($nextCio),
                 ];
             }
@@ -197,48 +196,24 @@ class AcompanhamentoFemeasController extends Controller
             $durations = PigCycleService::getCycleDurations();
             $cioFim = (clone $lastCio)->addDays($durations['cio']);
             if ($now->betweenIncluded($lastCio, $cioFim)) {
-                if ($podeCobrirAgora) {
-                    return [
-                        'fase_anterior' => 'Maturidade reprodutiva',
-                        'fase' => $cioAtualLabel,
-                        'proxima_fase' => 'Cobertura',
-                        'prevista_em' => PigCycleService::formatDisplayDate($lastCio),
-                    ];
-                }
-
-                $nextCio = (clone $lastCio)->addDays(max(1, (int) ($cfg['dias_ate_cio'] ?? 21)));
-                $nextLabel = ($countCios + 1) . 'º cio';
-
                 return [
-                    'fase_anterior' => 'Maturidade reprodutiva',
+                    'fase_anterior' => 'Maturidade Reprodutiva',
                     'fase' => $cioAtualLabel,
-                    'proxima_fase' => $nextLabel,
-                    'prevista_em' => PigCycleService::formatDisplayDate($nextCio),
+                    'proxima_fase' => $podeCobrirAgora ? 'Cobertura' : $cioProximoLabel,
+                    'prevista_em' => PigCycleService::formatDisplayDate($lastCio),
                 ];
             }
         }
 
-        $lastEventoCio = $lastCio;
-        if ($lastEventoCio === null || ($lastSaltaCio !== null && $lastSaltaCio->gt($lastEventoCio))) {
-            $lastEventoCio = $lastSaltaCio;
-        }
+        $lastEventoCio = $lastCio ?: $lastSaltaCio;
 
         if ($lastEventoCio) {
             $nextCio = (clone $lastEventoCio)->addDays(max(1, $cfg['dias_ate_cio']));
 
-            if ($idadeOkCobertura && $countCios >= $cioCoberturaNumero) {
-                return [
-                    'fase_anterior' => $cioAtualLabel,
-                    'fase' => $cioAtualLabel,
-                    'proxima_fase' => 'Cobertura',
-                    'prevista_em' => PigCycleService::formatDisplayDate($nextCio),
-                ];
-            }
-
             return [
                 'fase_anterior' => $cioAtualLabel,
-                'fase' => $cioAtualLabel,
-                'proxima_fase' => $cioProximoLabel,
+                'fase' => $cioAtualLabel . ' (Concluído)',
+                'proxima_fase' => $podeCobrirAgora ? 'Cobertura' : $cioProximoLabel,
                 'prevista_em' => PigCycleService::formatDisplayDate($nextCio),
             ];
         }
@@ -250,23 +225,8 @@ class AcompanhamentoFemeasController extends Controller
                 return [
                     'fase_anterior' => 'Nascimento',
                     'fase' => 'Leitoa',
-                    'proxima_fase' => 'Maturidade reprodutiva',
+                    'proxima_fase' => 'Maturidade Reprodutiva',
                     'prevista_em' => PigCycleService::formatDisplayDate($prev),
-                ];
-            }
-        }
-
-        if ($idade !== null) {
-            $matMin = $cfg['maturidade_min_dias'];
-            $matMax = $cfg['maturidade_max_dias'];
-            if ($idade >= $matMin && $idade <= $matMax) {
-                $maturityStart = (clone $nasc)->addDays($matMin);
-                $nextCio = (clone $maturityStart)->addDays(max(1, $cfg['dias_ate_cio']));
-                return [
-                    'fase_anterior' => 'Leitoa',
-                    'fase' => 'Maturidade reprodutiva',
-                    'proxima_fase' => $cioProximoLabel,
-                    'prevista_em' => PigCycleService::formatDisplayDate($nextCio),
                 ];
             }
         }
@@ -289,8 +249,8 @@ class AcompanhamentoFemeasController extends Controller
 
         return [
             'fase_anterior' => $tipo === 'leitoa' ? 'Leitoa' : '-',
-            'fase' => 'Maturidade reprodutiva',
-            'proxima_fase' => $cioProximoLabel,
+            'fase' => 'Maturidade Reprodutiva',
+            'proxima_fase' => '1º cio',
             'prevista_em' => $previstaEm,
         ];
     }
@@ -307,18 +267,18 @@ class AcompanhamentoFemeasController extends Controller
         $limit = max(1, min(2000, (int) $request->query('limit', 500)));
 
         $cfg = [
-            'dias_ate_cio' => $this->metaInt('criterio_dias_ate_cio', 21),
-            'cio_dias' => $this->metaInt('criterio_dias_cio', 3),
-            'gestacao_dias' => $this->metaInt('criterio_dias_gestacao', 114),
+            'dias_ate_cio' => $this->metaInt('criterio_cio_intervalo_min', 21),
+            'cio_dias' => 3,
+            'gestacao_dias' => $this->metaInt('meta_gestacao_periodo_gestacao', 114),
             'lactacao_min_dias' => $this->metaInt('criterio_dias_lactacao_min', 21),
             'lactacao_max_dias' => $this->metaInt('criterio_dias_lactacao_max', 28),
-            'intervalo_desmame_cio_dias' => $this->metaInt('criterio_dias_intervalo_desmame_cio', 5),
-            'cobertura_idade_min_dias' => $this->metaInt('criterio_cobertura_idade_min_dias', 210),
-            'cobertura_ciclos_min' => $this->metaInt('criterio_cobertura_ciclos_min', 3),
-            'leitoa_min_dias' => $this->metaInt('criterio_leitoa_idade_min_dias', 150),
-            'leitoa_max_dias' => $this->metaInt('criterio_leitoa_idade_max_dias', 150),
-            'maturidade_min_dias' => $this->metaInt('criterio_maturidade_idade_min_dias', 151),
-            'maturidade_max_dias' => $this->metaInt('criterio_maturidade_idade_max_dias', 220),
+            'intervalo_desmame_cio_dias' => $this->metaInt('meta_gestacao_intervalo_desmame_cobertura', 7),
+            'cobertura_idade_min_dias' => $this->metaInt('criterio_cobertura_leitoa_idade_min', 220),
+            'cobertura_ciclos_min' => $this->metaInt('criterio_matriz_ciclo_min', 0),
+            'leitoa_min_dias' => $this->metaInt('criterio_leitoa_idade_min', 60),
+            'leitoa_max_dias' => $this->metaInt('criterio_leitoa_idade_max', 190),
+            'maturidade_min_dias' => $this->metaInt('meta_selecao_idade_selecao', 150),
+            'maturidade_max_dias' => $this->metaInt('meta_selecao_idade_cobertura', 230),
         ];
 
         $query = DB::table('femea')

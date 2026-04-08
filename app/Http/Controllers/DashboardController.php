@@ -81,17 +81,20 @@ class DashboardController extends Controller
 
         $durations = PigCycleService::getCycleDurations();
         $cfg = [
-            'dias_ate_cio' => $this->metaInt('criterio_dias_ate_cio', 21),
-            'cio_dias' => $durations['cio'],
+            'dias_ate_cio' => $this->metaInt('criterio_cio_intervalo_min', 21), // Reutilizando intervalo mínimo como base de aviso
+            'cio_dias' => 5, // Janela padrão
             'gestacao_dias' => $durations['gestacao'],
             'lactacao_min_dias' => $durations['lactacao'],
-            'lactacao_max_dias' => $durations['lactacao'] + 7, // Assuming 7 days buffer for max
             'intervalo_desmame_cio_dias' => $durations['intervalo'],
-            'maturidade_min_dias' => $this->metaInt('criterio_maturidade_idade_min_dias', 151),
+            'maturidade_min_dias' => $this->metaInt('meta_selecao_idade_selecao', 150),
+            'matriz_vazia_max' => $this->metaInt('criterio_matriz_vazia_max_dias', 250),
+            'macho_parado_max' => $this->metaInt('criterio_inconsistencia_macho_parado_max', 60),
         ];
 
         $today = Carbon::today();
+        $items = [];
 
+        // 1. Inconsistências de Fêmeas
         $query = DB::table('femea as f')
             ->select([
                 'f.id',
@@ -100,9 +103,11 @@ class DashboardController extends Controller
                 'f.tipo_compra',
                 'f.localizacao',
                 'f.data_cobertura as data_cobertura_cadastro',
+                'f.criado_em',
             ])
             ->orderBy('f.id_primaria')
             ->limit(2000);
+
         if (Schema::hasColumn('femea', 'data_nascimento')) {
             $query->addSelect(['f.data_nascimento']);
         } else {
@@ -166,7 +171,6 @@ class DashboardController extends Controller
 
         $lastPartos = [];
         if (Schema::hasTable('maternidade_parto')) {
-            // Pega o último parto de cada fêmea
             $lastPartosQuery = DB::table('maternidade_parto')
                 ->select('id', 'femea_id', 'data')
                 ->whereIn('id', function($q) {
@@ -175,151 +179,96 @@ class DashboardController extends Controller
                         ->groupBy('femea_id');
                 })
                 ->get();
-            
-            foreach ($lastPartosQuery as $lp) {
-                $lastPartos[$lp->femea_id] = $lp;
-            }
+            foreach ($lastPartosQuery as $lp) { $lastPartos[$lp->femea_id] = $lp; }
         }
 
         $desmames = [];
         if (Schema::hasTable('maternidade_desmame')) {
-            $desmames = DB::table('maternidade_desmame')
-                ->pluck('parto_id', 'parto_id')
-                ->toArray();
+            $desmames = DB::table('maternidade_desmame')->pluck('parto_id', 'parto_id')->toArray();
         }
 
         $rows = $query->get();
-        $items = [];
         $logged = 0;
 
         foreach ($rows as $row) {
             $femeaId = (int) $row->id;
             $lastCob = empty($row->last_cobertura) ? null : Carbon::parse($row->last_cobertura)->startOfDay();
+            if (!$lastCob && !empty($row->data_cobertura_cadastro)) {
+                $lastCob = Carbon::parse($row->data_cobertura_cadastro)->startOfDay();
+            }
             $lastCio = empty($row->last_cio) ? null : Carbon::parse($row->last_cio)->startOfDay();
             $lastSalta = empty($row->last_salta_cio) ? null : Carbon::parse($row->last_salta_cio)->startOfDay();
 
-            $prevCio = null;
-            $base = null;
-
-            if ($lastCob) {
-                $prevCio = (clone $lastCob)
-                    ->addDays($cfg['gestacao_dias'] + $cfg['lactacao_min_dias'] + $cfg['intervalo_desmame_cio_dias']);
-                $base = 'pós-desmame';
-            } else {
-                $lastEvento = $lastCio;
-                if ($lastEvento === null || ($lastSalta !== null && $lastSalta->gt($lastEvento))) {
-                    $lastEvento = $lastSalta;
+            // Verificação de Matriz Vazia Prolongada
+            if (!$lastCob) {
+                $baseDate = $lastCio ?: ($lastSalta ?: Carbon::parse($row->criado_em));
+                $daysVazia = $today->diffInDays($baseDate);
+                if ($daysVazia > $cfg['matriz_vazia_max']) {
+                    $items[] = [
+                        'tipo' => 'matriz_vazia_prolongada',
+                        'femea_id' => $femeaId,
+                        'id_primaria' => (string) $row->id_primaria,
+                        'localizacao' => $row->localizacao ?: '-',
+                        'ultima_operacao' => 'Vazia há ' . $daysVazia . ' dias',
+                        'problema' => "Matriz ultrapassou o limite de dias vazia ({$cfg['matriz_vazia_max']} dias).",
+                    ];
                 }
+            }
+
+            // Cio Previsto (Lógica Existente)
+            $prevCio = null;
+            if ($lastCob) {
+                $prevCio = (clone $lastCob)->addDays($cfg['gestacao_dias'] + $cfg['lactacao_min_dias'] + $cfg['intervalo_desmame_cio_dias']);
+            } else {
+                $lastEvento = $lastCio ?: $lastSalta;
                 if ($lastEvento) {
                     $prevCio = (clone $lastEvento)->addDays(max(1, $cfg['dias_ate_cio']));
-                    $base = 'ciclo';
-                }
-            }
-
-            if (! $prevCio) {
-                $tipo = (string) $row->tipo_compra;
-                if ($tipo === 'leitoa' && ! empty($row->data_nascimento)) {
-                    $nasc = Carbon::parse($row->data_nascimento)->startOfDay();
-                    $maturityStart = (clone $nasc)->addDays(max(0, $cfg['maturidade_min_dias']));
-                    $prevCio = (clone $maturityStart)->addDays(max(1, $cfg['dias_ate_cio']));
-                    $base = 'maturidade';
-                }
-            }
-
-            if (! $prevCio) {
-                continue;
-            }
-
-            $janelaFim = (clone $prevCio)->addDays(max(0, $cfg['cio_dias']));
-            $prevIso = $prevCio->toDateString();
-            $fimIso = $janelaFim->toDateString();
-
-            $inWindow = $today->betweenIncluded($prevCio, $janelaFim);
-
-            $temRegistro = false;
-            if (Schema::hasTable('gestacao_cio')) {
-                $temRegistro = DB::table('gestacao_cio')
-                    ->where('femea_id', $femeaId)
-                    ->whereBetween('data', [$prevIso, $fimIso])
-                    ->exists();
-            }
-            if (! $temRegistro && Schema::hasTable('gestacao_salta_cio')) {
-                $temRegistro = DB::table('gestacao_salta_cio')
-                    ->where('femea_id', $femeaId)
-                    ->whereBetween('data', [$prevIso, $fimIso])
-                    ->exists();
-            }
-
-            if ($temRegistro) {
-                continue;
-            }
-
-            // A fêmea só aparece como inconsistência se JÁ ESTIVER na janela de cio ou se o prazo expirou
-            // Se hoje ainda não chegou na data de início do cio (prevCio), ignoramos (previsão futura)
-            if ($today->lt($prevCio)) {
-                continue;
-            }
-
-            $tipoLabel = $this->tipoLabel($row->tipo_compra);
-            $prevBr = $prevCio->format('d/m/Y');
-            $fimBr = $janelaFim->format('d/m/Y');
-
-            if ($inWindow) {
-                $diff = max(0, (int) $today->diffInDays($prevCio));
-                $problema = "Fêmea sem registro de cio há {$diff} dias ({$tipoLabel}).";
-            } else {
-                // Se não está na janela e já passou o início (verificado pelo if anterior), então está em atraso
-                $problema = "Fêmea com cio previsto em {$prevBr} (janela até {$fimBr}) sem registro de Cio/Salta cio ({$tipoLabel}).";
-            }
-
-            $items[] = [
-                'tipo' => 'cio_previsto_sem_registro',
-                'femea_id' => $femeaId,
-                'id_primaria' => (string) $row->id_primaria,
-                'id_secundaria' => $row->id_secundaria === null ? null : (string) $row->id_secundaria,
-                'localizacao' => $row->localizacao === null ? '-' : (string) $row->localizacao,
-                'ultima_operacao' => empty($row->ultima_acao) ? '-' : (string) $row->ultima_acao . ' (' . PigCycleService::formatDisplayDate(Carbon::parse($row->ultima_data)) . ')',
-                'problema' => $problema,
-            ];
-
-            if ($logged < 100) {
-                $this->logInconsistenciaCioPrevisto($femeaId, [
-                    'previsto_em' => $prevIso,
-                    'janela_fim' => $fimIso,
-                    'base' => $base,
-                    'tipo_compra' => (string) $row->tipo_compra,
-                ], $problema);
-                $logged++;
-            }
-
-            // Verificação de Parto Atrasado
-            if (Schema::hasTable('maternidade_parto')) {
-                $cob = empty($row->last_cobertura) ? null : Carbon::parse($row->last_cobertura);
-                if (!$cob && !empty($row->data_cobertura_cadastro)) {
-                    $cob = Carbon::parse($row->data_cobertura_cadastro);
-                }
-
-                if ($cob) {
-                    $expected = (clone $cob)->addDays($cfg['gestacao_dias']);
-                    if ($today->gt($expected)) {
-                        $hasParto = isset($lastPartos[$femeaId]) && Carbon::parse($lastPartos[$femeaId]->data)->greaterThanOrEqualTo($cob->startOfDay());
-                        
-                        if (!$hasParto) {
-                            $items[] = [
-                                'tipo' => 'parto_atrasado',
-                                'femea_id' => $femeaId,
-                                'id_primaria' => (string) $row->id_primaria,
-                                'id_secundaria' => $row->id_secundaria === null ? null : (string) $row->id_secundaria,
-                                'localizacao' => $row->localizacao === null ? '-' : (string) $row->localizacao,
-                                'ultima_operacao' => empty($row->ultima_acao) ? '-' : (string) $row->ultima_acao . ' (' . PigCycleService::formatDisplayDate(Carbon::parse($row->ultima_data)) . ')',
-                                'problema' => "Parto previsto para " . $expected->format('d/m/Y') . " não registrado (" . $this->tipoLabel($row->tipo_compra) . ").",
-                            ];
-                        }
+                } else {
+                    // Fallback para leitoas: maturidade + intervalo até 1º cio
+                    $tipo = (string) $row->tipo_compra;
+                    if ($tipo === 'leitoa' && ! empty($row->data_nascimento)) {
+                        $nasc = Carbon::parse($row->data_nascimento)->startOfDay();
+                        $maturityStart = (clone $nasc)->addDays(max(0, $cfg['maturidade_min_dias']));
+                        $prevCio = (clone $maturityStart)->addDays(max(1, $cfg['dias_ate_cio']));
                     }
                 }
             }
 
-            // Verificação de Desmame Atrasado
+            if ($prevCio && $today->gte($prevCio)) {
+                // Se o último cio/salta registrado for igual ou posterior ao previsto, então já foi atendido.
+                $hasFutureRegistry = ($lastCio && $lastCio->gte($prevCio->startOfDay())) || ($lastSalta && $lastSalta->gte($prevCio->startOfDay()));
+
+                if (!$hasFutureRegistry) {
+                    $items[] = [
+                        'tipo' => 'cio_previsto_sem_registro',
+                        'femea_id' => $femeaId,
+                        'id_primaria' => (string) $row->id_primaria,
+                        'localizacao' => $row->localizacao ?: '-',
+                        'ultima_operacao' => empty($row->ultima_acao) ? '-' : (string) $row->ultima_acao,
+                        'problema' => "Sem registro de Cio/Salta cio previsto para " . $prevCio->format('d/m/Y'),
+                    ];
+                }
+            }
+
+            // Parto Atrasado
+            if ($lastCob) {
+                $expected = (clone $lastCob)->addDays($cfg['gestacao_dias']);
+                if ($today->gt($expected)) {
+                    $hasParto = isset($lastPartos[$femeaId]) && Carbon::parse($lastPartos[$femeaId]->data)->gte($lastCob);
+                    if (!$hasParto) {
+                        $items[] = [
+                            'tipo' => 'parto_atrasado',
+                            'femea_id' => $femeaId,
+                            'id_primaria' => (string) $row->id_primaria,
+                            'localizacao' => $row->localizacao ?: '-',
+                            'ultima_operacao' => 'Cobertura (' . $lastCob->format('d/m/Y') . ')',
+                            'problema' => "Parto previsto para " . $expected->format('d/m/Y') . " não registrado.",
+                        ];
+                    }
+                }
+            }
+
+            // Desmame Atrasado
             if (isset($lastPartos[$femeaId])) {
                 $lp = $lastPartos[$femeaId];
                 if (!isset($desmames[$lp->id])) {
@@ -329,18 +278,57 @@ class DashboardController extends Controller
                             'tipo' => 'desmame_atrasado',
                             'femea_id' => $femeaId,
                             'id_primaria' => (string) $row->id_primaria,
-                            'id_secundaria' => $row->id_secundaria === null ? null : (string) $row->id_secundaria,
-                            'localizacao' => $row->localizacao === null ? '-' : (string) $row->localizacao,
+                            'localizacao' => $row->localizacao ?: '-',
                             'ultima_operacao' => 'Parto (' . PigCycleService::formatDisplayDate(Carbon::parse($lp->data)) . ')',
-                            'problema' => "Desmame previsto para " . $expectedDesmame->format('d/m/Y') . " não registrado (" . $this->tipoLabel($row->tipo_compra) . ").",
+                            'problema' => "Desmame previsto para " . $expectedDesmame->format('d/m/Y') . " não registrado.",
                         ];
                     }
                 }
             }
         }
 
-        return $items;
+        // 2. Inconsistências de Machos (Macho Parado)
+        if (Schema::hasTable('macho')) {
+            // Otimizado: Busca data de última cobertura para todos os machos de uma vez
+            $lastUsedDates = [];
+            if (Schema::hasTable('gestacao_cobertura')) {
+                $lastUsedDates = DB::table('gestacao_cobertura')
+                    ->selectRaw('macho_id, MAX(data) as last_data')
+                    ->whereNotNull('macho_id')
+                    ->groupBy('macho_id')
+                    ->pluck('last_data', 'macho_id')
+                    ->toArray();
+            }
 
+            $machos = DB::table('macho as m')
+                ->select(['m.id', 'm.id_primaria', 'm.localizacao', 'm.criado_em'])
+                ->whereNotExists(function ($q) {
+                    $q->select(DB::raw(1))->from('macho_movimento as mm')->whereColumn('mm.macho_id', 'm.id')->whereIn('mm.acao', ['morte', 'descarte', 'venda']);
+                })
+                ->get();
+
+            foreach ($machos as $macho) {
+                $lastUsedRaw = $lastUsedDates[$macho->id] ?? null;
+                $lastUsed = $lastUsedRaw ? Carbon::parse($lastUsedRaw) : null;
+                
+                // Se nunca usou, baseia-se na data de criação do registro
+                $baseDate = $lastUsed ?: Carbon::parse($macho->criado_em);
+                $daysIdle = $today->diffInDays($baseDate);
+
+                if ($daysIdle > $cfg['macho_parado_max']) {
+                    $items[] = [
+                        'tipo' => 'macho_parado',
+                        'femea_id' => $macho->id,
+                        'id_primaria' => 'Macho: ' . $macho->id_primaria,
+                        'localizacao' => $macho->localizacao ?: '-',
+                        'ultima_operacao' => $lastUsed ? 'Última cobertura em ' . $lastUsed->format('d/m/Y') : 'Nunca utilizado',
+                        'problema' => "Macho sem atividade há {$daysIdle} dias (Meta: {$cfg['macho_parado_max']} dias).",
+                    ];
+                }
+            }
+        }
+
+        return $items;
     }
 
     public function __invoke()

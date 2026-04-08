@@ -87,12 +87,12 @@ class PigCycleService
 
         // Gregorian durations from meta table or defaults
         return [
-            'gestacao' => self::metaInt('criterio_dias_gestacao', 114),
+            'gestacao' => self::metaInt('meta_gestacao_periodo_gestacao', self::metaInt('criterio_dias_gestacao', 114)),
             'lactacao' => self::metaInt('criterio_dias_lactacao_min', 21),
-            'intervalo' => self::metaInt('criterio_dias_intervalo_desmame_cio', 5),
+            'intervalo' => self::metaInt('meta_gestacao_intervalo_desmame_cobertura', self::metaInt('criterio_dias_intervalo_desmame_cio', 7)),
             'recria' => 63,
             'terminacao' => 70,
-            'cio' => self::metaInt('criterio_dias_cio', 3),
+            'cio' => self::metaInt('meta_gestacao_montas_por_cobertura', self::metaInt('criterio_dias_cio', 3)),
         ];
     }
 
