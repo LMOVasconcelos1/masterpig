@@ -244,12 +244,7 @@ class GestacaoCioController extends Controller
                 }
             }
 
-            if ($tipo === 'leitoa' && $idadeDias >= $matMinDias && Schema::hasTable('femea') && Schema::hasColumn('femea', 'tipo_compra')) {
-                DB::table('femea')->where('id', (int) $validated['femea_id'])->update([
-                    'tipo_compra' => 'matriz_vazia',
-                    'atualizado_em' => now(),
-                ]);
-            }
+
         }
 
         return response()->json([
