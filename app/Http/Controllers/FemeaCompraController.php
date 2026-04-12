@@ -48,6 +48,12 @@ class FemeaCompraController extends Controller
                 'f.peso_compra',
                 'f.peso_atual',
                 'f.valor_compra',
+                'f.raca_id',
+                'f.fornecedor_id',
+                'f.localizacao',
+                'f.baia',
+                'f.data_cobertura',
+                'f.caracteristicas',
             ]);
 
         if ($request->filled('tipo_compra')) {
@@ -107,6 +113,12 @@ class FemeaCompraController extends Controller
                 'peso_compra' => $row->peso_compra,
                 'peso_atual' => $row->peso_atual,
                 'valor' => $row->valor_compra,
+                'raca_id' => $row->raca_id,
+                'fornecedor_id' => $row->fornecedor_id,
+                'localizacao' => $row->localizacao,
+                'baia' => $row->baia,
+                'data_cobertura' => $row->data_cobertura,
+                'caracteristicas' => $row->caracteristicas,
             ];
         })->values();
 

@@ -26,8 +26,215 @@
             }).then(() => {
                 window.location.reload();
             });
+        },
+
+        // Global Edit State
+        saving: false,
+        openEditFemea: false,
+        editFemeaData: {
+            id: '',
+            id_primaria: '',
+            id_secundaria: '',
+            raca_id: '',
+            localizacao: '',
+            baia: '',
+            data_nascimento: '',
+            data_compra: '',
+            data_cobertura: '',
+            tipo_compra: '',
+            ciclos_ate_compra: '',
+            fornecedor_id: '',
+            valor_compra: '',
+            peso_compra: '',
+            caracteristicas: ''
+        },
+        racas: [],
+        fornecedores: [],
+        utilLocalizacoes: [],
+        utilBaias: [],
+
+        ensureRacas() {
+            if (this.racas.length > 0) return;
+            fetch('/api/racas')
+                .then(r => r.json())
+                .then(data => { this.racas = Array.isArray(data) ? data : []; })
+                .catch(() => { this.racas = []; });
+        },
+        ensureFornecedores() {
+            if (this.fornecedores.length > 0) return;
+            fetch('/api/fornecedores')
+                .then(r => r.json())
+                .then(data => { this.fornecedores = Array.isArray(data) ? data : []; })
+                .catch(() => { this.fornecedores = []; });
+        },
+        ensureUtilitarios() {
+            fetch('/api/utilitarios/localizacoes')
+                .then(r => r.json())
+                .then(data => { this.utilLocalizacoes = data; });
+            fetch('/api/utilitarios/baias')
+                .then(r => r.json())
+                .then(data => { this.utilBaias = data; });
+        },
+
+        formatBrDate(raw) {
+            if (!raw) return '';
+            const d = new Date(raw);
+            if (isNaN(d.getTime())) return raw;
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}/${month}/${year}`;
+        },
+        parseBrDate(brStr) {
+            if (!brStr || !/^\d{2}\/\d{2}\/\d{4}$/.test(brStr)) return null;
+            const [d, m, y] = brStr.split('/');
+            return `${y}-${m}-${d}`;
+        },
+        normalizeDateInput(value) {
+            if (!value) return '';
+            let v = value.replace(/\D/g, '');
+            if (v.length > 8) v = v.slice(0, 8);
+            if (v.length > 4) v = v.replace(/^(\d{2})(\d{2})(\d{0,4}).*/, '$1/$2/$3');
+            else if (v.length > 2) v = v.replace(/^(\d{2})(\d{0,2}).*/, '$1/$2');
+            return v;
+        },
+
+        openEdit(f) {
+            this.editFemeaData = {
+                id: f.id,
+                id_primaria: f.id_primaria,
+                id_secundaria: f.id_secundaria || '',
+                raca_id: f.raca_id || '',
+                localizacao: f.localizacao || '',
+                baia: f.baia || '',
+                data_nascimento: this.formatBrDate(f.data_nascimento),
+                data_compra: this.formatBrDate(f.data_compra || f.data),
+                data_cobertura: this.formatBrDate(f.data_cobertura),
+                tipo_compra: f.tipo_key || f.tipo_compra || f.tipo || '',
+                ciclos_ate_compra: f.ciclos_ate_compra || '',
+                fornecedor_id: f.fornecedor_id || '',
+                valor_compra: f.valor_compra || '',
+                peso_compra: f.peso_compra || '',
+                caracteristicas: f.caracteristicas || ''
+            };
+            this.ensureRacas();
+            this.ensureFornecedores();
+            this.ensureUtilitarios();
+            this.openEditFemea = true;
+        },
+
+        saveEditFemea() {
+            if (!this.editFemeaData.id_primaria) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'ID Primária é obrigatório', type: 'error' } }));
+                return;
+            }
+            this.saving = true;
+            fetch(`/api/plantel/femeas/${this.editFemeaData.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                },
+                body: JSON.stringify(this.editFemeaData)
+            })
+            .then(async r => {
+                const data = await r.json();
+                if (!r.ok) throw new Error(data.message || 'Erro ao salvar alterações');
+                return data;
+            })
+            .then(data => {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Fêmea atualizada com sucesso!', type: 'success' } }));
+                this.openEditFemea = false;
+                // Notify tabs to refresh
+                window.dispatchEvent(new CustomEvent('femea-updated', { detail: { id: this.editFemeaData.id } }));
+            })
+            .catch(e => {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message, type: 'error' } }));
+            })
+            .finally(() => this.saving = false);
+        },
+
+        // Datepicker Logic (Moved from Lancamentos)
+        activePicker: null,
+        calendarMonth: new Date().getMonth(),
+        calendarYear: new Date().getFullYear(),
+        calendarMonths: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
+        prevCalendarMonth() {
+            if (this.calendarMonth === 0) {
+                this.calendarMonth = 11;
+                this.calendarYear--;
+            } else {
+                this.calendarMonth--;
+            }
+        },
+        nextCalendarMonth() {
+            if (this.calendarMonth === 11) {
+                this.calendarMonth = 0;
+                this.calendarYear++;
+            } else {
+                this.calendarMonth++;
+            }
+        },
+        getCalendarDays() {
+            const firstDay = new Date(this.calendarYear, this.calendarMonth, 1);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+            const days = [];
+            for (let i = 0; i < 42; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                days.push({
+                    date: date.toISOString().split('T')[0],
+                    day: date.getDate(),
+                    isCurrentMonth: date.getMonth() === this.calendarMonth
+                });
+            }
+            return days;
+        },
+        selectCalendarDate(dateStr) {
+            const d = new Date(dateStr + 'T12:00:00');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const yyyy = d.getFullYear();
+            const formatted = `${dd}/${mm}/${yyyy}`;
+            
+            if (this.openEditFemea) {
+                if (this.activePicker === 'nascimento') this.editFemeaData.data_nascimento = formatted;
+                if (this.activePicker === 'compra') this.editFemeaData.data_compra = formatted;
+                if (this.activePicker === 'cobertura') this.editFemeaData.data_cobertura = formatted;
+            } else {
+                if (this.activePicker === 'compra') this.dataCompra = formatted;
+                else if (this.activePicker === 'nascimento') {
+                    if (this.nascimentoAuto !== undefined) this.nascimentoAuto = false;
+                    this.dataNascimento = formatted;
+                }
+                else if (this.activePicker === 'cobertura') this.dataCobertura = formatted;
+                else if (this.activePicker === 'cio') this.dataCio = formatted;
+                else if (this.activePicker === 'editCio') {
+                    if (this.editCioData) this.editCioData.data = formatted;
+                }
+            }
+            this.activePicker = null;
+        },
+        getSelectedPigDay() {
+            let raw = '';
+            if (this.openEditFemea) {
+                if (this.activePicker === 'nascimento') raw = this.editFemeaData.data_nascimento;
+                if (this.activePicker === 'compra') raw = this.editFemeaData.data_compra;
+                if (this.activePicker === 'cobertura') raw = this.editFemeaData.data_cobertura;
+            } else {
+                if (this.activePicker === 'compra') raw = this.dataCompra;
+                else if (this.activePicker === 'nascimento') raw = this.dataNascimento;
+                else if (this.activePicker === 'cobertura') raw = this.dataCobertura;
+                else if (this.activePicker === 'cio') raw = this.dataCio;
+                else if (this.activePicker === 'editCio') raw = (this.editCioData ? this.editCioData.data : '');
+            }
+            const iso = this.parseBrDate(raw);
+            if (!iso) return '';
+            return typeof toPigDay === 'function' ? toPigDay(iso) : '';
         }
-     }"
+    }"
      x-init="
         window.addEventListener('toast', (e) => { toastMessage = e.detail.message; toastType = e.detail.type || 'success'; toastOpen = true; setTimeout(() => toastOpen = false, 4000); });
      "
@@ -339,10 +546,6 @@
         vendasFemeas: [],
         cioFemeas: [],
         cioFemeasLoaded: false,
-        racas: [],
-        fornecedores: [],
-        utilLocalizacoes: [],
-        utilBaias: [],
         racaId: '',
         fornecedorId: '',
         idPrimaria: '',
@@ -358,76 +561,7 @@
         diaCicloCio: '',
         causaMorteId: '',
 
-        // Datepicker partilhado
-        activePicker: null,
-        calendarMonth: new Date().getMonth(),
-        calendarYear: new Date().getFullYear(),
-        calendarMonths: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
-        prevCalendarMonth() {
-            if (this.calendarMonth === 0) {
-                this.calendarMonth = 11;
-                this.calendarYear--;
-            } else {
-                this.calendarMonth--;
-            }
-        },
-        nextCalendarMonth() {
-            if (this.calendarMonth === 11) {
-                this.calendarMonth = 0;
-                this.calendarYear++;
-            } else {
-                this.calendarMonth++;
-            }
-        },
-        getCalendarDays() {
-            const firstDay = new Date(this.calendarYear, this.calendarMonth, 1);
-            const startDate = new Date(firstDay);
-            startDate.setDate(startDate.getDate() - firstDay.getDay());
-            const days = [];
-            for (let i = 0; i < 42; i++) {
-                const date = new Date(startDate);
-                date.setDate(startDate.getDate() + i);
-                days.push({
-                    date: date.toISOString().split('T')[0],
-                    day: date.getDate(),
-                    isCurrentMonth: date.getMonth() === this.calendarMonth
-                });
-            }
-            return days;
-        },
-        selectCalendarDate(dateStr) {
-            const d = new Date(dateStr + 'T12:00:00');
-            const dd = String(d.getDate()).padStart(2, '0');
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const yyyy = d.getFullYear();
-            const formatted = `${dd}/${mm}/${yyyy}`;
-            
-            if (this.activePicker === 'compra') {
-                this.dataCompra = formatted;
-            } else if (this.activePicker === 'nascimento') {
-                this.nascimentoAuto = false;
-                this.dataNascimento = formatted;
-            } else if (this.activePicker === 'cobertura') {
-                this.dataCobertura = formatted;
-            } else if (this.activePicker === 'cio') {
-                this.dataCio = formatted;
-            } else if (this.activePicker === 'editCio') {
-                this.editCioData.data = formatted;
-            }
-            this.activePicker = null;
-        },
-        getSelectedPigDay() {
-            let raw = '';
-            if (this.activePicker === 'compra') raw = this.dataCompra;
-            else if (this.activePicker === 'nascimento') raw = this.dataNascimento;
-            else if (this.activePicker === 'cobertura') raw = this.dataCobertura;
-            else if (this.activePicker === 'cio') raw = this.dataCio;
-            else if (this.activePicker === 'editCio') raw = this.editCioData.data;
-            
-            const iso = this.parseBrDate(raw);
-            if (!iso) return '';
-            return typeof toPigDay === 'function' ? toPigDay(iso) : '';
-        },
+
 
         // Paginação e busca de fêmeas
         femeasPage: 1,
@@ -456,18 +590,6 @@
         cioFilterDataFinal: '',
         cioFilterSearch: '',
         cioFilterNumero: '',
-
-        // Edição rápida de fêmea
-        openEditFemea: false,
-        editFemeaData: {
-            id: '',
-            id_primaria: '',
-            id_secundaria: '',
-            raca_id: '',
-            localizacao: '',
-            baia: ''
-        },
-
         // Edição rápida de cio
         openEditCio: false,
         editCioData: {
@@ -477,48 +599,7 @@
         },
         openEditCioModal: false,
 
-        openEdit(f) {
-            this.editFemeaData = {
-                id: f.id,
-                id_primaria: f.id_primaria,
-                id_secundaria: f.id_secundaria || '',
-                raca_id: f.raca_id || '',
-                localizacao: f.localizacao || '',
-                baia: f.baia || ''
-            };
-            this.ensureRacas();
-            this.openEditFemea = true;
-        },
-        saveEditFemea() {
-            if (!this.editFemeaData.id_primaria) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'ID Primária é obrigatório', type: 'error' } }));
-                return;
-            }
-            this.saving = true;
-            fetch(`/api/plantel/femeas/${this.editFemeaData.id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
-                },
-                body: JSON.stringify(this.editFemeaData)
-            })
-            .then(async r => {
-                const data = await r.json();
-                if (!r.ok) throw new Error(data.message || 'Erro ao salvar alterações');
-                return data;
-            })
-            .then(data => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Fêmea atualizada com sucesso!', type: 'success' } }));
-                this.openEditFemea = false;
-                this.ensureFemeasAtivas();
-            })
-            .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message, type: 'error' } }));
-            })
-            .finally(() => this.saving = false);
-        },
+
         openEditCio(row) {
             this.editCioData = {
                 id: row.cio_id,
@@ -1792,7 +1873,7 @@
             })
             .finally(() => { this.saving = false; });
         },
-    }" x-init="loadComprasFemeas(); loadComprasMachos(true); $watch('item', () => { if(item === 'femeas' && mov === 'compra') loadComprasFemeas(); }); $watch('mov', () => { if(item === 'femeas' && mov === 'compra') loadComprasFemeas(); })" class="space-y-6">
+    }" x-init="loadComprasFemeas(); loadComprasMachos(true); $watch('item', () => { if(item === 'femeas' && mov === 'compra') loadComprasFemeas(); }); $watch('mov', () => { if(item === 'femeas' && mov === 'compra') loadComprasFemeas(); }); window.addEventListener('femea-updated', () => { if(item === 'femeas' && mov === 'compra') loadComprasFemeas(true); if(item === 'femeas' && mov === 'morte') loadMortesFemeas(); if(item === 'femeas' && mov === 'descarte') loadDescartesFemeas(); if(item === 'femeas' && mov === 'venda') loadVendasFemeas(); });" class="space-y-6">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
@@ -3387,66 +3468,7 @@
         </div>
 
         <!-- Modal de Edição Rápida de Fêmea -->
-        <div x-show="openEditFemea" class="fixed inset-0 z-[110] overflow-y-auto" x-cloak>
-            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                <div x-show="openEditFemea" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 transition-opacity" aria-hidden="true" @click="openEditFemea = false">
-                    <div class="absolute inset-0 bg-gray-500/75 dark:bg-gray-950/80 backdrop-blur-sm"></div>
-                </div>
 
-                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-                <div x-show="openEditFemea" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary-100 text-primary-600 sm:mx-0 sm:h-10 sm:w-10">
-                                <i class="fa-solid fa-pencil text-lg"></i>
-                            </div>
-                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                                <h3 class="text-lg leading-6 font-bold text-gray-900">Editar Fêmea</h3>
-                                <div class="mt-4 space-y-4">
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">ID Primária</label>
-                                            <input type="text" x-model="editFemeaData.id_primaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">ID Secundária</label>
-                                            <input type="text" x-model="editFemeaData.id_secundaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Raça</label>
-                                        <select x-model="editFemeaData.raca_id" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
-                                            <option value="">Selecione...</option>
-                                            <template x-for="r in racas" :key="r.id">
-                                                <option :value="String(r.id)" x-text="r.nome"></option>
-                                            </template>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Localização (Galpão)</label>
-                                        <input type="text" x-model="editFemeaData.localizacao" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Gestação 01">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Sala / Baia</label>
-                                        <input type="text" x-model="editFemeaData.baia" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Sala 02 / Baia 15">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button type="button" @click="saveEditFemea()" :disabled="saving" class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto disabled:opacity-50">
-                            <template x-if="!saving"><span>Salvar</span></template>
-                            <template x-if="saving"><span>Salvando...</span></template>
-                        </button>
-                        <button type="button" @click="openEditFemea = false" :disabled="saving" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 shadow-sm px-5 py-2.5 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto">
-                            Cancelar
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <div x-show="openNovaRaca" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" x-cloak>
             <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -3568,18 +3590,19 @@
             </div>
         </div>
 
-        <datalist id="util-localizacoes">
-            <template x-for="n in utilLocalizacoes" :key="`loc-${n}`">
-                <option :value="n"></option>
-            </template>
-        </datalist>
-        <datalist id="util-baias">
-            <template x-for="n in utilBaias" :key="`baia-${n}`">
-                <option :value="n"></option>
-            </template>
-        </datalist>
     </div>
 </div>
+
+<datalist id="util-localizacoes">
+    <template x-for="n in utilLocalizacoes" :key="`dl-loc-${n}`">
+        <option :value="n"></option>
+    </template>
+</datalist>
+<datalist id="util-baias">
+    <template x-for="n in utilBaias" :key="`dl-baia-${n}`">
+        <option :value="n"></option>
+    </template>
+</datalist>
 
 <div x-show="tab === 'acompanhamento'" x-cloak>
     <div x-data="{
@@ -3611,7 +3634,7 @@
                 .then(data => { this.selected = data.item || null; })
                 .catch(() => { this.selected = null; });
         },
-    }" x-init="if ($root.tab === 'acompanhamento') load()" @acompanhamento-open.window="load()" class="space-y-6">
+    }" x-init="if ($root.tab === 'acompanhamento') load(); window.addEventListener('femea-updated', () => { load(); });" @acompanhamento-open.window="load()" class="space-y-6">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
@@ -3706,7 +3729,10 @@
                             </div>
                         </div>
                     </div>
-                    <div class="bg-white border-t border-gray-100 px-6 py-4 flex justify-end">
+                    <div class="bg-white border-t border-gray-100 px-6 py-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                        <button type="button" @click="openEdit(selected); modalOpen = false" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700">
+                            <i class="fa-solid fa-pencil mr-2"></i> Editar fêmea
+                        </button>
                         <button type="button" @click="modalOpen = false" class="inline-flex items-center rounded-xl border border-gray-200 shadow-sm px-5 py-2.5 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50">
                             Fechar
                         </button>
@@ -4712,6 +4738,296 @@
     </div>
 </div>
 
+<div x-show="openEditFemea" class="fixed inset-0 z-[110] overflow-y-auto" x-cloak>
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div x-show="openEditFemea" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 transition-opacity" aria-hidden="true" @click="openEditFemea = false">
+            <div class="absolute inset-0 bg-gray-500/75 dark:bg-gray-950/80 backdrop-blur-sm"></div>
+        </div>
+
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div x-show="openEditFemea" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-100">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6">
+                <div class="flex items-start justify-between mb-4 pb-4 border-b border-gray-100">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center">
+                            <i class="fa-solid fa-pencil text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Editar Fêmea</h3>
+                            <p class="text-sm text-gray-500">Alterar dados cadastrais da fêmea</p>
+                        </div>
+                    </div>
+                    <button type="button" @click="openEditFemea = false" class="text-gray-400 hover:text-gray-500 transition-colors">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-6">
+                    <!-- Identificação -->
+                    <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                        <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-4">Identificação e Datas</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">ID Primária</label>
+                                <input type="text" x-model="editFemeaData.id_primaria" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">ID Secundária</label>
+                                <input type="text" x-model="editFemeaData.id_secundaria" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo na compra</label>
+                                <select x-model="editFemeaData.tipo_compra" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="">Selecione...</option>
+                                    <option value="leitoa">Leitoa</option>
+                                    <option value="matriz_vazia">Matriz vazia</option>
+                                    <option value="matriz_gestante">Matriz gestante</option>
+                                </select>
+                            </div>
+                            <div x-show="editFemeaData.tipo_compra !== 'leitoa'" x-cloak>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Ciclos até a compra</label>
+                                <input type="number" x-model="editFemeaData.ciclos_ate_compra" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Data nascimento</label>
+                                <div class="relative">
+                                    <input type="text" 
+                                           x-model="editFemeaData.data_nascimento" 
+                                           @input="editFemeaData.data_nascimento = normalizeDateInput($event.target.value)"
+                                           @click="activePicker = 'nascimento'"
+                                           readonly
+                                           class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 pr-10 cursor-pointer" 
+                                           placeholder="DD/MM/AAAA">
+                                    <button type="button" @click="activePicker = 'nascimento'" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                        <i class="fa-solid fa-calendar"></i>
+                                    </button>
+                                    
+                                    <!-- Calendário Picker Nascimento -->
+                                    <div x-show="activePicker === 'nascimento'" x-cloak 
+                                         class="absolute z-[120] mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72 left-0 sm:left-auto sm:right-0" 
+                                         @click.away="activePicker = null">
+                                        <div class="flex items-center justify-between mb-3 text-gray-900 dark:text-gray-100">
+                                            <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                <i class="fa-solid fa-chevron-left"></i>
+                                            </button>
+                                            <span class="font-medium" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                            <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                <i class="fa-solid fa-chevron-right"></i>
+                                            </button>
+                                        </div>
+                                        <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                                            <template x-for="day in ['D','S','T','Q','Q','S','S']">
+                                                <div class="font-medium text-gray-500 dark:text-gray-400 py-1" x-text="day"></div>
+                                            </template>
+                                        </div>
+                                        <div class="grid grid-cols-7 gap-1">
+                                            <template x-for="day in getCalendarDays()" :key="day.date">
+                                                <button type="button" 
+                                                        @click.stop="selectCalendarDate(day.date)"
+                                                        :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                        :disabled="!day.isCurrentMonth"
+                                                        class="p-2 text-sm rounded-lg transition-colors"
+                                                        x-text="day.day">
+                                                </button>
+                                            </template>
+                                        </div>
+                                        <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                <span x-text="calendarType === '1000_dias' ? 'Dia PIG: ' + getSelectedPigDay() : 'Data: ' + editFemeaData.data_nascimento"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Data compra</label>
+                                <div class="relative">
+                                    <input type="text" 
+                                           x-model="editFemeaData.data_compra" 
+                                           @input="editFemeaData.data_compra = normalizeDateInput($event.target.value)"
+                                           @click="activePicker = 'compra'"
+                                           readonly
+                                           class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 pr-10 cursor-pointer" 
+                                           placeholder="DD/MM/AAAA">
+                                    <button type="button" @click="activePicker = 'compra'" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                        <i class="fa-solid fa-calendar"></i>
+                                    </button>
+                                    
+                                    <!-- Calendário Picker Compra -->
+                                    <div x-show="activePicker === 'compra'" x-cloak 
+                                         class="absolute z-[120] mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72 left-0 sm:left-auto sm:right-0" 
+                                         @click.away="activePicker = null">
+                                        <div class="flex items-center justify-between mb-3 text-gray-900 dark:text-gray-100">
+                                            <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                <i class="fa-solid fa-chevron-left"></i>
+                                            </button>
+                                            <span class="font-medium" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                            <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                <i class="fa-solid fa-chevron-right"></i>
+                                            </button>
+                                        </div>
+                                        <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                                            <template x-for="day in ['D','S','T','Q','Q','S','S']">
+                                                <div class="font-medium text-gray-500 dark:text-gray-400 py-1" x-text="day"></div>
+                                            </template>
+                                        </div>
+                                        <div class="grid grid-cols-7 gap-1">
+                                            <template x-for="day in getCalendarDays()" :key="day.date">
+                                                <button type="button" 
+                                                        @click.stop="selectCalendarDate(day.date)"
+                                                        :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                        :disabled="!day.isCurrentMonth"
+                                                        class="p-2 text-sm rounded-lg transition-colors"
+                                                        x-text="day.day">
+                                                </button>
+                                            </template>
+                                        </div>
+                                        <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                <span x-text="calendarType === '1000_dias' ? 'Dia PIG: ' + getSelectedPigDay() : 'Data: ' + editFemeaData.data_compra"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div x-show="editFemeaData.tipo_compra === 'matriz_gestante'" x-cloak>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Data cobertura (compra)</label>
+                                <div class="relative">
+                                    <input type="text" 
+                                           x-model="editFemeaData.data_cobertura" 
+                                           @input="editFemeaData.data_cobertura = normalizeDateInput($event.target.value)"
+                                           @click="activePicker = 'cobertura'"
+                                           readonly
+                                           class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 pr-10 cursor-pointer" 
+                                           placeholder="DD/MM/AAAA">
+                                    <button type="button" @click="activePicker = 'cobertura'" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                        <i class="fa-solid fa-calendar"></i>
+                                    </button>
+                                    
+                                    <!-- Calendário Picker Cobertura -->
+                                    <div x-show="activePicker === 'cobertura'" x-cloak 
+                                         class="absolute z-[120] mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72 left-0 sm:left-auto sm:right-0" 
+                                         @click.away="activePicker = null">
+                                        <div class="flex items-center justify-between mb-3 text-gray-900 dark:text-gray-100">
+                                            <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                <i class="fa-solid fa-chevron-left"></i>
+                                            </button>
+                                            <span class="font-medium" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                            <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                <i class="fa-solid fa-chevron-right"></i>
+                                            </button>
+                                        </div>
+                                        <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                                            <template x-for="day in ['D','S','T','Q','Q','S','S']">
+                                                <div class="font-medium text-gray-500 dark:text-gray-400 py-1" x-text="day"></div>
+                                            </template>
+                                        </div>
+                                        <div class="grid grid-cols-7 gap-1">
+                                            <template x-for="day in getCalendarDays()" :key="day.date">
+                                                <button type="button" 
+                                                        @click.stop="selectCalendarDate(day.date)"
+                                                        :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                        :disabled="!day.isCurrentMonth"
+                                                        class="p-2 text-sm rounded-lg transition-colors"
+                                                        x-text="day.day">
+                                                </button>
+                                            </template>
+                                        </div>
+                                        <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                <span x-text="calendarType === '1000_dias' ? 'Dia PIG: ' + getSelectedPigDay() : 'Data: ' + editFemeaData.data_cobertura"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Genética e Fornecedor -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-4">Genética</div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Raça</label>
+                                <select x-model="editFemeaData.raca_id" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="">Selecione...</option>
+                                    <template x-for="r in racas" :key="'edit-raca-' + r.id">
+                                        <option :value="String(r.id)" x-text="r.nome"></option>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-4">Origem</div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fornecedor</label>
+                                <select x-model="editFemeaData.fornecedor_id" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                    <option value="">Selecione...</option>
+                                    <template x-for="f in fornecedores" :key="'edit-forn-' + f.id">
+                                        <option :value="String(f.id)" x-text="f.nome"></option>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Valores e Características -->
+                    <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                        <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-4">Complementares</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Peso na compra</label>
+                                <div class="relative">
+                                    <input type="number" step="0.01" x-model="editFemeaData.peso_compra" class="w-full pr-10 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="0,00">
+                                    <span class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400">kg</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Valor da compra</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-3 flex items-center text-xs text-gray-400">R$</span>
+                                    <input type="number" step="0.01" x-model="editFemeaData.valor_compra" class="w-full pl-9 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="0,00">
+                                </div>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Características</label>
+                                <textarea x-model="editFemeaData.caracteristicas" rows="2" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Opcional"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Localização -->
+                    <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                        <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-4">Localização</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Galpão / Localização</label>
+                                <input type="text" x-model="editFemeaData.localizacao" list="util-localizacoes" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Gestação A">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Sala / Baia</label>
+                                <input type="text" x-model="editFemeaData.baia" list="util-baias" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Baia 05">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                <button type="button" @click="openEditFemea = false" :disabled="saving" class="inline-flex justify-center items-center rounded-xl border border-gray-200 shadow-sm px-6 py-2.5 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                    Cancelar
+                </button>
+                <button type="button" @click="saveEditFemea()" :disabled="saving" class="inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-8 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50">
+                    <template x-if="!saving"><span>Salvar Alterações</span></template>
+                    <template x-if="saving"><span>Salvando...</span></template>
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -4734,15 +5050,17 @@
 
     function toPigDay(date) {
         if (!date) return null;
-        const start = new Date(PIG_BASE_DATE + 'T00:00:00');
-        const end = new Date(date);
-        end.setHours(0, 0, 0, 0);
-        const diff = Math.floor((end.getTime() - start.getTime()) / 86400000);
+        const start = new Date(PIG_BASE_DATE + 'T12:00:00');
+        const end = new Date(date + (date.length <= 10 ? 'T12:00:00' : ''));
+        end.setHours(12, 0, 0, 0);
+        const diff = Math.round((end.getTime() - start.getTime()) / 86400000);
         const absoluteDay = diff + 1;
         
-        // Aplicar ciclo de 1000 dias com offset -1 para corresponder ao pig1000.com
-        // Fórmula: ((absoluto - 2) % 1000) + 1
-        return ((absoluteDay - 2) % 1000) + 1;
+        // Aplicar ciclo de 1000 dias
+        // Fórmula: ((absoluto - 3) % 1000) + 1
+        let result = ((absoluteDay - 3) % 1000) + 1;
+        if (result <= 0) result += 1000;
+        return result;
     }
 
     function calculatePigCycle(coverageDate, referenceDate = new Date(), calendarType = 'gregoriano', config = {}) {

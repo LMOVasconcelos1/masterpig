@@ -404,6 +404,12 @@ class AcompanhamentoFemeasController extends Controller
                 'data_cobertura',
                 'localizacao',
                 'baia',
+                'raca_id',
+                'fornecedor_id',
+                'valor_compra',
+                'peso_compra',
+                'caracteristicas',
+                'ciclos_ate_compra',
             ])
             ->first();
 
@@ -471,8 +477,15 @@ class AcompanhamentoFemeasController extends Controller
                 'tipo_key' => (string) $row->tipo_compra,
                 'data_nascimento' => empty($row->data_nascimento) ? null : Carbon::parse($row->data_nascimento)->format('d/m/Y'),
                 'data_compra' => empty($row->data_compra) ? null : Carbon::parse($row->data_compra)->format('d/m/Y'),
+                'data_cobertura' => empty($row->data_cobertura) ? null : Carbon::parse($row->data_cobertura)->format('d/m/Y'),
+                'ciclos_ate_compra' => $row->ciclos_ate_compra,
                 'localizacao' => $row->localizacao === null ? null : (string) $row->localizacao,
                 'baia' => $row->baia === null ? null : (string) $row->baia,
+                'raca_id' => $row->raca_id,
+                'fornecedor_id' => $row->fornecedor_id,
+                'valor_compra' => $row->valor_compra,
+                'peso_compra' => $row->peso_compra,
+                'caracteristicas' => $row->caracteristicas,
                 'fase' => $fase['fase'],
                 'proxima_fase' => $fase['proxima_fase'],
                 'prevista_em' => $fase['prevista_em'],

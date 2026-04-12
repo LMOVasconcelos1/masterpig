@@ -236,19 +236,57 @@ class PlantelApiController extends Controller
         $validated = $request->validate([
             'id_primaria' => 'required|string|max:255',
             'id_secundaria' => 'nullable|string|max:255',
+            'tipo_compra' => 'nullable|string|in:leitoa,matriz_vazia,matriz_gestante',
             'raca_id' => 'nullable|integer',
             'localizacao' => 'nullable|string|max:255',
             'baia' => 'nullable|string|max:255',
+            'data_nascimento' => 'nullable|string',
+            'data_compra' => 'nullable|string',
+            'data_cobertura' => 'nullable|string',
+            'ciclos_ate_compra' => 'nullable|integer|min:0',
+            'fornecedor_id' => 'nullable|integer',
+            'valor_compra' => 'nullable|numeric',
+            'peso_compra' => 'nullable|numeric',
+            'caracteristicas' => 'nullable|string',
         ]);
 
-        DB::table('femea')->where('id', $id)->update([
+        $update = [
             'id_primaria' => $validated['id_primaria'],
             'id_secundaria' => $validated['id_secundaria'],
+            'tipo_compra' => $validated['tipo_compra'],
             'raca_id' => $validated['raca_id'],
             'localizacao' => $validated['localizacao'],
             'baia' => $validated['baia'],
+            'ciclos_ate_compra' => $validated['ciclos_ate_compra'],
+            'fornecedor_id' => $validated['fornecedor_id'],
+            'valor_compra' => $validated['valor_compra'],
+            'peso_compra' => $validated['peso_compra'],
+            'caracteristicas' => $validated['caracteristicas'],
             'updated_at' => now(),
-        ]);
+        ];
+
+        if (!empty($validated['data_nascimento'])) {
+            $parsed = \App\Services\PigCycleService::parseFilterDate($validated['data_nascimento']);
+            if ($parsed) $update['data_nascimento'] = $parsed->toDateString();
+        } else {
+            $update['data_nascimento'] = null;
+        }
+
+        if (!empty($validated['data_compra'])) {
+            $parsed = \App\Services\PigCycleService::parseFilterDate($validated['data_compra']);
+            if ($parsed) $update['data_compra'] = $parsed->toDateString();
+        } else {
+            $update['data_compra'] = null;
+        }
+
+        if (!empty($validated['data_cobertura'])) {
+            $parsed = \App\Services\PigCycleService::parseFilterDate($validated['data_cobertura']);
+            if ($parsed) $update['data_cobertura'] = $parsed->toDateString();
+        } else {
+            $update['data_cobertura'] = null;
+        }
+
+        DB::table('femea')->where('id', $id)->update($update);
 
         return response()->json(['message' => 'Fêmea atualizada com sucesso']);
     }
