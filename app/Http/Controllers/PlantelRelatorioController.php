@@ -13,7 +13,7 @@ class PlantelRelatorioController extends Controller
     public function femeas(Request $request)
     {
         $data_emissao = Carbon::now()->format('d/m/Y H:i');
-        $items = $this->getFemeasItems();
+        $items = $this->getFemeasItems($request->all());
 
         $format = mb_strtolower((string) $request->query('format', 'html'));
         $baseFile = 'relatorio-femeas-'.Carbon::now()->format('Ymd-Hi');
@@ -102,7 +102,7 @@ class PlantelRelatorioController extends Controller
         ]);
     }
 
-    private function getFemeasItems()
+    private function getFemeasItems(array $filters = [])
     {
         if (! Schema::hasTable('femea')) {
             return collect();
@@ -120,6 +120,8 @@ class PlantelRelatorioController extends Controller
                 'f.localizacao',
                 'f.baia',
                 'f.data_compra',
+                'f.peso_atual',
+                'f.data_nascimento',
             ])
             ->orderBy('f.id_primaria');
 
@@ -137,6 +139,22 @@ class PlantelRelatorioController extends Controller
                     'fm.acao as ultima_acao',
                     'fm.data as ultima_data',
                 ]);
+        }
+
+        if (isset($filters['peso_min']) && $filters['peso_min'] !== '') {
+            $query->where('f.peso_atual', '>=', (float) $filters['peso_min']);
+        }
+        if (isset($filters['peso_max']) && $filters['peso_max'] !== '') {
+            $query->where('f.peso_atual', '<=', (float) $filters['peso_max']);
+        }
+
+        if (isset($filters['idade_min']) && $filters['idade_min'] !== '') {
+            $date = Carbon::now()->subDays((int) $filters['idade_min'])->toDateString();
+            $query->where('f.data_nascimento', '<=', $date);
+        }
+        if (isset($filters['idade_max']) && $filters['idade_max'] !== '') {
+            $date = Carbon::now()->subDays((int) $filters['idade_max'])->toDateString();
+            $query->where('f.data_nascimento', '>=', $date);
         }
 
         return $query->limit(20000)->get()->map(function ($row) {
@@ -162,6 +180,8 @@ class PlantelRelatorioController extends Controller
                 'raca' => $row->raca_nome,
                 'localizacao' => $row->localizacao,
                 'baia' => $row->baia,
+                'peso' => $row->peso_atual ? number_format($row->peso_atual, 2, ',', '.') : '-',
+                'idade' => $row->data_nascimento ? Carbon::parse($row->data_nascimento)->diffInDays(Carbon::now()) : '-',
                 'data_compra' => $row->data_compra ? Carbon::parse($row->data_compra)->format('d/m/Y') : null,
                 'ultima_operacao' => $ultimaOperacao,
                 'status' => $status,
