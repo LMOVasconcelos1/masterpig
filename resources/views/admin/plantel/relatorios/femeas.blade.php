@@ -52,31 +52,100 @@
     <div class="filter-container">
         <div class="filter-title">
             <i class="fa-solid fa-filter text-blue-600"></i>
-            FILTRAR PLANTEL
+            OPÇÕES DE FILTRAGEM AVANÇADA
         </div>
         <form method="GET" action="{{ route('admin.relatorios.plantel.femeas') }}">
+            <!-- Seção 1: Geral -->
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 11px; color: #94a3b8; font-weight: 700; margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">CATEGORIA E SITUAÇÃO</div>
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label>Categoria</label>
+                        <select name="categoria" class="form-input">
+                            <option value="">Todas</option>
+                            <option value="leitoa" {{ request('categoria') === 'leitoa' ? 'selected' : '' }}>Somente Leitoas</option>
+                            <option value="matriz" {{ request('categoria') === 'matriz' ? 'selected' : '' }}>Somente Matrizes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Situação</label>
+                        <select name="situacao" class="form-input">
+                            <option value="">Todas</option>
+                            <option value="ativas" {{ request('situacao') === 'ativas' ? 'selected' : '' }}>Ativas</option>
+                            <option value="descartadas" {{ request('situacao') === 'descartadas' ? 'selected' : '' }}>Descartadas</option>
+                            <option value="pre_descartadas" {{ request('situacao') === 'pre_descartadas' ? 'selected' : '' }}>Pré-descartadas</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Peso (Min/Max)</label>
+                        <div style="display: flex; gap: 4px;">
+                            <input type="number" step="0.01" name="peso_min" value="{{ request('peso_min') }}" placeholder="Min" style="width: 50%;">
+                            <input type="number" step="0.01" name="peso_max" value="{{ request('peso_max') }}" placeholder="Max" style="width: 50%;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Idade (Min/Max)</label>
+                        <div style="display: flex; gap: 4px;">
+                            <input type="number" name="idade_min" value="{{ request('idade_min') }}" placeholder="Min" style="width: 50%;">
+                            <input type="number" name="idade_max" value="{{ request('idade_max') }}" placeholder="Max" style="width: 50%;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção 2: Reprodutivo -->
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 11px; color: #94a3b8; font-weight: 700; margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">ESTADO REPRODUTIVO</div>
+                <div class="filter-grid">
+                    <div class="form-group">
+                        <label>Estado</label>
+                        <select name="estado" class="form-input">
+                            <option value="">Todos</option>
+                            <option value="vazia" {{ request('estado') === 'vazia' ? 'selected' : '' }}>Vazia</option>
+                            <option value="gestante" {{ request('estado') === 'gestante' ? 'selected' : '' }}>Gestante</option>
+                            <option value="lactante" {{ request('estado') === 'lactante' ? 'selected' : '' }}>Lactante</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Ciclo (Entre X e X)</label>
+                        <div style="display: flex; gap: 4px;">
+                            <input type="number" name="ciclo_min" value="{{ request('ciclo_min') }}" placeholder="De" style="width: 50%;">
+                            <input type="number" name="ciclo_max" value="{{ request('ciclo_max') }}" placeholder="Até" style="width: 50%;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Vazio (Dias Min/Max)</label>
+                        <div style="display: flex; gap: 4px;">
+                            <input type="number" name="vazio_min" value="{{ request('vazio_min') }}" placeholder="De" style="width: 50%;">
+                            <input type="number" name="vazio_max" value="{{ request('vazio_max') }}" placeholder="Até" style="width: 50%;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Gestação (Dias Min/Max)</label>
+                        <div style="display: flex; gap: 4px;">
+                            <input type="number" name="gestante_min" value="{{ request('gestante_min') }}" placeholder="De" style="width: 50%;">
+                            <input type="number" name="gestante_max" value="{{ request('gestante_max') }}" placeholder="Até" style="width: 50%;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="filter-grid">
                 <div class="form-group">
-                    <label>Peso Mínimo (kg)</label>
-                    <input type="number" step="0.01" name="peso_min" value="{{ request('peso_min') }}" placeholder="Ex: 150.00">
+                    <label>Lactação (Leitões X a X dias)</label>
+                    <div style="display: flex; gap: 4px;">
+                        <input type="number" name="lactante_min" value="{{ request('lactante_min') }}" placeholder="De" style="width: 50%;">
+                        <input type="number" name="lactante_max" value="{{ request('lactante_max') }}" placeholder="Até" style="width: 50%;">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Peso Máximo (kg)</label>
-                    <input type="number" step="0.01" name="peso_max" value="{{ request('peso_max') }}" placeholder="Ex: 300.00">
-                </div>
-                <div class="form-group">
-                    <label>Idade Mínima (dias)</label>
-                    <input type="number" name="idade_min" value="{{ request('idade_min') }}" placeholder="Ex: 180">
-                </div>
-                <div class="form-group">
-                    <label>Idade Máxima (dias)</label>
-                    <input type="number" name="idade_max" value="{{ request('idade_max') }}" placeholder="Ex: 500">
-                </div>
+                <div></div>
+                <div></div>
                 <div class="form-group" style="justify-content: flex-end;">
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" style="height: 38px;">
                         <i class="fa-solid fa-magnifying-glass" style="margin-right: 8px;"></i>
-                        Aplicar Filtros
+                        Filtrar Resultados
                     </button>
+                    <a href="{{ route('admin.relatorios.plantel.femeas') }}" class="btn btn-secondary" style="margin-top: 4px; border: none; font-size: 11px; text-decoration: underline;">Limpar filtros</a>
                 </div>
             </div>
         </form>
@@ -84,21 +153,26 @@
         <div class="actions-bar">
             <div style="font-size: 13px; color: #6b7280; font-weight: 500;">
                 <i class="fa-solid fa-file-export" style="margin-right: 6px;"></i>
-                Exportar resultados:
+                Documentação:
             </div>
             <div class="actions-right">
                 <a class="btn btn-secondary" href="{{ route('admin.relatorios.plantel.femeas', array_merge(request()->all(), ['format' => 'pdf']), false) }}">
                     <i class="fa-solid fa-file-pdf" style="margin-right: 8px; color: #ef4444;"></i>
-                    Documento PDF
+                    Exportar PDF
                 </a>
                 <a class="btn btn-secondary" href="{{ route('admin.relatorios.plantel.femeas', array_merge(request()->all(), ['format' => 'csv']), false) }}">
                     <i class="fa-solid fa-file-csv" style="margin-right: 8px; color: #10b981;"></i>
-                    Planilha CSV
+                    Baixar CSV
                 </a>
             </div>
         </div>
     </div>
     @endif
+
+    <style>
+        .form-input { padding: 9px 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 13px; transition: all 0.2s; background: #f9fafb; width: 100%; box-sizing: border-box; }
+        .form-group input { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 12px; }
+    </style>
 
     <table>
         <thead>
@@ -107,13 +181,15 @@
                 <th style="width: 12%;">ID secundária</th>
                 <th style="width: 12%;">Tipo</th>
                 <th>Raça</th>
-                <th style="width: 14%;">Localização</th>
-                <th style="width: 8%;">Baia</th>
+                <th style="width: 12%;">Localização</th>
+                <th style="width: 6%;">Baia</th>
+                <th style="width: 6%;">Ciclo</th>
+                <th style="width: 12%;">Estado</th>
                 <th style="width: 9%;">Peso (kg)</th>
                 <th style="width: 9%;">Idade (d)</th>
-                <th style="width: 11%;">Data compra</th>
-                <th style="width: 15%;">Última operação</th>
-                <th style="width: 11%;">Status</th>
+                <th style="width: 10%;">Data compra</th>
+                <th style="width: 14%;">Última operação</th>
+                <th style="width: 10%;">Status</th>
             </tr>
         </thead>
         <tbody>
@@ -125,6 +201,8 @@
                 <td>{{ $row['raca'] ?? '-' }}</td>
                 <td>{{ $row['localizacao'] ?? '-' }}</td>
                 <td>{{ $row['baia'] ?? '-' }}</td>
+                <td style="font-weight: 700; color: #1e2937;">{{ $row['ciclo'] }}</td>
+                <td style="font-size: 11px; font-weight: 600;">{{ $row['estado'] }}</td>
                 <td style="font-weight: 600;">{{ $row['peso'] }}</td>
                 <td style="color: #64748b;">{{ $row['idade'] }}</td>
                 <td>{{ $row['data_compra'] ?? '-' }}</td>

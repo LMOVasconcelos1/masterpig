@@ -122,8 +122,35 @@ class PlantelRelatorioController extends Controller
                 'f.data_compra',
                 'f.peso_atual',
                 'f.data_nascimento',
+                'f.ciclos_ate_compra',
             ])
             ->orderBy('f.id_primaria');
+
+        // JOINs para estados reprodutivos e situações
+        if (Schema::hasTable('gestacao_cobertura')) {
+            $lastCob = DB::table('gestacao_cobertura')
+                ->selectRaw('MAX(data) as last_data, femea_id')
+                ->groupBy('femea_id');
+            $query->leftJoinSub($lastCob, 'lc', 'lc.femea_id', '=', 'f.id')
+                ->addSelect('lc.last_data as last_cobertura');
+        }
+
+        if (Schema::hasTable('maternidade_parto')) {
+            $lastParto = DB::table('maternidade_parto')
+                ->selectRaw('MAX(data) as last_data, femea_id, COUNT(id) as partos_count')
+                ->groupBy('femea_id');
+            $query->leftJoinSub($lastParto, 'lp', 'lp.femea_id', '=', 'f.id')
+                ->addSelect(['lp.last_data as last_parto', 'lp.partos_count']);
+        }
+
+        if (Schema::hasTable('maternidade_desmame')) {
+            $lastDesmame = DB::table('maternidade_desmame as md')
+                ->join('maternidade_parto as mp', 'mp.id', '=', 'md.parto_id')
+                ->selectRaw('MAX(md.data) as last_data, mp.femea_id')
+                ->groupBy('mp.femea_id');
+            $query->leftJoinSub($lastDesmame, 'ld', 'ld.femea_id', '=', 'f.id')
+                ->addSelect('ld.last_data as last_desmame');
+        }
 
         if (Schema::hasTable('femea_movimento')) {
             $last = DB::table('femea_movimento')
@@ -139,6 +166,31 @@ class PlantelRelatorioController extends Controller
                     'fm.acao as ultima_acao',
                     'fm.data as ultima_data',
                 ]);
+        }
+
+        // Filtro de Categoria (Matriz vs Leitoa)
+        if (isset($filters['categoria']) && $filters['categoria'] !== '') {
+            if ($filters['categoria'] === 'leitoa') {
+                $query->where('f.tipo_compra', 'leitoa');
+            } else if ($filters['categoria'] === 'matriz') {
+                $query->where('f.tipo_compra', '!=', 'leitoa');
+            }
+        }
+
+        // Filtro de Situação
+        if (isset($filters['situacao']) && $filters['situacao'] !== '') {
+            if (Schema::hasTable('femea_movimento')) {
+                if ($filters['situacao'] === 'ativas') {
+                    $query->where(function($q) {
+                        $q->whereNull('fm.acao')
+                          ->orWhereNotIn('fm.acao', ['morte', 'descarte', 'venda']);
+                    });
+                } else if ($filters['situacao'] === 'descartadas') {
+                    $query->where('fm.acao', 'descarte');
+                } else if ($filters['situacao'] === 'pre_descartadas') {
+                    $query->where('fm.acao', 'pre_descarte');
+                }
+            }
         }
 
         if (isset($filters['peso_min']) && $filters['peso_min'] !== '') {
@@ -157,7 +209,70 @@ class PlantelRelatorioController extends Controller
             $query->where('f.data_nascimento', '>=', $date);
         }
 
-        return $query->limit(20000)->get()->map(function ($row) {
+        // Filtro de Ciclo (Paridade)
+        if ((isset($filters['ciclo_min']) && $filters['ciclo_min'] !== '') || (isset($filters['ciclo_max']) && $filters['ciclo_max'] !== '')) {
+            $min = (int) ($filters['ciclo_min'] ?? 0);
+            $max = (int) ($filters['ciclo_max'] ?? 99);
+            // Ciclo = ciclos_ate_compra + partos_count
+            $query->whereRaw('(COALESCE(f.ciclos_ate_compra, 0) + COALESCE(lp.partos_count, 0)) BETWEEN ? AND ?', [$min, $max]);
+        }
+
+        $items = $query->limit(20000)->get()->map(function ($row) {
+            $now = Carbon::today();
+            $lastCob = $row->last_cobertura ? Carbon::parse($row->last_cobertura) : null;
+            $lastParto = $row->last_parto ? Carbon::parse($row->last_parto) : null;
+            $lastDesmame = $row->last_desmame ? Carbon::parse($row->last_desmame) : null;
+
+            // Determinar Estado Reprodutivo
+            $estado = 'Vazia';
+            $diasNoEstado = 0;
+
+            if ($lastCob && (!$lastParto || $lastCob->gt($lastParto))) {
+                $estado = 'Gestante';
+                $diasNoEstado = $lastCob->diffInDays($now);
+            } else if ($lastParto && (!$lastDesmame || $lastParto->gt($lastDesmame))) {
+                $estado = 'Lactante';
+                $diasNoEstado = $lastParto->diffInDays($now);
+            } else {
+                $estado = 'Vazia';
+                $baseDate = $lastDesmame ?: ($lastParto ?: ($lastCob ?: Carbon::parse($row->data_compra ?? now())));
+                $diasNoEstado = $baseDate->diffInDays($now);
+            }
+
+            $row->calculated_estado = $estado;
+            $row->calculated_dias = $diasNoEstado;
+            $row->calculated_ciclo = ($row->ciclos_ate_compra ?? 0) + ($row->partos_count ?? 0);
+
+            return $row;
+        });
+
+        // Filtragem em memória para estados reprodutivos e seus intervalos (mais robusto)
+        if (isset($filters['estado']) && $filters['estado'] !== '') {
+            $items = $items->filter(fn($r) => strtolower($r->calculated_estado) === strtolower($filters['estado']));
+        }
+
+        if (isset($filters['vazio_min']) && $filters['vazio_min'] !== '') {
+            $items = $items->filter(fn($r) => $r->calculated_estado === 'Vazia' && $r->calculated_dias >= (int) $filters['vazio_min']);
+        }
+        if (isset($filters['vazio_max']) && $filters['vazio_max'] !== '') {
+            $items = $items->filter(fn($r) => $r->calculated_estado === 'Vazia' && $r->calculated_dias <= (int) $filters['vazio_max']);
+        }
+
+        if (isset($filters['gestante_min']) && $filters['gestante_min'] !== '') {
+            $items = $items->filter(fn($r) => $r->calculated_estado === 'Gestante' && $r->calculated_dias >= (int) $filters['gestante_min']);
+        }
+        if (isset($filters['gestante_max']) && $filters['gestante_max'] !== '') {
+            $items = $items->filter(fn($r) => $r->calculated_estado === 'Gestante' && $r->calculated_dias <= (int) $filters['gestante_max']);
+        }
+
+        if (isset($filters['lactante_min']) && $filters['lactante_min'] !== '') {
+            $items = $items->filter(fn($r) => $r->calculated_estado === 'Lactante' && $r->calculated_dias >= (int) $filters['lactante_min']);
+        }
+        if (isset($filters['lactante_max']) && $filters['lactante_max'] !== '') {
+            $items = $items->filter(fn($r) => $r->calculated_estado === 'Lactante' && $r->calculated_dias <= (int) $filters['lactante_max']);
+        }
+
+        return $items->map(function ($row) {
             $ultimaOperacao = '-';
             $status = 'Ativo';
 
@@ -180,6 +295,8 @@ class PlantelRelatorioController extends Controller
                 'raca' => $row->raca_nome,
                 'localizacao' => $row->localizacao,
                 'baia' => $row->baia,
+                'ciclo' => $row->calculated_ciclo,
+                'estado' => $row->calculated_estado . ($row->calculated_dias > 0 ? ' ('.$row->calculated_dias.'d)' : ''),
                 'peso' => $row->peso_atual ? number_format($row->peso_atual, 2, ',', '.') : '-',
                 'idade' => $row->data_nascimento ? Carbon::parse($row->data_nascimento)->diffInDays(Carbon::now()) : '-',
                 'data_compra' => $row->data_compra ? Carbon::parse($row->data_compra)->format('d/m/Y') : null,

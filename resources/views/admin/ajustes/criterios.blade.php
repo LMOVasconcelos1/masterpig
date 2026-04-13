@@ -20,6 +20,7 @@
         criterio_cobertura_presenca_cio: 'sim',
         criterio_dias_ate_cio: '21',
         criterio_dias_cio: '3',
+        criterio_dias_cio_leitoa: '21',
         criterio_dias_gestacao: '114',
         criterio_dias_lactacao_min: '21',
         criterio_dias_lactacao_max: '28',
@@ -45,6 +46,7 @@
                 this.criterios.criterio_cobertura_presenca_cio = (items.criterio_cobertura_presenca_cio === null || items.criterio_cobertura_presenca_cio === undefined || String(items.criterio_cobertura_presenca_cio).trim() === '') ? 'sim' : String(items.criterio_cobertura_presenca_cio);
                 this.criterios.criterio_dias_ate_cio = (items.criterio_dias_ate_cio === null || items.criterio_dias_ate_cio === undefined || String(items.criterio_dias_ate_cio).trim() === '') ? '21' : String(items.criterio_dias_ate_cio);
                 this.criterios.criterio_dias_cio = (items.criterio_dias_cio === null || items.criterio_dias_cio === undefined || String(items.criterio_dias_cio).trim() === '') ? '3' : String(items.criterio_dias_cio);
+                this.criterios.criterio_dias_cio_leitoa = (items.criterio_dias_cio_leitoa === null || items.criterio_dias_cio_leitoa === undefined || String(items.criterio_dias_cio_leitoa).trim() === '') ? '21' : String(items.criterio_dias_cio_leitoa);
                 this.criterios.criterio_dias_gestacao = (items.criterio_dias_gestacao === null || items.criterio_dias_gestacao === undefined || String(items.criterio_dias_gestacao).trim() === '') ? '114' : String(items.criterio_dias_gestacao);
                 this.criterios.criterio_dias_lactacao_min = (items.criterio_dias_lactacao_min === null || items.criterio_dias_lactacao_min === undefined || String(items.criterio_dias_lactacao_min).trim() === '') ? '21' : String(items.criterio_dias_lactacao_min);
                 this.criterios.criterio_dias_lactacao_max = (items.criterio_dias_lactacao_max === null || items.criterio_dias_lactacao_max === undefined || String(items.criterio_dias_lactacao_max).trim() === '') ? '28' : String(items.criterio_dias_lactacao_max);
@@ -75,6 +77,7 @@
             criterio_cobertura_presenca_cio: this.criterios.criterio_cobertura_presenca_cio === '' ? null : String(this.criterios.criterio_cobertura_presenca_cio),
             criterio_dias_ate_cio: this.criterios.criterio_dias_ate_cio === '' ? null : Number(String(this.criterios.criterio_dias_ate_cio).trim()),
             criterio_dias_cio: this.criterios.criterio_dias_cio === '' ? null : Number(String(this.criterios.criterio_dias_cio).trim()),
+            criterio_dias_cio_leitoa: this.criterios.criterio_dias_cio_leitoa === '' ? null : Number(String(this.criterios.criterio_dias_cio_leitoa).trim()),
             criterio_dias_gestacao: this.criterios.criterio_dias_gestacao === '' ? null : Number(String(this.criterios.criterio_dias_gestacao).trim()),
             criterio_dias_lactacao_min: this.criterios.criterio_dias_lactacao_min === '' ? null : Number(String(this.criterios.criterio_dias_lactacao_min).trim()),
             criterio_dias_lactacao_max: this.criterios.criterio_dias_lactacao_max === '' ? null : Number(String(this.criterios.criterio_dias_lactacao_max).trim()),
@@ -192,6 +195,11 @@
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Duração do cio (dias)</label>
                         <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Quantidade de dias considerados como período de cio. Padrão: 3.</div>
                         <input type="number" min="1" max="10" step="1" x-model="criterios.criterio_dias_cio" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500 rounded-xl">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Critério de dias para cio</label>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Dias mínimos para considerar que a leitoa está em cio. Padrão: 21.</div>
+                        <input type="number" min="1" max="365" step="1" x-model="criterios.criterio_dias_cio_leitoa" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500 rounded-xl">
                     </div>
                 </div>
             </div>

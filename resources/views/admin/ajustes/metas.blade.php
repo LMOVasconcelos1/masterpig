@@ -37,6 +37,8 @@
         meta_retencao_pos_p8: '20',
         meta_retencao_pos_p9: '10',
         meta_retencao_pos_p10: '0',
+        meta_plantel_estoque_matrizes: '100',
+        meta_plantel_estoque_leitoas: '50',
 
         criterio_leitoa_peso_min: '6',
         criterio_leitoa_peso_max: '150',
@@ -54,10 +56,7 @@
         criterio_macho_idade_max: '300',
         criterio_venda_peso_min: '20',
         criterio_venda_peso_max: '600',
-        criterio_cio_entrada_leitoa_min: '0',
-        criterio_cio_entrada_leitoa_max: '250',
-        criterio_cio_intervalo_min: '10',
-        criterio_cio_intervalo_max: '63',
+        criterio_dias_cio_leitoa: '21',
         criterio_inconsistencia_descarte_dias_min: '0',
         criterio_inconsistencia_descarte_dias_max: '90',
         criterio_inconsistencia_macho_parado_min: '0',
@@ -246,6 +245,10 @@
                         <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Mortalidade (%)</label><input type="number" step="0.01" x-model="metas.meta_manutencao_mortalidade_matrizes" class="w-full border-gray-200 rounded-xl text-sm"></div>
                         <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Perdas Pré-Cob. (%)</label><input type="number" x-model="metas.meta_manutencao_perdas_leitoas_pre_cobertura" class="w-full border-gray-200 rounded-xl text-sm"></div>
                     </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Meta Estoque Matrizes</label><input type="number" x-model="metas.meta_plantel_estoque_matrizes" class="w-full border-gray-200 rounded-xl text-sm" placeholder="100"></div>
+                        <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Meta Estoque Leitoas</label><input type="number" x-model="metas.meta_plantel_estoque_leitoas" class="w-full border-gray-200 rounded-xl text-sm" placeholder="50"></div>
+                    </div>
                 </div>
             </div>
             <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
@@ -272,6 +275,9 @@
                  <div><span class="text-[10px] font-bold text-gray-400 block mb-1">IDADE MÍN/MÁX</span><div class="flex gap-1"><input type="number" x-model="metas.criterio_leitoa_idade_min" class="w-full text-xs border-gray-200 p-1 rounded-lg"><input type="number" x-model="metas.criterio_leitoa_idade_max" class="w-full text-xs border-gray-200 p-1 rounded-lg"></div></div>
              </div>
              <!-- ... Matriz, Cio_Inc ... -->
+             <div x-show="ruleTabPlantel === 'cio_inc'" class="space-y-4" x-cloak>
+                 <div><span class="text-[10px] font-bold text-gray-400 block mb-1">DIAS CIO LEITOA</span><input type="number" x-model="metas.criterio_dias_cio_leitoa" class="w-full text-xs border-gray-200 p-1 rounded-lg" placeholder="21"></div>
+             </div>
         </div>
     </div>
 
