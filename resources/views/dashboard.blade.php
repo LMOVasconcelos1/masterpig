@@ -2060,6 +2060,27 @@
                 return;
             }
 
+            // Verificar se está fora dos critérios antes de pedir confirmação
+            fetch(`/api/gestacao/cio/verificar-criterios?femea_id=${this.femeaCioId}&data=${dataIso}`)
+                .then(response => response.json())
+                .then(result => {
+                    if (!result.dentro_critérios) {
+                        // Está fora dos critérios, pedir confirmação
+                        if (!confirm(`Atenção: Este registro está fora dos critérios estabelecidos.\n\nMotivo: ${result.motivo || 'Não especificado'}\n\nDeseja registrar mesmo assim?`)) {
+                            return;
+                        }
+                    }
+                    
+                    // Prosseguir com o salvamento
+                    this.executarSalvarCio(dataIso);
+                })
+                .catch(error => {
+                    // Se não conseguir verificar critérios, salva normalmente
+                    console.error('Erro ao verificar critérios:', error);
+                    this.executarSalvarCio(dataIso);
+                });
+        },
+        executarSalvarCio(dataIso) {
             this.saving = true;
 
             fetch('/api/gestacao/cio', {
