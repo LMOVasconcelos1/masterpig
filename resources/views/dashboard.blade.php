@@ -4016,7 +4016,7 @@
                                     <template x-if="!saving"><span>Salvar</span></template>
                                     <template x-if="saving"><span>Gravando...</span></template>
                                 </button>
-                                <button type="button" @click="saveCompraFemeaContinuar()" :disabled="saving" class="flex-1 inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-green-600 text-sm font-semibold text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
+                                <button type="button" @click="saveCompraFemeaContinuar()" :disabled="saving" class="flex-1 inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
                                     <template x-if="!saving"><span>Salvar e Continuar</span></template>
                                     <template x-if="saving"><span>Gravando...</span></template>
                                 </button>
