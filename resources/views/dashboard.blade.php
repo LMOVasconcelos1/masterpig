@@ -1568,95 +1568,95 @@
             .finally(() => { this.saving = false; });
         },
         saveCompraFemeaContinuar() {
-            this.saving = true;
+            // Usar setTimeout para evitar travamento do navegador
+            setTimeout(() => {
+                this.saving = true;
 
-            // Converter datas para aceitar dia PIG
-            let dataCompraIso, dataNascimentoIso, dataCoberturaIso, dataUltimoCioIso;
-            
-            // Data de compra
-            if (/^\d+$/.test(this.dataCompra)) {
-                dataCompraIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataCompra) : null;
-            } else {
-                dataCompraIso = this.parseBrDate(this.dataCompra);
-            }
-            
-            // Data de nascimento
-            if (/^\d+$/.test(this.dataNascimento)) {
-                dataNascimentoIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataNascimento) : null;
-            } else {
-                dataNascimentoIso = this.parseBrDate(this.dataNascimento);
-            }
-            
-            // Data de cobertura
-            if (/^\d+$/.test(this.dataCobertura)) {
-                dataCoberturaIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataCobertura) : null;
-            } else {
-                dataCoberturaIso = this.parseBrDate(this.dataCobertura);
-            }
-            
-            // Data do último cio
-            if (/^\d+$/.test(this.dataUltimoCio)) {
-                dataUltimoCioIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataUltimoCio) : null;
-            } else {
-                dataUltimoCioIso = this.parseBrDate(this.dataUltimoCio);
-            }
-
-            const payload = {
-                tipo_compra: this.compraFemeasTipo,
-                id_primaria: this.idPrimaria,
-                id_secundaria: this.idSecundaria || null,
-                data_compra: dataCompraIso,
-                data_nascimento: dataNascimentoIso || null,
-                ciclos_ate_compra: this.ciclosAteCompra === '' ? null : Number(this.ciclosAteCompra),
-                data_cobertura: dataCoberturaIso || null,
-                raca_id: this.racaId,
-                valor_compra: this.valorCompra === '' ? null : Number(this.valorCompra),
-                peso_compra: this.pesoCompra === '' ? null : Number(this.pesoCompra),
-                fornecedor_id: this.fornecedorId || null,
-                caracteristicas: this.caracteristicas || null,
-                localizacao: this.localizacao || null,
-                baia: this.baia || null,
-                houve_cio: this.houveCio,
-                data_ultimo_cio: dataUltimoCioIso || null,
-            };
-
-            fetch('{{ route('admin.plantel.femeas.compras.store', [], false) }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => {
-                        let msg = err.message;
-                        if (err.errors) {
-                            const firstKey = Object.keys(err.errors)[0];
-                            if (firstKey) msg = err.errors[firstKey][0];
-                        }
-                        throw new Error(msg);
-                    });
+                // Converter datas para aceitar dia PIG
+                let dataCompraIso, dataNascimentoIso, dataCoberturaIso, dataUltimoCioIso;
+                
+                // Data de compra
+                if (/^\d+$/.test(this.dataCompra)) {
+                    dataCompraIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataCompra) : null;
+                } else {
+                    dataCompraIso = this.parseBrDate(this.dataCompra);
                 }
-                return response.json();
-            })
-            .then(data => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Compra registrada com sucesso!', type: 'success' } }));
-                // Limpar apenas IDs e manter modal aberto
-                this.idPrimaria = '';
-                this.idSecundaria = '';
-                // Recarregar lista
-                this.comprasFemeasLoaded = false;
-                this.femeasAtivas = [];
-                this.femeasMode = '';
-                this.loadComprasFemeas(true);
-            })
-            .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar', type: 'error' } }));
-            })
-            .finally(() => { this.saving = false; });
+                
+                // Data de nascimento
+                if (/^\d+$/.test(this.dataNascimento)) {
+                    dataNascimentoIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataNascimento) : null;
+                } else {
+                    dataNascimentoIso = this.parseBrDate(this.dataNascimento);
+                }
+                
+                // Data de cobertura
+                if (/^\d+$/.test(this.dataCobertura)) {
+                    dataCoberturaIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataCobertura) : null;
+                } else {
+                    dataCoberturaIso = this.parseBrDate(this.dataCobertura);
+                }
+                
+                // Data do último cio
+                if (/^\d+$/.test(this.dataUltimoCio)) {
+                    dataUltimoCioIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataUltimoCio) : null;
+                } else {
+                    dataUltimoCioIso = this.parseBrDate(this.dataUltimoCio);
+                }
+
+                const payload = {
+                    tipo_compra: this.compraFemeasTipo,
+                    id_primaria: this.idPrimaria,
+                    id_secundaria: this.idSecundaria || null,
+                    data_compra: dataCompraIso,
+                    data_nascimento: dataNascimentoIso || null,
+                    ciclos_ate_compra: this.ciclosAteCompra === '' ? null : Number(this.ciclosAteCompra),
+                    data_cobertura: dataCoberturaIso || null,
+                    raca_id: this.racaId,
+                    valor_compra: this.valorCompra === '' ? null : Number(this.valorCompra),
+                    peso_compra: this.pesoCompra === '' ? null : Number(this.pesoCompra),
+                    fornecedor_id: this.fornecedorId || null,
+                    caracteristicas: this.caracteristicas || null,
+                    localizacao: this.localizacao || null,
+                    baia: this.baia || null,
+                    houve_cio: this.houveCio,
+                    data_ultimo_cio: dataUltimoCioIso || null,
+                };
+
+                fetch('{{ route('admin.plantel.femeas.compras.store', [], false) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => {
+                            let msg = err.message;
+                            if (err.errors) {
+                                const firstKey = Object.keys(err.errors)[0];
+                                if (firstKey) msg = err.errors[firstKey][0];
+                            }
+                            throw new Error(msg);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Compra registrada com sucesso!', type: 'success' } }));
+                    // Limpar apenas IDs e manter modal aberto
+                    this.idPrimaria = '';
+                    this.idSecundaria = '';
+                    // Não recarregar lista imediatamente para evitar travamento
+                    // A lista será recarregada quando o modal for fechado
+                })
+                .catch(e => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar', type: 'error' } }));
+                })
+                .finally(() => { this.saving = false; });
+            }, 0); // Executar na próxima tick do event loop
         },
         saveMorteFemea() {
             this.saving = true;
