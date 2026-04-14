@@ -66,61 +66,71 @@
     }
 }">
     <!-- Header & Topbar -->
-    <div class="mb-6 -mx-3 sm:-mx-6 px-3 sm:px-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div class="pt-4 pb-2">
-            <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Maternidade</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Visão geral e lançamentos operacionais</p>
+    <div>
+        <div class="rounded-xl shadow-sm p-6" style="border-color: #78350f;">
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-white mb-2">Maternidade</h2>
+                <p class="text-sm text-white">Visão geral e lançamentos operacionais</p>
+            </div>
+            <nav class="flex justify-center space-x-8 overflow-x-auto mt-6">
+                <button type="button" @click="tab = 'visao-geral'" 
+                    :class="tab === 'visao-geral' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
+                    class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                    Visão Geral
+                </button>
+                <button type="button" @click="tab = 'lancamentos'" 
+                    :class="tab === 'lancamentos' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
+                    class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                    Lançamentos
+                </button>
+            </nav>
         </div>
-        <nav class="-mb-px flex space-x-6 overflow-x-auto">
-            <button type="button" @click="tab = 'visao-geral'" 
-                :class="tab === 'visao-geral' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700'"
-                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                Visão Geral
-            </button>
-            <button type="button" @click="tab = 'lancamentos'" 
-                :class="tab === 'lancamentos' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-700'"
-                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                Lançamentos
-            </button>
-        </nav>
     </div>
 
     <!-- Conteúdo: Visão Geral -->
     <div x-show="tab === 'visao-geral'">
         <!-- Indicadores -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-800">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-4 group">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Fêmeas Lactantes</p>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $femeasLactantes }}</p>
+                        <div class="text-xs font-bold text-primary-500 uppercase tracking-wider mb-1">Fêmeas Lactantes</div>
+                        <div class="text-xl font-bold text-gray-800 tracking-tight group-hover:scale-105 transition-transform origin-left">
+                            {{ $femeasLactantes }}
+                        </div>
                     </div>
-                    <div class="p-3 bg-blue-50 rounded-lg">
-                        <i class="fa-solid fa-baby-carriage text-blue-600 text-xl"></i>
+                    <div class="p-2 bg-primary-50 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
+                        <i class="fa-solid fa-baby-carriage text-xl"></i>
                     </div>
                 </div>
+                </div>
             </div>
-            <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-800">
+            <div class="bg-white border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-4 group">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Mães de Leite</p>
-                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $maesLeite }}</p>
+                        <div class="text-xs font-bold text-primary-500 uppercase tracking-wider mb-1">Mães de Leite</div>
+                        <div class="text-xl font-bold text-gray-800 tracking-tight group-hover:scale-105 transition-transform origin-left">
+                            {{ $maesLeite }}
+                        </div>
                     </div>
-                    <div class="p-3 bg-purple-50 rounded-lg">
-                        <i class="fa-solid fa-hand-holding-heart text-purple-600 text-xl"></i>
+                    <div class="p-2 bg-primary-50 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
+                        <i class="fa-solid fa-hand-holding-heart text-xl"></i>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Inconsistências -->
-        <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
-            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex items-center gap-2">
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-200">Inconsistências da Maternidade</h3>
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                    <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Inconsistências da Maternidade</h6>
+                    <div class="text-sm text-gray-500 mt-1">Partos com problemas identificados no sistema</div>
+                </div>
                 
                 <!-- Tooltip Informativo -->
                 <div class="relative group">
-                    <i class="fa-solid fa-circle-info text-primary-400 cursor-help hover:text-primary-600 transition-colors text-base"></i>
+                    <i class="fa-solid fa-circle-info text-primary-500 cursor-help hover:text-primary-600 transition-colors text-base"></i>
                     <div class="absolute z-50 left-1/2 mt-2 w-80 p-4 bg-gray-900 text-white text-[10px] rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-300 transform -translate-x-1/2">
                         <div class="space-y-3">
                             <div>
@@ -136,24 +146,24 @@
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-gray-50/50">
-                            <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Fêmea</th>
-                            <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Lote</th>
-                            <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Localização</th>
-                            <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Idade Leitões</th>
-                            <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Previsão Desmame</th>
-                            <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Problema</th>
-                            <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ações</th>
+                            <th class="px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">Fêmea</th>
+                            <th class="px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">Lote</th>
+                            <th class="px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">Localização</th>
+                            <th class="px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">Idade Leitões</th>
+                            <th class="px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">Previsão Desmame</th>
+                            <th class="px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">Problema</th>
+                            <th class="px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">Ações</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                         @forelse($inconsistencias as $inc)
-                        <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
-                            <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{{ $inc['femea'] }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $inc['lote'] }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $inc['localizacao'] }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $inc['idade_leitoes'] }} dias</td>
-                            <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $inc['previsao_desmame'] }}</td>
-                            <td class="px-6 py-4 text-sm text-red-600 dark:text-red-400 font-medium">{{ $inc['problema'] }}</td>
+                        <tr class="hover:bg-gray-50/50 transition-colors">
+                            <td class="px-6 py-4 text-sm font-semibold text-navy-900">{{ $inc['femea'] }}</td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">{{ $inc['lote'] }}</td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">{{ $inc['localizacao'] }}</td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">{{ $inc['idade_leitoes'] }} dias</td>
+                            <td class="px-6 py-4 text-sm text-text-secondary">{{ $inc['previsao_desmame'] }}</td>
+                            <td class="px-6 py-4 text-sm text-danger-text font-semibold">{{ $inc['problema'] }}</td>
                             <td class="px-6 py-4 text-sm">
                                 <button @click="selectedPartoId = {{ $inc['parto_id'] }}; showDesmameModal = true" 
                                     class="inline-flex items-center px-3 py-1.5 bg-primary-600 text-white text-xs font-semibold rounded-lg hover:bg-primary-700 transition-colors">
@@ -163,7 +173,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-8 text-center text-gray-500 italic">
+                            <td colspan="7" class="px-6 py-8 text-center text-text-muted italic">
                                 Nenhuma inconsistência detectada na maternidade.
                             </td>
                         </tr>
@@ -177,19 +187,19 @@
     <!-- Conteúdo: Lançamentos -->
     <div x-show="tab === 'lancamentos'" class="space-y-6">
         <!-- Navegação de Sub-abas -->
-        <div class="flex items-center gap-4 border-b border-gray-200 dark:border-gray-800">
+        <div class="flex items-center gap-4 border-b border-border">
             <button @click="subTab = 'partos'" 
-                :class="subTab === 'partos' ? 'border-primary-500 text-primary-600 border-b-2' : 'border-transparent text-gray-500'"
+                :class="subTab === 'partos' ? 'tab-active px-4 py-2' : 'border-transparent text-text-secondary'"
                 class="pb-2 px-1 text-sm font-bold transition-all border-b-2">
                 Partos
             </button>
             <button @click="subTab = 'desmames'" 
-                :class="subTab === 'desmames' ? 'border-primary-500 text-primary-600 border-b-2' : 'border-transparent text-gray-500'"
+                :class="subTab === 'desmames' ? 'tab-active px-4 py-2' : 'border-transparent text-text-secondary'"
                 class="pb-2 px-1 text-sm font-bold transition-all border-b-2">
                 Desmames
             </button>
             <button @click="subTab = 'mortes'" 
-                :class="subTab === 'mortes' ? 'border-primary-500 text-primary-600 border-b-2' : 'border-transparent text-gray-500'"
+                :class="subTab === 'mortes' ? 'tab-active px-4 py-2' : 'border-transparent text-text-secondary'"
                 class="pb-2 px-1 text-sm font-bold transition-all border-b-2">
                 Morte de Leitão
             </button>
@@ -198,44 +208,44 @@
         <!-- Conteúdo Sub-aba Partos -->
         <div x-show="subTab === 'partos'" class="space-y-4">
             <div class="flex justify-between items-center">
-                <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Listagem de Partos</h4>
+                <h4 class="text-sm font-bold text-navy-900 uppercase tracking-wider">Listagem de Partos</h4>
                 <button @click="showPartoModal = true" 
-                    class="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 transition-colors">
+                    class="inline-flex items-center px-4 py-2 bg-primary-500 text-white text-sm font-bold rounded-card hover:bg-primary-600 transition-colors">
                     <i class="fa-solid fa-plus mr-2"></i> Novo Parto
                 </button>
             </div>
-            <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+            <div class="card overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-gray-50/50">
-                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Data</th>
-                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Fêmea</th>
-                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Lote</th>
-                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Vivos</th>
-                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Mortos</th>
-                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Mumif.</th>
-                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Observação</th>
+                                <th class="px-6 py-3 text-xs font-bold text-text-secondary uppercase tracking-wider">Data</th>
+                                <th class="px-6 py-3 text-xs font-bold text-text-secondary uppercase tracking-wider">Fêmea</th>
+                                <th class="px-6 py-3 text-xs font-bold text-text-secondary uppercase tracking-wider">Lote</th>
+                                <th class="px-6 py-3 text-xs font-bold text-text-secondary uppercase tracking-wider">Vivos</th>
+                                <th class="px-6 py-3 text-xs font-bold text-text-secondary uppercase tracking-wider">Mortos</th>
+                                <th class="px-6 py-3 text-xs font-bold text-text-secondary uppercase tracking-wider">Mumif.</th>
+                                <th class="px-6 py-3 text-xs font-bold text-text-secondary uppercase tracking-wider">Observação</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                             @forelse($partosRegistrados as $parto)
-                            <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
-                                <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ \Carbon\Carbon::parse($parto->data)->format('d/m/Y') }}</td>
-                                <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
+                            <tr class="hover:bg-gray-50/50 transition-colors">
+                                <td class="px-6 py-4 text-sm text-navy-900">{{ \Carbon\Carbon::parse($parto->data)->format('d/m/Y') }}</td>
+                                <td class="px-6 py-4 text-sm font-semibold text-navy-900">
                                     {{ (string) $parto->id_primaria . ($parto->id_secundaria ? " ({$parto->id_secundaria})" : "") }}
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $parto->lote ?? '-' }}</td>
-                                <td class="px-6 py-4 text-sm font-bold text-green-600">{{ $parto->total_vivos }}</td>
-                                <td class="px-6 py-4 text-sm text-red-600">{{ $parto->total_mortos }}</td>
-                                <td class="px-6 py-4 text-sm text-amber-600">{{ $parto->total_mumificados }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate" title="{{ $parto->observacao }}">
+                                <td class="px-6 py-4 text-sm text-text-secondary">{{ $parto->lote ?? '-' }}</td>
+                                <td class="px-6 py-4 text-sm font-bold text-success-text">{{ $parto->total_vivos }}</td>
+                                <td class="px-6 py-4 text-sm text-danger-text">{{ $parto->total_mortos }}</td>
+                                <td class="px-6 py-4 text-sm text-primary-600">{{ $parto->total_mumificados }}</td>
+                                <td class="px-6 py-4 text-sm text-text-secondary max-w-xs truncate" title="{{ $parto->observacao }}">
                                     {{ $parto->observacao ?: '-' }}
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-8 text-center text-gray-500 italic">
+                                <td colspan="7" class="px-6 py-8 text-center text-text-muted italic">
                                     Nenhum parto registrado recentemente.
                                 </td>
                             </tr>
@@ -247,17 +257,17 @@
         </div>
 
         <!-- Conteúdo Sub-aba Desmames -->
-        <div x-show="subTab === 'desmames'" class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-8 text-center">
-            <i class="fa-solid fa-hourglass-half text-gray-300 text-4xl mb-4"></i>
-            <p class="text-gray-500 dark:text-gray-400 text-sm italic">Módulo de listagem de desmames em desenvolvimento.</p>
+        <div x-show="subTab === 'desmames'" class="card p-8 text-center">
+            <i class="fa-solid fa-hourglass-half text-text-muted text-4xl mb-4"></i>
+            <p class="text-text-secondary text-sm italic">Módulo de listagem de desmames em desenvolvimento.</p>
         </div>
 
         <!-- Conteúdo Sub-aba Mortes -->
         <div x-show="subTab === 'mortes'" class="space-y-4">
             <div class="flex justify-between items-center">
-                <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Mortes de Leitões</h4>
+                <h4 class="text-sm font-bold text-navy-900 uppercase tracking-wider">Mortes de Leitões</h4>
                 <button @click="showMorteModal = true" 
-                    class="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors">
+                    class="inline-flex items-center px-4 py-2 bg-danger-text text-white text-sm font-bold rounded-card hover:bg-red-700 transition-colors">
                     <i class="fa-solid fa-plus mr-2"></i> Nova Morte
                 </button>
             </div>
@@ -276,20 +286,20 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                             @forelse($mortesLeitaoRegistradas as $morte)
-                            <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-800/50 transition-colors">
-                                <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                            <tr class="hover:bg-gray-50/50 transition-colors">
+                                <td class="px-6 py-4 text-sm text-navy-900">
                                     {{ \Carbon\Carbon::parse($morte->data)->format('d/m/Y') }} {{ $morte->hora ? \Carbon\Carbon::parse($morte->hora)->format('H:i') : '' }}
                                 </td>
-                                <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
+                                <td class="px-6 py-4 text-sm font-semibold text-navy-900">
                                     {{ (string) $morte->id_primaria . ($morte->id_secundaria ? " ({$morte->id_secundaria})" : "") }}
                                 </td>
-                                <td class="px-6 py-4 text-sm font-bold text-red-600">{{ $morte->quantidade }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $morte->causa_nome ?? '-' }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $morte->funcionario ?? '-' }}</td>
+                                <td class="px-6 py-4 text-sm font-bold text-danger-text">{{ $morte->quantidade }}</td>
+                                <td class="px-6 py-4 text-sm text-text-secondary">{{ $morte->causa_nome ?? '-' }}</td>
+                                <td class="px-6 py-4 text-sm text-text-secondary">{{ $morte->funcionario ?? '-' }}</td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-8 text-center text-gray-500 italic">
+                                <td colspan="5" class="px-6 py-8 text-center text-text-muted italic">
                                     Nenhuma morte registrada recentemente.
                                 </td>
                             </tr>

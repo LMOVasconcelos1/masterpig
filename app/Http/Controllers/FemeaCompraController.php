@@ -10,12 +10,17 @@ use Illuminate\Support\Facades\Schema;
 
 class FemeaCompraController extends Controller
 {
+    /**
+     * Lista todas as compras de fêmeas registradas
+     * Retorna dados paginados com filtros por busca, raça, fornecedor, localização, baia e período
+     * Ordena pela data da compra em ordem decrescente
+     */
     public function index(Request $request)
     {
         if (! Schema::hasTable('femea') || ! Schema::hasTable('femea_movimento')) {
             return response()->json([
                 'items' => [],
-                'message' => 'Tabelas do plantel ainda não foram criadas no banco.',
+                'message' => 'Tabelas do plantel ainda não foram criadas no banco. Entre em contato com o nosso suporte',
             ]);
         }
 
@@ -131,6 +136,12 @@ class FemeaCompraController extends Controller
         ]);
     }
 
+    /**
+     * Registra uma nova compra de fêmea no sistema
+     * Valida todos os dados da compra e cria registro na tabela femea
+     * Também registra o movimento na tabela femea_movimento
+     * Se informado cio, registra também em gestacao_cio e femea_movimento com ação 'cio'
+     */
     public function store(Request $request)
     {
         if (! Schema::hasTable('femea') || ! Schema::hasTable('femea_movimento')) {
@@ -227,7 +238,7 @@ class FemeaCompraController extends Controller
             }
 
             $femea = Femea::create($validated);
-
+            //Salva a compra da femea na tabela femea_movimento
             DB::table('femea_movimento')->insert([
                 'femea_id' => $femea->id,
                 'femea_id_primaria' => $femea->id_primaria,
@@ -240,7 +251,7 @@ class FemeaCompraController extends Controller
                 'atualizado_em' => now(),
             ]);
 
-            // Se informou que houve cio, registra na tabela gestacao_cio
+            // Se informou que houve cio, registra na tabela gestacao_cio e femea_movimento
             if (($validated['houve_cio'] ?? 'nao') === 'sim' && ! empty($validated['data_ultimo_cio'])) {
                 if (Schema::hasTable('gestacao_cio')) {
                     $payload = [
@@ -259,6 +270,16 @@ class FemeaCompraController extends Controller
 
                     DB::table('gestacao_cio')->insert($payload);
                 }
+
+                // Registra o cio na tabela femea_movimento
+                DB::table('femea_movimento')->insert([
+                    'femea_id' => $femea->id,
+                    'femea_id_primaria' => $femea->id_primaria,
+                    'acao' => 'cio',
+                    'data' => $validated['data_ultimo_cio'],
+                    'criado_em' => now(),
+                    'atualizado_em' => now(),
+                ]);
             }
 
             return $femea;
@@ -272,6 +293,9 @@ class FemeaCompraController extends Controller
 
     /**
      * Converte data do formato brasileiro (DD/MM/AAAA) para ISO (AAAA-MM-DD)
+     * Utilizada nos filtros de data da listagem de compras
+     * @param string $dataBr Data no formato brasileiro
+     * @return string|null Data no formato ISO ou null se inválida
      */
     private function converterDataBrParaIso($dataBr)
     {

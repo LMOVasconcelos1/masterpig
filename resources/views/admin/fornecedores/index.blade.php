@@ -1,10 +1,18 @@
 @extends('layouts.dashboard')
 
 @section('title', 'Fornecedores')
-@section('page_title', 'Fornecedores')
 
 @section('content')
-<div class="space-y-6" x-data="{
+<div>
+    <div class="rounded-xl shadow-sm p-6" style="border-color: #78350f;">
+        <div class="text-center">
+            <h2 class="text-2xl font-bold text-white mb-2">Fornecedores</h2>
+            <p class="text-sm text-white">Cadastro e gestão de fornecedores</p>
+        </div>
+    </div>
+</div>
+
+<div class="space-y-6 mt-6" x-data="{
     openCreate: {{ $errors->any() ? 'true' : 'false' }},
 }">
     @if(!empty($errorMessage))
@@ -13,11 +21,11 @@
         </div>
     @endif
 
-    <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-                <h6 class="font-bold text-primary-700 dark:text-primary-400 uppercase text-xs tracking-wider">Fornecedores</h6>
-                <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Cadastro de fornecedores.</div>
+                <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Cadastro de Fornecedores</h6>
+                <div class="text-sm text-gray-500 mt-1">Cadastro de fornecedores.</div>
             </div>
             <button type="button" @click="openCreate = true" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                 <i class="fa-solid fa-plus mr-2"></i>

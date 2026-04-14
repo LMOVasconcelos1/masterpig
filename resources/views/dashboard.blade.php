@@ -271,7 +271,7 @@
                 </template>
             </div>
             <div class="ml-3 w-0 flex-1 pt-0.5">
-                <p class="text-sm font-medium text-gray-900 dark:text-gray-100" x-text="toastMessage"></p>
+                <p class="text-sm font-medium text-gray-900 " x-text="toastMessage"></p>
             </div>
             <div class="ml-4 flex-shrink-0 flex">
                 <button @click="toastOpen = false" class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
@@ -283,70 +283,72 @@
     </div>
 </div>
 <!-- Header & Topbar -->
-<div class="mb-6 -mx-3 sm:-mx-6 px-3 sm:px-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-    <div class="pt-4 pb-2">
-        <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Plantel Reprodutivo</h2>
-        <p class="text-sm text-gray-500">Visão geral, lançamentos e relatórios</p>
+<div>
+    <div class="rounded-xl shadow-sm p-6" style="border-color: #78350f;">
+        <div class="text-center">
+            <h2 class="text-2xl font-bold text-white mb-2">Plantel Reprodutivo</h2>
+            <p class="text-sm text-white">Visão geral, lançamentos e relatórios</p>
+        </div>
+        <nav class="flex justify-center space-x-8 overflow-x-auto mt-6">
+            <button type="button" @click="tab = 'visao'" 
+                :class="tab === 'visao' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
+                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                Visão Geral
+            </button>
+            <button type="button" @click="tab = 'lancamentos'" 
+                :class="tab === 'lancamentos' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
+                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                Lançamentos
+            </button>
+            <button type="button" @click="tab = 'acompanhamento'; $dispatch('acompanhamento-open')" 
+                :class="tab === 'acompanhamento' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
+                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                Acompanhamento
+            </button>
+            <button type="button" @click="tab = 'analise'" 
+                :class="tab === 'analise' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
+                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                Análise
+            </button>
+            <button type="button" @click="tab = 'relatorios'" 
+                :class="tab === 'relatorios' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
+                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                Relatórios
+            </button>
+        </nav>
     </div>
-    <nav class="-mb-px flex space-x-6 overflow-x-auto">
-        <button type="button" @click="tab = 'visao'" 
-            :class="tab === 'visao' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
-            class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
-            Visão Geral
-        </button>
-        <button type="button" @click="tab = 'lancamentos'" 
-            :class="tab === 'lancamentos' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-            class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
-            Lançamentos
-        </button>
-        <button type="button" @click="tab = 'acompanhamento'; $dispatch('acompanhamento-open')" 
-            :class="tab === 'acompanhamento' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-            class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
-            Acompanhamento
-        </button>
-        <button type="button" @click="tab = 'analise'" 
-            :class="tab === 'analise' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-            class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
-            Análise
-        </button>
-        <button type="button" @click="tab = 'relatorios'" 
-            :class="tab === 'relatorios' ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-            class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
-            Relatórios
-        </button>
-    </nav>
 </div>
 
-<div x-show="tab === 'visao'" x-cloak>
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <div class="bg-white dark:bg-gray-900 border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-5 group">
+<div x-show="tab === 'visao'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-4">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-4 group">
         <div class="flex items-center justify-between">
             <div>
-                <div class="text-xs font-bold text-primary-500 uppercase tracking-wider mb-1">Estoque Total (Animais)</div>
-                <div class="text-2xl font-bold text-gray-800 dark:text-gray-100 tracking-tight group-hover:scale-105 transition-transform origin-left">
+                <div class="text-xs font-bold text-primary-500 uppercase tracking-wider mb-1">Estoque Total</div>
+                <div class="text-xl font-bold text-gray-800 tracking-tight group-hover:scale-105 transition-transform origin-left">
                     {{ $estoqueTotalAnimais ?? 0 }}
                 </div>
             </div>
-            <div class="p-3 bg-primary-50 dark:bg-primary-900/40 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
-                <i class="fa-solid fa-warehouse text-2xl"></i>
+            <div class="p-2 bg-primary-50 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
+                <i class="fa-solid fa-warehouse text-xl"></i>
             </div>
         </div>
-        <div class="mt-4 flex items-center text-sm text-gray-500 dark:text-gray-400">
+        <div class="mt-4 flex items-center text-sm text-gray-500">
             <i class="fa-solid fa-piggy-bank mr-2"></i>
             <span class="font-medium">Leitoas + Matrizes + Machos</span>
         </div>
     </div>
 
-    <div class="bg-white dark:bg-gray-900 border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-5 group">
+    <div class="bg-white border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-4 group">
         <div class="flex items-center justify-between">
             <div>
                 <div class="text-xs font-bold text-primary-500 uppercase tracking-wider mb-1">Leitoas Ativas</div>
-                <div class="text-2xl font-bold text-gray-800 dark:text-gray-100 tracking-tight group-hover:scale-105 transition-transform origin-left">
+                <div class="text-xl font-bold text-gray-800 tracking-tight group-hover:scale-105 transition-transform origin-left">
                     {{ $leitoasAtivas ?? 0 }}
                 </div>
             </div>
-            <div class="p-3 bg-primary-50 dark:bg-primary-900/40 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
-                <i class="fa-solid fa-piggy-bank text-2xl"></i>
+            <div class="p-2 bg-primary-50 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
+                <i class="fa-solid fa-piggy-bank text-xl"></i>
             </div>
         </div>
         <div class="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
@@ -372,16 +374,16 @@
         </div>
     </div>
 
-    <div class="bg-white dark:bg-gray-900 border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-5 group">
+    <div class="bg-white border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-4 group">
         <div class="flex items-center justify-between">
             <div>
                 <div class="text-xs font-bold text-primary-500 uppercase tracking-wider mb-1">Matrizes Ativas</div>
-                <div class="text-2xl font-bold text-gray-800 dark:text-gray-100 tracking-tight group-hover:scale-105 transition-transform origin-left">
+                <div class="text-xl font-bold text-gray-800 tracking-tight group-hover:scale-105 transition-transform origin-left">
                     {{ $matrizesAtivas ?? 0 }}
                 </div>
             </div>
-            <div class="p-3 bg-primary-50 dark:bg-primary-900/40 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
-                <i class="fa-solid fa-piggy-bank text-2xl"></i>
+            <div class="p-2 bg-primary-50 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
+                <i class="fa-solid fa-piggy-bank text-xl"></i>
             </div>
         </div>
         <div class="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
@@ -407,16 +409,16 @@
         </div>
     </div>
 
-    <div class="bg-white dark:bg-gray-900 border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-5 group">
+    <div class="bg-white border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-4 group">
         <div class="flex items-center justify-between">
             <div>
                 <div class="text-xs font-bold text-primary-500 uppercase tracking-wider mb-1">Machos Ativos</div>
-                <div class="text-2xl font-bold text-gray-800 dark:text-gray-100 tracking-tight group-hover:scale-105 transition-transform origin-left">
+                <div class="text-xl font-bold text-gray-800 tracking-tight group-hover:scale-105 transition-transform origin-left">
                     {{ $machosAtivos ?? 0 }}
                 </div>
             </div>
-            <div class="p-3 bg-primary-50 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
-                <i class="fa-solid fa-piggy-bank text-2xl"></i>
+            <div class="p-2 bg-primary-50 rounded-full text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-colors duration-300">
+                <i class="fa-solid fa-piggy-bank text-xl"></i>
             </div>
         </div>
         <div class="mt-4 flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
@@ -532,7 +534,7 @@
     </div>
 </div>
 
-<div x-show="tab === 'lancamentos'" x-cloak>
+<div x-show="tab === 'lancamentos'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-4">
     <div x-data="{
         item: 'femeas',
         mov: 'compra',
@@ -674,7 +676,7 @@
             .catch(e => {
                 window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message, type: 'error' } }));
             })
-            .finally(() => this.saving = false);
+            .finally(() => { this.saving = false; });
         },
         deleteFemeaRecord(id) {
             if (!confirm('Tem certeza que deseja excluir esta fêmea permanentemente? Todos os registros relacionados (cios, coberturas, movimentos) também serão removidos.')) return;
@@ -699,7 +701,7 @@
             .catch(e => {
                 window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message, type: 'error' } }));
             })
-            .finally(() => this.saving = false);
+            .finally(() => { this.saving = false; });
         },
         causasMorte: [],
         causasDescarte: [],
@@ -1035,6 +1037,26 @@
                 this.femeasMode = '';
             }
             this.ensureFemeasAtivas();
+        },
+        loadPlantelFemeas() {
+            if (!(this.item === 'femeas' && this.mov === 'plantel')) return;
+
+            this.lancamentosLoading = true;
+            this.lancamentosError = '';
+
+            fetch('/api/plantel/femeas/plantel', { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => {
+                    this.plantelFemeas = data.items ?? [];
+                    if (data.message) this.lancamentosError = data.message;
+                })
+                .catch(() => {
+                    this.lancamentosError = 'Não foi possível carregar a listagem.';
+                    this.plantelFemeas = [];
+                })
+                .finally(() => {
+                    this.lancamentosLoading = false;
+                });
         },
         loadComprasMachos(force = false) {
             if (force) {
@@ -2113,27 +2135,30 @@
         },
     }" x-init="loadComprasFemeas(); loadComprasMachos(true); $watch('item', () => { if(item === 'femeas' && mov === 'compra') loadComprasFemeas(); }); $watch('mov', () => { if(item === 'femeas' && mov === 'compra') loadComprasFemeas(); }); window.addEventListener('femea-updated', () => { if(item === 'femeas' && mov === 'compra') loadComprasFemeas(true); if(item === 'femeas' && mov === 'morte') loadMortesFemeas(); if(item === 'femeas' && mov === 'descarte') loadDescartesFemeas(); if(item === 'femeas' && mov === 'venda') loadVendasFemeas(); });" class="space-y-6">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                <div class="text-center">
                     <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Lançamentos</h6>
                     <div class="text-sm text-gray-500 mt-1">Escolha o item (macho, fêmea ou sêmen) e depois a movimentação.</div>
                 </div>
             </div>
             <div class="p-6">
-                <div class="flex flex-col gap-4">
-                    <div class="flex items-center gap-2 bg-gray-100 p-1.5 rounded-xl self-start overflow-x-auto max-w-full">
-                        <button type="button" @click="item = 'femeas'; mov = 'compra'; compraFemeasTipo = 'leitoa';" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all" :class="item === 'femeas' ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-900/5' : 'text-gray-500 hover:text-gray-700'">
-                            <i class="fa-solid fa-piggy-bank text-primary-600"></i> Fêmeas
+                <div class="flex flex-col gap-6">
+                    <div class="flex justify-center items-center gap-2 bg-gray-100 p-1.5 rounded-xl overflow-x-auto max-w-full">
+                        <button type="button" @click="item = 'femeas'; mov = 'compra'; compraFemeasTipo = 'leitoa';" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg" :class="item === 'femeas' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30 scale-105' : 'text-gray-700 hover:text-gray-800 hover:bg-white/80'">
+                            <i class="fa-solid fa-piggy-bank text-primary-600 transition-colors duration-300" :class="item === 'femeas' ? 'text-primary-600' : 'text-gray-600'"></i> Fêmeas
                         </button>
-                        <button type="button" @click="item = 'machos'; mov = 'compra'; loadComprasMachos()" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all" :class="item === 'machos' ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-900/5' : 'text-gray-500 hover:text-gray-700'">
-                            <i class="fa-solid fa-piggy-bank text-primary-600"></i> Machos
+                        <button type="button" @click="item = 'machos'; mov = 'compra'; loadComprasMachos()" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg" :class="item === 'machos' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30 scale-105' : 'text-gray-700 hover:text-gray-800 hover:bg-white/80'">
+                            <i class="fa-solid fa-piggy-bank text-primary-600 transition-colors duration-300" :class="item === 'machos' ? 'text-primary-600' : 'text-gray-600'"></i> Machos
                         </button>
-                        <button type="button" @click="item = 'semen'; mov = null" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all" :class="item === 'semen' ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-900/5' : 'text-gray-500 hover:text-gray-700'">
-                            <i class="fa-solid fa-vial text-primary-600"></i> Sêmen
+                        <button type="button" @click="item = 'semen'; mov = null" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg" :class="item === 'semen' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30 scale-105' : 'text-gray-700 hover:text-gray-800 hover:bg-white/80'">
+                            <i class="fa-solid fa-vial text-primary-600 transition-colors duration-300" :class="item === 'semen' ? 'text-primary-600' : 'text-gray-600'"></i> Sêmen
                         </button>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-2" x-show="item !== 'semen'" x-cloak>
+                    <div class="flex flex-wrap justify-center items-center gap-2" x-show="item !== 'semen'" x-cloak>
+                        <button x-show="item === 'femeas'" x-cloak type="button" @click="mov = 'plantel'; loadPlantelFemeas()" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border" :class="mov === 'plantel' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'">
+                            <i class="fa-solid fa-list w-4"></i> Plantel
+                        </button>
                         <button type="button" @click="mov = 'compra'; if(item === 'femeas') loadComprasFemeas(); else loadComprasMachos();" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border" :class="mov === 'compra' ? 'bg-primary-50 border-primary-200 text-primary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'">
                             <i class="fa-solid fa-cart-shopping w-4"></i> Compra
                         </button>
@@ -2155,8 +2180,8 @@
         </div>
 
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-                <div>
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                <div class="text-center">
                     <div class="text-xs font-bold text-gray-600 uppercase tracking-wider" x-text="tipoLabel"></div>
                     <div class="text-sm text-gray-500 mt-1">
                         <span>Listagem do tipo selecionado.</span>
@@ -2887,7 +2912,7 @@
                                                 <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                     <i class="fa-solid fa-chevron-left"></i>
                                                 </button>
-                                                <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
                                                 <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                     <i class="fa-solid fa-chevron-right"></i>
                                                 </button>
@@ -2904,7 +2929,7 @@
                                                     <div class="text-center">
                                                         <button type="button" 
                                                                 @click.stop="selectCalendarDate(day.date)"
-                                                                :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                                :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
                                                                 :disabled="!day.isCurrentMonth"
                                                                 class="p-2 text-sm rounded-lg transition-colors w-full"
                                                                 x-text="day.day">
@@ -2967,7 +2992,7 @@
                                                 <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                     <i class="fa-solid fa-chevron-left"></i>
                                                 </button>
-                                                <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
                                                 <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                     <i class="fa-solid fa-chevron-right"></i>
                                                 </button>
@@ -2984,7 +3009,7 @@
                                                     <div class="text-center">
                                                         <button type="button" 
                                                                 @click.stop="selectCalendarDate(day.date)"
-                                                                :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                                :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
                                                                 :disabled="!day.isCurrentMonth"
                                                                 class="p-2 text-sm rounded-lg transition-colors w-full"
                                                                 x-text="day.day">
@@ -3047,7 +3072,7 @@
                                                 <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                     <i class="fa-solid fa-chevron-left"></i>
                                                 </button>
-                                                <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
                                                 <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                     <i class="fa-solid fa-chevron-right"></i>
                                                 </button>
@@ -3064,7 +3089,7 @@
                                                     <div class="text-center">
                                                         <button type="button" 
                                                                 @click.stop="selectCalendarDate(day.date)"
-                                                                :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                                :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
                                                                 :disabled="!day.isCurrentMonth"
                                                                 class="p-2 text-sm rounded-lg transition-colors w-full"
                                                                 x-text="day.day">
@@ -3127,7 +3152,7 @@
                                                 <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                     <i class="fa-solid fa-chevron-left"></i>
                                                 </button>
-                                                <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
                                                 <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                     <i class="fa-solid fa-chevron-right"></i>
                                                 </button>
@@ -3144,7 +3169,7 @@
                                                     <div class="text-center">
                                                         <button type="button" 
                                                                 @click.stop="selectCalendarDate(day.date)"
-                                                                :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                                :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
                                                                 :disabled="!day.isCurrentMonth"
                                                                 class="p-2 text-sm rounded-lg transition-colors w-full"
                                                                 x-text="day.day">
@@ -3211,7 +3236,7 @@
                                                     <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                         <i class="fa-solid fa-chevron-left"></i>
                                                     </button>
-                                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                    <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
                                                     <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                         <i class="fa-solid fa-chevron-right"></i>
                                                     </button>
@@ -3228,7 +3253,7 @@
                                                         <div class="text-center">
                                                             <button type="button" 
                                                                     @click.stop="selectCalendarDate(day.date)"
-                                                                    :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                                    :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
                                                                     :disabled="!day.isCurrentMonth"
                                                                     class="p-2 text-sm rounded-lg transition-colors w-full"
                                                                     x-text="day.day">
@@ -3314,7 +3339,7 @@
                                                     <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                         <i class="fa-solid fa-chevron-left"></i>
                                                     </button>
-                                                    <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                    <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
                                                     <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                         <i class="fa-solid fa-chevron-right"></i>
                                                     </button>
@@ -3331,7 +3356,7 @@
                                                         <div class="text-center">
                                                             <button type="button" 
                                                                     @click.stop="selectCalendarDate(day.date)"
-                                                                    :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                                    :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
                                                                     :disabled="!day.isCurrentMonth"
                                                                     class="p-2 text-sm rounded-lg transition-colors w-full"
                                                                     x-text="day.day">
@@ -3417,7 +3442,7 @@
                                                         <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                             <i class="fa-solid fa-chevron-left"></i>
                                                         </button>
-                                                        <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                        <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
                                                         <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                             <i class="fa-solid fa-chevron-right"></i>
                                                         </button>
@@ -3434,7 +3459,7 @@
                                                             <div class="text-center">
                                                                 <button type="button" 
                                                                         @click.stop="selectCalendarDate(day.date)"
-                                                                        :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                                        :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
                                                                         :disabled="!day.isCurrentMonth"
                                                                         class="p-2 text-sm rounded-lg transition-colors w-full"
                                                                         x-text="day.day">
@@ -3502,7 +3527,7 @@
                                                                 <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                                     <i class="fa-solid fa-chevron-left"></i>
                                                                 </button>
-                                                                <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                                <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
                                                                 <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                                     <i class="fa-solid fa-chevron-right"></i>
                                                                 </button>
@@ -3519,7 +3544,7 @@
                                                                     <div class="text-center">
                                                                         <button type="button" 
                                                                                 @click.stop="selectCalendarDate(day.date)"
-                                                                                :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                                                :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
                                                                                 :disabled="!day.isCurrentMonth"
                                                                                 class="p-2 text-sm rounded-lg transition-colors w-full"
                                                                                 x-text="day.day">
@@ -3560,7 +3585,7 @@
                                                                 <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                                     <i class="fa-solid fa-chevron-left"></i>
                                                                 </button>
-                                                                <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                                <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
                                                                 <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                                     <i class="fa-solid fa-chevron-right"></i>
                                                                 </button>
@@ -3577,7 +3602,7 @@
                                                                     <div class="text-center">
                                                                         <button type="button" 
                                                                                 @click.stop="selectCalendarDate(day.date)"
-                                                                                :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                                                :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
                                                                                 :disabled="!day.isCurrentMonth"
                                                                                 class="p-2 text-sm rounded-lg transition-colors w-full"
                                                                                 x-text="day.day">
@@ -3715,7 +3740,7 @@
                                                             <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                                 <i class="fa-solid fa-chevron-left"></i>
                                                             </button>
-                                                            <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                            <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
                                                             <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                                 <i class="fa-solid fa-chevron-right"></i>
                                                             </button>
@@ -3732,7 +3757,7 @@
                                                                 <div class="text-center">
                                                                     <button type="button" 
                                                                             @click.stop="selectCalendarDate(day.date)"
-                                                                            :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                                            :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
                                                                             :disabled="!day.isCurrentMonth"
                                                                             class="p-2 text-sm rounded-lg transition-colors w-full"
                                                                             x-text="day.day">
@@ -3787,7 +3812,7 @@
                                                             <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                                 <i class="fa-solid fa-chevron-left"></i>
                                                             </button>
-                                                            <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                            <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
                                                             <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                                 <i class="fa-solid fa-chevron-right"></i>
                                                             </button>
@@ -3804,7 +3829,7 @@
                                                                 <div class="text-center">
                                                                     <button type="button" 
                                                                             @click.stop="selectCalendarDate(day.date)"
-                                                                            :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                                            :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
                                                                             :disabled="!day.isCurrentMonth"
                                                                             class="p-2 text-sm rounded-lg transition-colors w-full"
                                                                             x-text="day.day">
@@ -3847,7 +3872,7 @@
                                                             <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                                 <i class="fa-solid fa-chevron-left"></i>
                                                             </button>
-                                                            <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                            <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
                                                             <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                                 <i class="fa-solid fa-chevron-right"></i>
                                                             </button>
@@ -3863,7 +3888,7 @@
                                                             <template x-for="day in getCalendarDays()" :key="day.date">
                                                                 <button type="button" 
                                                                         @click.stop="selectCalendarDate(day.date)"
-                                                                        :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                                        :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
                                                                         :disabled="!day.isCurrentMonth"
                                                                         class="p-2 text-sm rounded-lg transition-colors"
                                                                         x-text="day.day">
@@ -4087,7 +4112,7 @@
                                             <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                 <i class="fa-solid fa-chevron-left"></i>
                                             </button>
-                                            <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                            <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
                                             <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                 <i class="fa-solid fa-chevron-right"></i>
                                             </button>
@@ -4103,7 +4128,7 @@
                                             <template x-for="day in getCalendarDays()" :key="day.date">
                                                 <button type="button" 
                                                         @click.stop="selectCalendarDate(day.date)"
-                                                        :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                        :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
                                                         :disabled="!day.isCurrentMonth"
                                                         class="p-2 text-sm rounded-lg transition-colors"
                                                         x-text="day.day">
@@ -4282,7 +4307,7 @@
     </template>
 </datalist>
 
-<div x-show="tab === 'acompanhamento'" x-cloak>
+<div x-show="tab === 'acompanhamento'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-4">
     <div x-data="{
         loaded: false,
         loading: false,
@@ -4421,7 +4446,7 @@
     </div>
 </div>
 
-<div x-show="tab === 'analise'" x-cloak>
+<div x-show="tab === 'analise'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-4">
     <div x-data="{
         analiseSubTab: 'desempenho',
         loading: false,
@@ -5280,7 +5305,7 @@
                                 <template x-for="row in top.femeas.morte" :key="row.causa">
                                     <div class="flex items-center justify-between gap-3 text-sm">
                                         <div class="min-w-0 truncate text-gray-700 dark:text-gray-300" x-text="row.causa"></div>
-                                        <div class="font-semibold text-gray-900 dark:text-gray-100" x-text="row.total"></div>
+                                        <div class="font-semibold text-gray-900 " x-text="row.total"></div>
                                     </div>
                                 </template>
                                 <div x-show="top.femeas.morte.length === 0" class="text-sm text-gray-500">Sem registros.</div>
@@ -5292,7 +5317,7 @@
                                 <template x-for="row in top.femeas.descarte" :key="row.causa">
                                     <div class="flex items-center justify-between gap-3 text-sm">
                                         <div class="min-w-0 truncate text-gray-700 dark:text-gray-300" x-text="row.causa"></div>
-                                        <div class="font-semibold text-gray-900 dark:text-gray-100" x-text="row.total"></div>
+                                        <div class="font-semibold text-gray-900 " x-text="row.total"></div>
                                     </div>
                                 </template>
                                 <div x-show="top.femeas.descarte.length === 0" class="text-sm text-gray-500">Sem registros.</div>
@@ -5304,7 +5329,7 @@
                                 <template x-for="row in top.femeas.venda" :key="row.causa">
                                     <div class="flex items-center justify-between gap-3 text-sm">
                                         <div class="min-w-0 truncate text-gray-700 dark:text-gray-300" x-text="row.causa"></div>
-                                        <div class="font-semibold text-gray-900 dark:text-gray-100" x-text="row.total"></div>
+                                        <div class="font-semibold text-gray-900 " x-text="row.total"></div>
                                     </div>
                                 </template>
                                 <div x-show="top.femeas.venda.length === 0" class="text-sm text-gray-500">Sem registros.</div>
@@ -5346,7 +5371,7 @@
                                 <template x-for="row in top.machos.morte" :key="row.causa">
                                     <div class="flex items-center justify-between gap-3 text-sm">
                                         <div class="min-w-0 truncate text-gray-700 dark:text-gray-300" x-text="row.causa"></div>
-                                        <div class="font-semibold text-gray-900 dark:text-gray-100" x-text="row.total"></div>
+                                        <div class="font-semibold text-gray-900 " x-text="row.total"></div>
                                     </div>
                                 </template>
                                 <div x-show="top.machos.morte.length === 0" class="text-sm text-gray-500">Sem registros.</div>
@@ -5358,7 +5383,7 @@
                                 <template x-for="row in top.machos.descarte" :key="row.causa">
                                     <div class="flex items-center justify-between gap-3 text-sm">
                                         <div class="min-w-0 truncate text-gray-700 dark:text-gray-300" x-text="row.causa"></div>
-                                        <div class="font-semibold text-gray-900 dark:text-gray-100" x-text="row.total"></div>
+                                        <div class="font-semibold text-gray-900 " x-text="row.total"></div>
                                     </div>
                                 </template>
                                 <div x-show="top.machos.descarte.length === 0" class="text-sm text-gray-500">Sem registros.</div>
@@ -5370,7 +5395,7 @@
                                 <template x-for="row in top.machos.venda" :key="row.causa">
                                     <div class="flex items-center justify-between gap-3 text-sm">
                                         <div class="min-w-0 truncate text-gray-700 dark:text-gray-300" x-text="row.causa"></div>
-                                        <div class="font-semibold text-gray-900 dark:text-gray-100" x-text="row.total"></div>
+                                        <div class="font-semibold text-gray-900 " x-text="row.total"></div>
                                     </div>
                                 </template>
                                 <div x-show="top.machos.venda.length === 0" class="text-sm text-gray-500">Sem registros.</div>
@@ -5383,7 +5408,7 @@
     </div>
 </div>
 
-<div x-show="tab === 'relatorios'" x-cloak>
+<div x-show="tab === 'relatorios'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-4">
     <div class="mb-4 bg-amber-50 border border-amber-100 text-amber-900 rounded-xl px-4 py-3 text-sm">
         Relatórios em desenvolvimento.
     </div>
@@ -5486,7 +5511,7 @@
                                     <div x-show="activePicker === 'nascimento'" x-cloak 
                                          class="absolute z-[120] mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72 left-0 sm:left-auto sm:right-0" 
                                          @click.away="activePicker = null">
-                                        <div class="flex items-center justify-between mb-3 text-gray-900 dark:text-gray-100">
+                                        <div class="flex items-center justify-between mb-3 text-gray-900 ">
                                             <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                 <i class="fa-solid fa-chevron-left"></i>
                                             </button>
@@ -5504,7 +5529,7 @@
                                             <template x-for="day in getCalendarDays()" :key="day.date">
                                                 <button type="button" 
                                                         @click.stop="selectCalendarDate(day.date)"
-                                                        :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                        :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
                                                         :disabled="!day.isCurrentMonth"
                                                         class="p-2 text-sm rounded-lg transition-colors"
                                                         x-text="day.day">
@@ -5538,7 +5563,7 @@
                                     <div x-show="activePicker === 'compra'" x-cloak 
                                          class="absolute z-[120] mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72 left-0 sm:left-auto sm:right-0" 
                                          @click.away="activePicker = null">
-                                        <div class="flex items-center justify-between mb-3 text-gray-900 dark:text-gray-100">
+                                        <div class="flex items-center justify-between mb-3 text-gray-900 ">
                                             <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                 <i class="fa-solid fa-chevron-left"></i>
                                             </button>
@@ -5556,7 +5581,7 @@
                                             <template x-for="day in getCalendarDays()" :key="day.date">
                                                 <button type="button" 
                                                         @click.stop="selectCalendarDate(day.date)"
-                                                        :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                        :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
                                                         :disabled="!day.isCurrentMonth"
                                                         class="p-2 text-sm rounded-lg transition-colors"
                                                         x-text="day.day">
@@ -5590,7 +5615,7 @@
                                     <div x-show="activePicker === 'cobertura'" x-cloak 
                                          class="absolute z-[120] mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72 left-0 sm:left-auto sm:right-0" 
                                          @click.away="activePicker = null">
-                                        <div class="flex items-center justify-between mb-3 text-gray-900 dark:text-gray-100">
+                                        <div class="flex items-center justify-between mb-3 text-gray-900 ">
                                             <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
                                                 <i class="fa-solid fa-chevron-left"></i>
                                             </button>
@@ -5608,7 +5633,7 @@
                                             <template x-for="day in getCalendarDays()" :key="day.date">
                                                 <button type="button" 
                                                         @click.stop="selectCalendarDate(day.date)"
-                                                        :class="day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                        :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
                                                         :disabled="!day.isCurrentMonth"
                                                         class="p-2 text-sm rounded-lg transition-colors"
                                                         x-text="day.day">

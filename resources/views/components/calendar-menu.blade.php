@@ -2,10 +2,10 @@
     <!-- Botão do Menu -->
     <button 
         @click="open = !open"
-        class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-xl transition-colors"
+        class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white hover:text-amber-100 hover:bg-amber-700 rounded-xl transition-colors"
         title="Calendário de 1000 dias"
     >
-        <i class="fa-solid fa-calendar-alt text-primary-600"></i>
+        <i class="fa-solid fa-calendar-alt text-white"></i>
         <span>Calendário</span>
         <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="open ? 'rotate-180' : ''"></i>
     </button>

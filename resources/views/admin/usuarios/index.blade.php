@@ -1,10 +1,18 @@
 @extends('layouts.dashboard')
 
 @section('title', 'Usuários')
-@section('page_title', 'Usuários')
 
 @section('content')
-<div x-data="{
+<div>
+    <div class="rounded-xl shadow-sm p-6" style="border-color: #78350f;">
+        <div class="text-center">
+            <h2 class="text-2xl font-bold text-white mb-2">Usuários</h2>
+            <p class="text-sm text-white">Cadastro e gestão de usuários</p>
+        </div>
+    </div>
+</div>
+
+<div class="space-y-6 mt-6" x-data="{
     openCreate: {{ ($errors->any() && old('_form') === 'create') ? 'true' : 'false' }},
     openEdit: {{ ($errors->any() && old('_form') === 'edit') ? 'true' : 'false' }},
     openDelete: false,
@@ -27,7 +35,7 @@
         this.openDelete = true;
         this.$nextTick(() => { this.deleteSubmitting = false; });
     },
-}" class="space-y-6">
+}">
     @if(!empty($errorMessage))
         <div class="bg-amber-50 border border-amber-100 text-amber-900 rounded-xl px-4 py-3 text-sm">
             {{ $errorMessage }}

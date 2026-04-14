@@ -593,54 +593,45 @@
     class="space-y-6"
 >
     <!-- Header & Topbar -->
-    <div class="mb-6 -mx-3 sm:-mx-6 px-3 sm:px-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div class="pt-4 pb-2">
-            <h2 class="text-xl font-bold text-gray-900 dark:text-gray-100">Gestação</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Coberturas, perdas reprodutivas e metas</p>
+    <div>
+        <div class="rounded-xl shadow-sm p-6" style="border-color: #78350f;">
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-white mb-2">Gestação</h2>
+                <p class="text-sm text-white">Coberturas, perdas reprodutivas e metas</p>
+            </div>
+            <nav class="flex justify-center space-x-8 overflow-x-auto mt-6">
+                <button type="button" @click="tab = 'lancamentos'" 
+                    :class="tab === 'lancamentos' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
+                    class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                    Lançamentos
+                </button>
+                <button type="button" @click="tab = 'analise'" 
+                    :class="tab === 'analise' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
+                    class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                    Análise
+                </button>
+            </nav>
         </div>
-        <nav class="-mb-px flex space-x-8 overflow-x-auto">
-            <button type="button" @click="tab = 'lancamentos'" 
-                :class="tab === 'lancamentos' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
-                class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
-                Lançamentos
-            </button>
-            <button type="button" @click="tab = 'analise'" 
-                :class="tab === 'analise' ? 'border-primary-500 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300'"
-                class="whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
-                Análise
-            </button>
-        </nav>
     </div>
 
-    <div x-show="tab === 'lancamentos'" x-cloak class="space-y-8">
-        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between">
-                <div>
-                    <h6 class="font-bold text-primary-700 dark:text-primary-400 uppercase text-xs tracking-wider">Lançamentos</h6>
-                    <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Coberturas e perdas reprodutivas.</div>
+    <div x-show="tab === 'lancamentos'" x-cloak class="space-y-8" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-4">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                <div class="text-center">
+                    <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Lançamentos</h6>
+                    <div class="text-sm text-gray-500 mt-1">Gerencie coberturas e perdas reprodutivas</div>
                 </div>
             </div>
-            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div class="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 p-1.5 rounded-xl self-start overflow-x-auto max-w-full border border-gray-200/50 dark:border-gray-700/50">
-                    <button type="button" @click="lancTab = 'cobertura'" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all" :class="lancTab === 'cobertura' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-100/10' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'">
-                        Coberturas
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+                <div class="flex justify-center items-center gap-2 bg-gray-100 p-1.5 rounded-xl overflow-x-auto max-w-full">
+                    <button type="button" @click="lancTab = 'cobertura'" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg" :class="lancTab === 'cobertura' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30 scale-105' : 'text-gray-700 hover:text-gray-800 hover:bg-white/80'">
+                        <i class="fa-solid fa-heart text-primary-600 transition-colors duration-300" :class="lancTab === 'cobertura' ? 'text-primary-600' : 'text-gray-600'"></i> Coberturas
                     </button>
-                    <button type="button" @click="lancTab = 'perda'" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all" :class="lancTab === 'perda' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-100/10' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'">
-                        Perdas
+                    <button type="button" @click="lancTab = 'perda'" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg" :class="lancTab === 'perda' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30 scale-105' : 'text-gray-700 hover:text-gray-800 hover:bg-white/80'">
+                        <i class="fa-solid fa-skull-crossbones text-primary-600 transition-colors duration-300" :class="lancTab === 'perda' ? 'text-primary-600' : 'text-gray-600'"></i> Perdas
                     </button>
-                    <button type="button" @click="lancTab = 'salta_cio'" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all" :class="lancTab === 'salta_cio' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-gray-900/5 dark:ring-gray-100/10' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'">
-                        Salta cio
-                    </button>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button type="button" x-show="lancTab === 'cobertura'" x-cloak @click="openCoberturaModal()" class="inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm w-11 h-11 bg-primary-600 text-white hover:bg-primary-700" title="Registrar cobertura">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
-                    <button type="button" x-show="lancTab === 'perda'" x-cloak @click="openPerdaModal()" class="inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm w-11 h-11 bg-primary-600 text-white hover:bg-primary-700" title="Registrar perda reprodutiva">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
-                    <button type="button" x-show="lancTab === 'salta_cio'" x-cloak @click="openSaltaCioModal()" class="inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm w-11 h-11 bg-primary-600 text-white hover:bg-primary-700" title="Registrar salta cio">
-                        <i class="fa-solid fa-plus"></i>
+                    <button type="button" @click="lancTab = 'salta_cio'" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg" :class="lancTab === 'salta_cio' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30 scale-105' : 'text-gray-700 hover:text-gray-800 hover:bg-white/80'">
+                        <i class="fa-solid fa-forward text-primary-600 transition-colors duration-300" :class="lancTab === 'salta_cio' ? 'text-primary-600' : 'text-gray-600'"></i> Salta Cio
                     </button>
                 </div>
             </div>
@@ -648,8 +639,13 @@
             <div class="p-6" x-show="lancTab === 'cobertura'" x-cloak>
                 <div class="rounded-2xl border border-gray-100 bg-white overflow-hidden">
                     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-                        <div class="text-sm font-bold text-gray-900">Últimas coberturas</div>
-                        <button type="button" @click="loadCoberturas()" class="text-sm text-primary-600 hover:text-primary-700">Atualizar</button>
+                        <div class="text-center flex-1">
+                            <div class="text-sm font-bold text-gray-900">Últimas coberturas</div>
+                            <button type="button" @click="loadCoberturas()" class="text-sm text-primary-600 hover:text-primary-700">Atualizar</button>
+                        </div>
+                        <button type="button" @click="openCoberturaModal()" class="inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm w-11 h-11 bg-primary-600 text-white hover:bg-primary-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg" title="Registrar cobertura">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
                     </div>
                     <div class="p-5 overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
@@ -688,8 +684,13 @@
             <div class="p-6" x-show="lancTab === 'perda'" x-cloak>
                 <div class="rounded-2xl border border-gray-100 bg-white overflow-hidden">
                     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-                        <div class="text-sm font-bold text-gray-900">Últimas perdas</div>
-                        <button type="button" @click="loadPerdas()" class="text-sm text-primary-600 hover:text-primary-700">Atualizar</button>
+                        <div class="text-center flex-1">
+                            <div class="text-sm font-bold text-gray-900">Últimas perdas</div>
+                            <button type="button" @click="loadPerdas()" class="text-sm text-primary-600 hover:text-primary-700">Atualizar</button>
+                        </div>
+                        <button type="button" @click="openPerdaModal()" class="inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm w-11 h-11 bg-primary-600 text-white hover:bg-primary-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg" title="Registrar perda reprodutiva">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
                     </div>
                     <div class="p-5 overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
@@ -722,8 +723,13 @@
             <div class="p-6" x-show="lancTab === 'salta_cio'" x-cloak>
                 <div class="rounded-2xl border border-gray-100 bg-white overflow-hidden">
                     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-                        <div class="text-sm font-bold text-gray-900">Últimos salta cio</div>
-                        <button type="button" @click="loadSaltaCio()" class="text-sm text-primary-600 hover:text-primary-700">Atualizar</button>
+                        <div class="text-center flex-1">
+                            <div class="text-sm font-bold text-gray-900">Últimos salta cio</div>
+                            <button type="button" @click="loadSaltaCio()" class="text-sm text-primary-600 hover:text-primary-700">Atualizar</button>
+                        </div>
+                        <button type="button" @click="openSaltaCioModal()" class="inline-flex items-center justify-center rounded-xl border border-transparent shadow-sm w-11 h-11 bg-primary-600 text-white hover:bg-primary-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg" title="Registrar salta cio">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
                     </div>
                     <div class="p-5 overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
@@ -1086,32 +1092,28 @@
 
     <!-- Aba Análise -->
     <div x-show="tab === 'analise'" x-cloak class="space-y-8">
-        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex items-center justify-between">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                    <h6 class="font-bold text-primary-700 dark:text-primary-400 uppercase text-xs tracking-wider">Análise</h6>
-                    <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Formulário de coleta resumida de cobertura</div>
+                    <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Análise</h6>
+                    <div class="text-sm text-gray-500 mt-1">Formulário de coleta resumida de cobertura</div>
                 </div>
-                <button type="button" @click="openFormularioCobertura = true" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 transition-all duration-200 hover:scale-[1.02]">
-                    <i class="fa-solid fa-file-lines mr-2"></i>
-                    Formulário de Cobertura
-                </button>
             </div>
             
             <div class="p-6">
                 <!-- Card Formulário de Cobertura Quadrado -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <button type="button" @click="openFormularioCobertura = true" class="group bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-[1.02] hover:border-primary-300 dark:hover:border-primary-600">
+                    <button type="button" @click="openFormularioCobertura = true" class="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-[1.02] hover:border-primary-300">
                         <div class="p-6">
                             <div class="flex flex-col items-center text-center space-y-4">
-                                <div class="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-2xl flex items-center justify-center group-hover:bg-primary-200 dark:group-hover:bg-primary-900/50 transition-colors duration-200">
-                                    <i class="fa-solid fa-file-lines text-2xl text-primary-600 dark:text-primary-400"></i>
+                                <div class="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center group-hover:bg-primary-200 transition-colors duration-200">
+                                    <i class="fa-solid fa-file-lines text-2xl text-primary-600"></i>
                                 </div>
                                 <div>
-                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors duration-200">
+                                    <h3 class="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors duration-200">
                                         Formulário de Cobertura
                                     </h3>
-                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                    <p class="text-sm text-gray-500 mt-1">
                                         Gerar formulário para coleta resumida
                                     </p>
                                 </div>

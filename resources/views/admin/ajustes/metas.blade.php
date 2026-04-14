@@ -56,7 +56,10 @@
         criterio_macho_idade_max: '300',
         criterio_venda_peso_min: '20',
         criterio_venda_peso_max: '600',
-        criterio_dias_cio_leitoa: '21',
+                criterio_entrada_leitoa_cio_min: '21',
+        criterio_entrada_leitoa_cio_max: '35',
+        criterio_intervalo_cios_leitoa_min: '18',
+        criterio_intervalo_cios_leitoa_max: '25',
         criterio_inconsistencia_descarte_dias_min: '0',
         criterio_inconsistencia_descarte_dias_max: '90',
         criterio_inconsistencia_macho_parado_min: '0',
@@ -276,7 +279,26 @@
              </div>
              <!-- ... Matriz, Cio_Inc ... -->
              <div x-show="ruleTabPlantel === 'cio_inc'" class="space-y-4" x-cloak>
-                 <div><span class="text-[10px] font-bold text-gray-400 block mb-1">DIAS CIO LEITOA</span><input type="number" x-model="metas.criterio_dias_cio_leitoa" class="w-full text-xs border-gray-200 p-1 rounded-lg" placeholder="21"></div>
+                 <div class="grid grid-cols-2 gap-4">
+                     <div>
+                         <span class="text-[10px] font-bold text-gray-400 block mb-1">DIAS ENTRE ENTRADA LEITOA E CIO MÍNIMO</span>
+                         <input type="number" x-model="metas.criterio_entrada_leitoa_cio_min" class="w-full text-xs border-gray-200 p-1 rounded-lg" placeholder="21">
+                     </div>
+                     <div>
+                         <span class="text-[10px] font-bold text-gray-400 block mb-1">DIAS ENTRE ENTRADA LEITOA E CIO MÁXIMO</span>
+                         <input type="number" x-model="metas.criterio_entrada_leitoa_cio_max" class="w-full text-xs border-gray-200 p-1 rounded-lg" placeholder="35">
+                     </div>
+                 </div>
+                 <div class="grid grid-cols-2 gap-4">
+                     <div>
+                         <span class="text-[10px] font-bold text-gray-400 block mb-1">DIAS ENTRE CIOS LEITOA MÍNIMO</span>
+                         <input type="number" x-model="metas.criterio_intervalo_cios_leitoa_min" class="w-full text-xs border-gray-200 p-1 rounded-lg" placeholder="18">
+                     </div>
+                     <div>
+                         <span class="text-[10px] font-bold text-gray-400 block mb-1">DIAS ENTRE CIOS LEITOA MÁXIMO</span>
+                         <input type="number" x-model="metas.criterio_intervalo_cios_leitoa_max" class="w-full text-xs border-gray-200 p-1 rounded-lg" placeholder="25">
+                     </div>
+                 </div>
              </div>
         </div>
     </div>

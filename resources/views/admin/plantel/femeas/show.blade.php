@@ -328,18 +328,18 @@
                     {
                         label: 'Nascidos Vivos',
                         data: dataVivos,
-                        borderColor: '#6366f1',
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderColor: '#f97316',
+                        backgroundColor: 'rgba(249, 115, 22, 0.08)',
                         borderWidth: 3,
                         tension: 0.4,
                         fill: true,
-                        pointBackgroundColor: '#6366f1',
+                        pointBackgroundColor: '#f97316',
                         pointRadius: 4
                     },
                     {
                         label: 'Meta Granja',
                         data: metaVivos,
-                        borderColor: '#d1d5db',
+                        borderColor: '#1a1a2e',
                         borderDash: [5, 5],
                         borderWidth: 2,
                         fill: false,
@@ -348,7 +348,7 @@
                     {
                         label: 'Média Plantel',
                         data: mediaPlantel,
-                        borderColor: '#10b981',
+                        borderColor: '#cccccc',
                         borderWidth: 1,
                         borderDash: [2, 2],
                         fill: false,
@@ -366,7 +366,7 @@
                     tooltip: {
                         mode: 'index',
                         intersect: false,
-                        backgroundColor: '#1f2937',
+                        backgroundColor: '#1a1a2e',
                         padding: 12,
                         titleFont: { size: 14, weight: 'bold' },
                         bodyFont: { size: 13 },
@@ -378,7 +378,8 @@
                         beginAtZero: true,
                         grid: {
                             display: true,
-                            color: '#f3f4f6'
+                            color: '#f0f0f0',
+                            lineWidth: 0.5
                         },
                         ticks: {
                             stepSize: 2
