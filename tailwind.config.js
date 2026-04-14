@@ -17,33 +17,62 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['DM Sans', ...defaultTheme.fontFamily.sans],
             },
             colors: {
+                // MoonRow-inspired color palette
                 primary: {
-                    50: '#f0f7ff',
-                    100: '#e0efff',
-                    200: '#c2e0ff',
-                    300: '#93c5fd',
-                    400: '#60a5fa',
-                    500: '#3b82f6',
-                    600: '#2563eb',
-                    700: '#1d4ed8',
-                    800: '#1e3a8a',
-                    900: '#0D1B3E',
-                },
-                secondary: {
                     50: '#fff7ed',
                     100: '#ffedd5',
                     200: '#fed7aa',
                     300: '#fdba74',
                     400: '#fb923c',
-                    500: '#E8A83E',
-                    600: '#d97706',
-                    700: '#b45309',
-                    800: '#92400e',
-                    900: '#78350f',
+                    500: '#f97316', // Primary accent color
+                    600: '#ea580c',
+                    700: '#c2410c',
+                    800: '#9a3412',
+                    900: '#7c2d12',
                 },
+                navy: {
+                    50: '#f8fafc',
+                    100: '#f1f5f9',
+                    200: '#e2e8f0',
+                    300: '#cbd5e1',
+                    400: '#94a3b8',
+                    500: '#64748b',
+                    600: '#475569',
+                    700: '#334155',
+                    800: '#1e293b',
+                    900: '#1a1a2e', // Dark navy color
+                },
+                // Semantic colors for dashboard
+                success: {
+                    50: '#e8f5e9',
+                    100: '#c8e6c9',
+                    500: '#2e7d32',
+                    600: '#1b5e20',
+                },
+                danger: {
+                    50: '#fce4ec',
+                    100: '#f8bbd9',
+                    500: '#c62828',
+                    600: '#b71c1c',
+                },
+                // Background colors
+                background: '#F4F5F7',
+                surface: '#ffffff',
+                border: '#e8e8e8',
+                // Text colors
+                'text-primary': '#1a1a2e',
+                'text-secondary': '#888888',
+                'text-muted': '#aaaaaa',
+            },
+            borderRadius: {
+                'card': '12px',
+                'tab': '20px',
+            },
+            boxShadow: {
+                'subtle': '0 0 0 0.5px rgba(0, 0, 0, 0.1)',
             },
         },
     },

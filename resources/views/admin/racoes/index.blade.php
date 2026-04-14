@@ -1,9 +1,18 @@
 @extends('layouts.dashboard')
 
 @section('title', 'Gerenciar Rações')
-@section('page_title', 'Rações')
 
 @section('content')
+<div>
+    <div class="rounded-xl shadow-sm p-6" style="border-color: #78350f;">
+        <div class="text-center">
+            <h2 class="text-2xl font-bold text-white mb-2">Rações</h2>
+            <p class="text-sm text-white">Cadastro e gestão de rações</p>
+        </div>
+    </div>
+</div>
+
+<div class="mt-6">
 <div x-data="{
     openCreate: {{ $errors->any() ? 'true' : 'false' }},
     createTab: 'geral',
@@ -302,9 +311,12 @@
         </div>
     </div>
 
-    <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
-            <h6 class="font-bold text-primary-700 dark:text-primary-400 uppercase text-xs tracking-wider">Lista de Rações</h6>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Lista de Rações</h6>
+                <div class="text-sm text-gray-500 mt-1">Gerencie todas as rações cadastradas</div>
+            </div>
         </div>
         <div class="p-4 sm:p-6">
             <div class="space-y-3 md:hidden">

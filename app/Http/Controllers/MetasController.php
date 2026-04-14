@@ -45,28 +45,57 @@ class MetasController extends Controller
         $rules = $this->rules();
         $validated = $request->validate($rules);
 
-        DB::transaction(function () use ($validated, $rules) {
-            $now = now();
-            foreach (array_keys($rules) as $key) {
-                if (! array_key_exists($key, $validated)) {
-                    continue;
+        // Processar individualmente para evitar timeout
+        $now = now();
+        
+        // Primeiro, obter todos os registros existentes em uma única consulta
+        $existingRecords = DB::table('meta')->pluck('valor', 'chave')->toArray();
+        
+        // Preparar operações em lote
+        $updates = [];
+        $inserts = [];
+        
+        foreach ($rules as $key => $rule) {
+            if (! array_key_exists($key, $validated)) {
+                continue;
+            }
+            $value = $validated[$key];
+            
+            if (array_key_exists($key, $existingRecords)) {
+                // Preparar para update
+                $updates[] = [
+                    'chave' => $key,
+                    'valor' => $value,
+                    'atualizado_em' => $now,
+                ];
+            } else {
+                // Preparar para insert
+                $inserts[] = [
+                    'chave' => $key,
+                    'valor' => $value,
+                    'criado_em' => $now,
+                    'atualizado_em' => $now,
+                ];
+            }
+        }
+        
+        // Executar operações em lote
+        DB::transaction(function () use ($updates, $inserts) {
+            // Updates em lote
+            if (!empty($updates)) {
+                foreach ($updates as $update) {
+                    DB::table('meta')
+                        ->where('chave', $update['chave'])
+                        ->update([
+                            'valor' => $update['valor'],
+                            'atualizado_em' => $update['atualizado_em'],
+                        ]);
                 }
-                $value = $validated[$key];
-
-                $exists = DB::table('meta')->where('chave', $key)->exists();
-                if ($exists) {
-                    DB::table('meta')->where('chave', $key)->update([
-                        'valor' => $value,
-                        'atualizado_em' => $now,
-                    ]);
-                } else {
-                    DB::table('meta')->insert([
-                        'chave' => $key,
-                        'valor' => $value,
-                        'criado_em' => $now,
-                        'atualizado_em' => $now,
-                    ]);
-                }
+            }
+            
+            // Inserts em lote
+            if (!empty($inserts)) {
+                DB::table('meta')->insert($inserts);
             }
         });
 
@@ -117,9 +146,7 @@ class MetasController extends Controller
             'criterio_cobertura_peso_min_kg' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'criterio_cobertura_peso_max_kg' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'criterio_cobertura_presenca_cio' => ['nullable', 'in:sim,nao'],
-            'criterio_dias_ate_cio' => ['nullable', 'integer', 'min:0', 'max:365'],
-            'criterio_dias_cio' => ['nullable', 'integer', 'min:1', 'max:10'],
-            'criterio_dias_gestacao' => ['nullable', 'integer', 'min:1', 'max:200'],
+                        'criterio_dias_gestacao' => ['nullable', 'integer', 'min:1', 'max:200'],
             'criterio_dias_lactacao_min' => ['nullable', 'integer', 'min:1', 'max:60'],
             'criterio_dias_lactacao_max' => ['nullable', 'integer', 'min:1', 'max:60'],
             'criterio_dias_intervalo_desmame_cio' => ['nullable', 'integer', 'min:0', 'max:30'],
@@ -159,10 +186,10 @@ class MetasController extends Controller
             'criterio_venda_peso_min' => ['nullable', 'numeric', 'min:0'],
             'criterio_venda_peso_max' => ['nullable', 'numeric', 'min:0'],
 
-            'criterio_cio_entrada_leitoa_min' => ['nullable', 'numeric', 'min:0'],
-            'criterio_cio_entrada_leitoa_max' => ['nullable', 'numeric', 'min:0'],
-            'criterio_cio_intervalo_min' => ['nullable', 'numeric', 'min:0'],
-            'criterio_cio_intervalo_max' => ['nullable', 'numeric', 'min:0'],
+            'criterio_entrada_leitoa_cio_min' => ['nullable', 'numeric', 'min:0'],
+            'criterio_entrada_leitoa_cio_max' => ['nullable', 'numeric', 'min:0'],
+            'criterio_intervalo_cios_leitoa_min' => ['nullable', 'numeric', 'min:0'],
+            'criterio_intervalo_cios_leitoa_max' => ['nullable', 'numeric', 'min:0'],
 
             'criterio_inconsistencia_descarte_dias_min' => ['nullable', 'numeric', 'min:0'],
             'criterio_inconsistencia_descarte_dias_max' => ['nullable', 'numeric', 'min:0'],
