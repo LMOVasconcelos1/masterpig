@@ -457,7 +457,7 @@
                         <div class="space-y-3">
                             <div>
                                 <strong class="text-primary-400 block mb-1 uppercase tracking-tighter">Cio Previsto sem Registro</strong>
-                                <span class="text-gray-300">Fêmeas que atingiram a data esperada de cobertura ou ciclicidade (baseado em desmame ou cio anterior) sem novos lançamentos.</span>
+                                <span class="text-gray-300">Fêmeas com registro de cio anterior que ultrapassaram 21 dias e atingiram a data esperada para o próximo cio sem novos lançamentos.</span>
                             </div>
                             <div>
                                 <strong class="text-amber-400 block mb-1 uppercase tracking-tighter">Parto Atrasado</strong>
@@ -480,10 +480,6 @@
                     </div>
                 </div>
             </div>
-            <a href="{{ route('admin.plantel.femeas.index', [], false) }}" class="inline-flex items-center rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-3 py-2 bg-white dark:bg-gray-800 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
-                <i class="fa-solid fa-list mr-2"></i>
-                Cadastro de fêmeas
-            </a>
         </div>
         <div class="p-6">
             <div class="overflow-x-auto border border-gray-100 dark:border-gray-800 rounded-xl">
@@ -780,6 +776,12 @@
             if (!v) return '';
             if (v.includes('/')) return v;
             if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+            
+            // Se estiver no modo 1000_dias, converter para dia PIG
+            if (this.calendarType === '1000_dias' && typeof toPigDay === 'function') {
+                return toPigDay(v);
+            }
+            
             const [y, m, d] = v.split('-');
             return `${d}/${m}/${y}`;
         },
@@ -1590,95 +1592,92 @@
             .finally(() => { this.saving = false; });
         },
         saveCompraFemeaContinuar() {
-            // Usar setTimeout para evitar travamento do navegador
-            setTimeout(() => {
-                this.saving = true;
+            this.saving = true;
 
-                // Converter datas para aceitar dia PIG
-                let dataCompraIso, dataNascimentoIso, dataCoberturaIso, dataUltimoCioIso;
-                
-                // Data de compra
-                if (/^\d+$/.test(this.dataCompra)) {
-                    dataCompraIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataCompra) : null;
-                } else {
-                    dataCompraIso = this.parseBrDate(this.dataCompra);
-                }
-                
-                // Data de nascimento
-                if (/^\d+$/.test(this.dataNascimento)) {
-                    dataNascimentoIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataNascimento) : null;
-                } else {
-                    dataNascimentoIso = this.parseBrDate(this.dataNascimento);
-                }
-                
-                // Data de cobertura
-                if (/^\d+$/.test(this.dataCobertura)) {
-                    dataCoberturaIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataCobertura) : null;
-                } else {
-                    dataCoberturaIso = this.parseBrDate(this.dataCobertura);
-                }
-                
-                // Data do último cio
-                if (/^\d+$/.test(this.dataUltimoCio)) {
-                    dataUltimoCioIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataUltimoCio) : null;
-                } else {
-                    dataUltimoCioIso = this.parseBrDate(this.dataUltimoCio);
-                }
+            // Converter datas para aceitar dia PIG
+            let dataCompraIso, dataNascimentoIso, dataCoberturaIso, dataUltimoCioIso;
+            
+            // Data de compra
+            if (/^\d+$/.test(this.dataCompra)) {
+                dataCompraIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataCompra) : null;
+            } else {
+                dataCompraIso = this.parseBrDate(this.dataCompra);
+            }
+            
+            // Data de nascimento
+            if (/^\d+$/.test(this.dataNascimento)) {
+                dataNascimentoIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataNascimento) : null;
+            } else {
+                dataNascimentoIso = this.parseBrDate(this.dataNascimento);
+            }
+            
+            // Data de cobertura
+            if (/^\d+$/.test(this.dataCobertura)) {
+                dataCoberturaIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataCobertura) : null;
+            } else {
+                dataCoberturaIso = this.parseBrDate(this.dataCobertura);
+            }
+            
+            // Data do último cio
+            if (/^\d+$/.test(this.dataUltimoCio)) {
+                dataUltimoCioIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataUltimoCio) : null;
+            } else {
+                dataUltimoCioIso = this.parseBrDate(this.dataUltimoCio);
+            }
 
-                const payload = {
-                    tipo_compra: this.compraFemeasTipo,
-                    id_primaria: this.idPrimaria,
-                    id_secundaria: this.idSecundaria || null,
-                    data_compra: dataCompraIso,
-                    data_nascimento: dataNascimentoIso || null,
-                    ciclos_ate_compra: this.ciclosAteCompra === '' ? null : Number(this.ciclosAteCompra),
-                    data_cobertura: dataCoberturaIso || null,
-                    raca_id: this.racaId,
-                    valor_compra: this.valorCompra === '' ? null : Number(this.valorCompra),
-                    peso_compra: this.pesoCompra === '' ? null : Number(this.pesoCompra),
-                    fornecedor_id: this.fornecedorId || null,
-                    caracteristicas: this.caracteristicas || null,
-                    localizacao: this.localizacao || null,
-                    baia: this.baia || null,
-                    houve_cio: this.houveCio,
-                    data_ultimo_cio: dataUltimoCioIso || null,
-                };
+            const payload = {
+                tipo_compra: this.compraFemeasTipo,
+                id_primaria: this.idPrimaria,
+                id_secundaria: this.idSecundaria || null,
+                data_compra: dataCompraIso,
+                data_nascimento: dataNascimentoIso || null,
+                ciclos_ate_compra: this.ciclosAteCompra === '' ? null : Number(this.ciclosAteCompra),
+                data_cobertura: dataCoberturaIso || null,
+                raca_id: this.racaId,
+                valor_compra: this.valorCompra === '' ? null : Number(this.valorCompra),
+                peso_compra: this.pesoCompra === '' ? null : Number(this.pesoCompra),
+                fornecedor_id: this.fornecedorId || null,
+                caracteristicas: this.caracteristicas || null,
+                localizacao: this.localizacao || null,
+                baia: this.baia || null,
+                houve_cio: this.houveCio,
+                data_ultimo_cio: dataUltimoCioIso || null,
+            };
 
-                fetch('{{ route('admin.plantel.femeas.compras.store', [], false) }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
-                    },
-                    body: JSON.stringify(payload)
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(err => {
-                            let msg = err.message;
-                            if (err.errors) {
-                                const firstKey = Object.keys(err.errors)[0];
-                                if (firstKey) msg = err.errors[firstKey][0];
-                            }
-                            throw new Error(msg);
-                        });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Compra registrada com sucesso!', type: 'success' } }));
-                    // Limpar apenas IDs e manter modal aberto
-                    this.idPrimaria = '';
-                    this.idSecundaria = '';
-                    // Não recarregar lista imediatamente para evitar travamento
-                    // A lista será recarregada quando o modal for fechado
-                })
-                .catch(e => {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar', type: 'error' } }));
-                })
-                .finally(() => { this.saving = false; });
-            }, 0); // Executar na próxima tick do event loop
+            fetch('{{ route('admin.plantel.femeas.compras.store', [], false) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        let msg = err.message;
+                        if (err.errors) {
+                            const firstKey = Object.keys(err.errors)[0];
+                            if (firstKey) msg = err.errors[firstKey][0];
+                        }
+                        throw new Error(msg);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Compra registrada com sucesso!', type: 'success' } }));
+                // Limpar apenas IDs e manter modal aberto
+                this.idPrimaria = '';
+                this.idSecundaria = '';
+                // Manter modal aberto e dados preenchidos para próxima inserção
+                // A lista será recarregada quando o modal for fechado
+            })
+            .catch(e => {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar', type: 'error' } }));
+            })
+            .finally(() => { this.saving = false; });
         },
         saveMorteFemea() {
             this.saving = true;
@@ -2190,7 +2189,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <template x-if="item === 'femeas' && mov === 'compra'">
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center justify-center gap-2">
                             <button type="button" @click="openNovoForm('leitoa')" class="inline-flex items-center gap-2 rounded-full border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                                 <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-pink-50 text-pink-600">
                                     <i class="fa-solid fa-piggy-bank"></i>
@@ -2205,7 +2204,7 @@
                             </button>
                             <button type="button" @click="openNovoForm('matriz_gestante')" class="inline-flex items-center gap-2 rounded-full border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                                 <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-violet-50 text-violet-600">
-                                    <i class="fa-solid fa-egg"></i>
+                                    <i class="fa-solid fa-piggy-bank"></i>
                                 </span>
                                 Matriz gestante
                             </button>
@@ -2849,7 +2848,7 @@
             <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
                 <div x-show="openNovo" @click="openNovo = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
                 <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                <div x-show="openNovo" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-flex flex-col align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-xl sm:w-full border border-gray-100 max-h-[85vh]">
+                <div x-show="openNovo" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-flex flex-col align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-5xl sm:w-full border border-gray-100 max-h-[85vh]">
                     <div class="bg-gradient-to-r from-primary-700 to-primary-600 px-6 py-5">
                         <div class="flex items-start justify-between">
                             <div class="text-left">
@@ -2862,23 +2861,7 @@
                         </div>
                     </div>
                     <div class="bg-white px-6 py-6 overflow-y-auto flex-1 min-h-0">
-                        <div x-show="mov === 'compra'" class="-mx-6 -mt-6 mb-6 px-6 pt-4 pb-3 bg-white/95 backdrop-blur border-b border-gray-100 sticky top-0 z-10" x-cloak>
-                            <div class="inline-flex items-center gap-1 rounded-2xl bg-gray-100 p-1 shadow-sm border border-gray-200">
-                                <button type="button" @click="openNovoTab = 'principal'" class="px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" :class="openNovoTab === 'principal' ? 'bg-white text-primary-700 shadow border border-gray-200' : 'bg-transparent text-gray-600 hover:text-gray-800 hover:bg-white/60'">
-                                    <span class="inline-flex items-center gap-2">
-                                        <i class="fa-solid fa-list-check text-sm"></i>
-                                        Principal
-                                    </span>
-                                </button>
-                                <button type="button" @click="openNovoTab = 'complementares'" class="px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" :class="openNovoTab === 'complementares' ? 'bg-white text-primary-700 shadow border border-gray-200' : 'bg-transparent text-gray-600 hover:text-gray-800 hover:bg-white/60'">
-                                    <span class="inline-flex items-center gap-2">
-                                        <i class="fa-solid fa-sliders text-sm"></i>
-                                        Complementares
-                                    </span>
-                                </button>
-                            </div>
-                        </div>
-                        <template x-if="item === 'femeas' && mov === 'morte'">
+                                                <template x-if="item === 'femeas' && mov === 'morte'">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div class="sm:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700">Fêmea</label>
@@ -3848,7 +3831,7 @@
                                                 </div>
                                                 <div class="mt-1 text-xs text-gray-500" x-show="!dataNascimento && sugestaoNascimento">
                                                     Sugestão: <button type="button" class="font-semibold text-primary-700 hover:underline" @click="nascimentoAuto = true; dataNascimento = sugestaoNascimento" x-text="sugestaoNascimento"></button>
-                                                </div>
+                                                </div>  
                                             </div>
                                             <div x-show="coberturaObrigatorio" x-cloak>
                                                 <label class="block text-sm font-medium text-gray-700">Data de cobertura</label>
@@ -3941,55 +3924,44 @@
                                                     </button>
                                                 </div>
                                             </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Peso na compra</label>
+                                                <div class="mt-1 relative">
+                                                    <input type="number" step="0.01" x-model="pesoCompra" class="w-full pr-12 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="0,00">
+                                                    <span class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400">kg</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Valor da compra</label>
+                                                <div class="mt-1 relative">
+                                                    <span class="absolute inset-y-0 left-3 flex items-center text-xs text-gray-400">R$</span>
+                                                    <input type="number" step="0.01" x-model="valorCompra" class="w-full pl-9 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="0,00">
+                                                </div>
+                                            </div>
+                                            <div class="sm:col-span-2">
+                                                <label class="block text-sm font-medium text-gray-700">Características</label>
+                                                <textarea x-model="caracteristicas" rows="2" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Opcional"></textarea>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Localização</label>
+                                                <div class="mt-1 flex items-center space-x-2">
+                                                    <input type="text" x-model="localizacao" list="util-localizacoes" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Galpão A">
+                                                    <button type="button" @click="openNovaLocalizacao = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 rounded-xl shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar localização">
+                                                        <i class="fa-solid fa-plus"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Baia</label>
+                                                <div class="mt-1 flex items-center space-x-2">
+                                                    <input type="text" x-model="baia" list="util-baias" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 12">
                                         </div>
                                     </div>
+
                                 </div>
                             </template>
 
-                            <template x-if="openNovoTab === 'complementares'">
-                                <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
-                                    <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Complementares</div>
-                                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">Peso na compra</label>
-                                            <div class="mt-1 relative">
-                                                <input type="number" step="0.01" x-model="pesoCompra" class="w-full pr-12 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="0,00">
-                                                <span class="absolute inset-y-0 right-3 flex items-center text-xs text-gray-400">kg</span>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">Valor da compra</label>
-                                            <div class="mt-1 relative">
-                                                <span class="absolute inset-y-0 left-3 flex items-center text-xs text-gray-400">R$</span>
-                                                <input type="number" step="0.01" x-model="valorCompra" class="w-full pl-9 shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="0,00">
-                                            </div>
-                                        </div>
-                                        <div class="sm:col-span-2">
-                                            <label class="block text-sm font-medium text-gray-700">Características</label>
-                                            <textarea x-model="caracteristicas" rows="2" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Opcional"></textarea>
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">Localização</label>
-                                            <div class="mt-1 flex items-center space-x-2">
-                                                <input type="text" x-model="localizacao" list="util-localizacoes" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Galpão A">
-                                                <button type="button" @click="openNovaLocalizacao = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 rounded-xl shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar localização">
-                                                    <i class="fa-solid fa-plus"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700">Baia</label>
-                                            <div class="mt-1 flex items-center space-x-2">
-                                                <input type="text" x-model="baia" list="util-baias" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 12">
-                                                <button type="button" @click="openNovaBaia = true" class="w-10 h-10 inline-flex items-center justify-center border border-gray-300 rounded-xl shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Cadastrar baia">
-                                                    <i class="fa-solid fa-plus"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
+                                                    </div>
                         </template>
                     </div>
                     <div class="bg-white border-t border-gray-100 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3">
@@ -5744,11 +5716,8 @@
         cio: 3
     };
 
-    window.PIG_BASE_DATE = '1969-01-01';
-
-    // Tornando globais explícitos e declarando var para o contexto do Alpine (que acessa por Window)
-    var API_BASE_URL = window.API_BASE_URL;
-    var PIG_CYCLE_DAYS = window.PIG_CYCLE_DAYS;
+    // Definir constante global para o calendário PIG
+    window.PIG_BASE_DATE = '1968-12-31';
     var PIG_BASE_DATE = window.PIG_BASE_DATE;
 
     function toPigDay(date) {
@@ -5757,24 +5726,47 @@
         const end = new Date(date + (date.length <= 10 ? 'T12:00:00' : ''));
         end.setHours(12, 0, 0, 0);
         const diff = Math.round((end.getTime() - start.getTime()) / 86400000);
-        const absoluteDay = diff + 1;
         
-        // Aplicar ciclo de 1000 dias
-        // Fórmula: ((absoluto - 3) % 1000) + 1
-        let result = ((absoluteDay - 3) % 1000) + 1;
-        if (result <= 0) result += 1000;
-        return result;
+        // Dia PIG Absoluto = quantidade de dias desde 31/12/1968
+        const absoluteDay = diff;
+        
+        // Dia PIG = últimos 3 dígitos do Dia PIG Absoluto
+        return absoluteDay % 1000;
     }
 
     function pigDayToDate(pigDay) {
         if (!pigDay || isNaN(pigDay)) return null;
+        
+        // Converter para número
+        pigDay = Number(pigDay);
+        
+        // Validar que o dia PIG está entre 0 e 999
+        if (pigDay < 0 || pigDay > 999) return null;
+        
         const start = new Date(PIG_BASE_DATE + 'T12:00:00');
-        // Encontrar o dia absoluto mais próximo que corresponde ao dia PIG
-        let absoluteDay = pigDay;
-        while (((absoluteDay - 3) % 1000) + 1 !== pigDay) {
-            absoluteDay++;
+        const today = new Date();
+        today.setHours(12, 0, 0, 0);
+        
+        // Dia PIG Absoluto atual
+        const currentAbsoluteDay = Math.round((today.getTime() - start.getTime()) / 86400000);
+        
+        // Encontrar o milhar mais recente que tenha os últimos 3 dígitos = pigDay
+        const currentThousand = Math.floor(currentAbsoluteDay / 1000) * 1000;
+        let targetAbsoluteDay = currentThousand + pigDay;
+        
+        // Se o dia alvo for maior que o atual, voltar um milhar
+        if (targetAbsoluteDay > currentAbsoluteDay) {
+            targetAbsoluteDay -= 1000;
         }
-        const targetDate = new Date(start.getTime() + (absoluteDay - 1) * 86400000);
+        
+        // Garantir que o dia alvo não seja negativo
+        if (targetAbsoluteDay < 0) return null;
+        
+        const targetDate = new Date(start.getTime() + targetAbsoluteDay * 86400000);
+        
+        // Validar que a data é válida
+        if (isNaN(targetDate.getTime())) return null;
+        
         return targetDate.toISOString().split('T')[0];
     }
 

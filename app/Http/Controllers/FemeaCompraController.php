@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Femea;
+use App\Services\PigCycleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -158,6 +159,9 @@ class FemeaCompraController extends Controller
             'caracteristicas' => $request->input('caracteristicas') === null ? null : trim((string) $request->input('caracteristicas')),
         ]);
 
+        // Converter datas que podem ser dias PIG antes da validação
+        $this->convertPigDatesToIso($request);
+
         $validated = $request->validate([
             'tipo_compra' => ['required', 'in:leitoa,matriz_vazia,matriz_gestante'],
             'id_primaria' => ['required', 'string', 'max:50', 'unique:femea,id_primaria'],
@@ -289,6 +293,28 @@ class FemeaCompraController extends Controller
             'message' => 'Compra registrada com sucesso!',
             'id' => $result->id,
         ], 201);
+    }
+
+    /**
+     * Converte datas que podem ser dias PIG para formato ISO antes da validação
+     * @param Request $request
+     */
+    private function convertPigDatesToIso(Request $request)
+    {
+        $dateFields = ['data_compra', 'data_nascimento', 'data_cobertura', 'data_ultimo_cio'];
+        
+        foreach ($dateFields as $field) {
+            $value = $request->input($field);
+            if ($value && is_numeric($value)) {
+                // É um dia PIG, converter para data ISO
+                try {
+                    $date = PigCycleService::fromPigDay((int) $value);
+                    $request->merge([$field => $date->format('Y-m-d')]);
+                } catch (\Exception $e) {
+                    // Se falhar a conversão, mantém o valor original para que a validação falhe
+                }
+            }
+        }
     }
 
     /**

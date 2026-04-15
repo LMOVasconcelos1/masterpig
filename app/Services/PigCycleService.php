@@ -10,7 +10,7 @@ class PigCycleService
 {
     public const CALENDAR_GREGORIAN = 'gregoriano';
     public const CALENDAR_1000_DAYS = '1000_dias';
-    public const PIG_BASE_DATE = '1969-01-01';
+    public const PIG_BASE_DATE = '1968-12-31';
 
     public static function getCalendarType(): string
     {
@@ -27,20 +27,35 @@ class PigCycleService
     {
         if (!$date) return null;
         $base = Carbon::parse(self::PIG_BASE_DATE)->startOfDay();
-        // Dia 1 = 01/01/1969. So diff in days + 1.
-        $absoluteDay = (int) $base->diffInDays($date->startOfDay(), false) + 1;
+        // Dia PIG Absoluto = quantidade de dias desde 31/12/1968
+        $absoluteDay = (int) $base->diffInDays($date->startOfDay(), false);
         
-        // Aplicar ciclo de 1000 dias com offset para corresponder ao padrão do integrador
-        // Fórmula: ((absoluto - 3) % 1000) + 1
-        return (($absoluteDay - 3) % 1000) + 1;
+        // Dia PIG = últimos 3 dígitos do Dia PIG Absoluto
+        return $absoluteDay % 1000;
     }
 
     /**
      * Converte um número de Dia PIG de volta para um objeto Carbon.
+     * Lógica simples: encontrar o dia absoluto mais recente com esses últimos 3 dígitos.
      */
     public static function fromPigDay(int $day): Carbon
     {
-        return Carbon::parse(self::PIG_BASE_DATE)->startOfDay()->addDays($day - 1);
+        $base = Carbon::parse(self::PIG_BASE_DATE)->startOfDay();
+        $today = Carbon::today();
+        
+        // Dia PIG Absoluto atual
+        $currentAbsoluteDay = (int) $base->diffInDays($today, false);
+        
+        // Encontrar o milhar mais recente que tenha os últimos 3 dígitos = $day
+        $currentThousand = floor($currentAbsoluteDay / 1000) * 1000;
+        $targetAbsoluteDay = $currentThousand + $day;
+        
+        // Se o dia alvo for maior que o atual, voltar um milhar
+        if ($targetAbsoluteDay > $currentAbsoluteDay) {
+            $targetAbsoluteDay -= 1000;
+        }
+        
+        return $base->addDays($targetAbsoluteDay);
     }
 
     /**

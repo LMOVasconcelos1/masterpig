@@ -190,7 +190,7 @@ class GestacaoCioController extends Controller
 
         $row = DB::table('femea')
             ->where('id', (int) $validated['femea_id'])
-            ->select(['id', 'tipo_compra', 'data_nascimento'])
+            ->select(['id', 'id_primaria', 'tipo_compra', 'data_nascimento'])
             ->first();
 
         if (! $row) {
@@ -217,13 +217,13 @@ class GestacaoCioController extends Controller
         $idadeDias = $nascimento->diffInDays($data);
 
         // Obter critérios de validação do metas.blade.php
-        $entradaLeitoaCioMin = $this->metaInt('criterio_entrada_leitoa_cio_min', null);
-        $entradaLeitoaCioMax = $this->metaInt('criterio_entrada_leitoa_cio_max', null);
-        $intervaloCiosLeitoaMin = $this->metaInt('criterio_intervalo_cios_leitoa_min', null);
-        $intervaloCiosLeitoaMax = $this->metaInt('criterio_intervalo_cios_leitoa_max', null);
+        $entradaLeitoaCioMin = $this->metaInt('criterio_entrada_leitoa_cio_min', 0);
+        $entradaLeitoaCioMax = $this->metaInt('criterio_entrada_leitoa_cio_max', 0);
+        $intervaloCiosLeitoaMin = $this->metaInt('criterio_intervalo_cios_leitoa_min', 0);
+        $intervaloCiosLeitoaMax = $this->metaInt('criterio_intervalo_cios_leitoa_max', 0);
 
         // Validação para leitoas: dias entre entrada e primeiro cio
-        if ($tipo === 'leitoa' && $entradaLeitoaCioMin !== null && $entradaLeitoaCioMax !== null) {
+        if ($tipo === 'leitoa' && $entradaLeitoaCioMin > 0 && $entradaLeitoaCioMax > 0) {
             // Buscar data de compra da fêmea
             $dataCompra = DB::table('femea_movimento')
                 ->where('femea_id', (int) $validated['femea_id'])
@@ -256,7 +256,7 @@ class GestacaoCioController extends Controller
             
             // Validação específica para leitoas
             if ($tipo === 'leitoa') {
-                if ($intervaloCiosLeitoaMin !== null && $intervaloCiosLeitoaMax !== null) {
+                if ($intervaloCiosLeitoaMin > 0 && $intervaloCiosLeitoaMax > 0) {
                     if ($diasEntreCios < $intervaloCiosLeitoaMin || $diasEntreCios > $intervaloCiosLeitoaMax) {
                         return response()->json([
                             'message' => "Para leitoas, o intervalo entre cios deve ser entre {$intervaloCiosLeitoaMin} e {$intervaloCiosLeitoaMax} dias (atualmente: {$diasEntreCios} dias).",
@@ -266,38 +266,40 @@ class GestacaoCioController extends Controller
             }
         }
 
-        if (! $exists) {
-            DB::table('gestacao_cio')->insert([
-                'femea_id' => (int) $validated['femea_id'],
-                'data' => $data->toDateString(),
-                'peso' => $validated['peso'] ?? null,
-                'criado_em' => now(),
-                'atualizado_em' => now(),
-            ]);
+        if ($exists) {
+            return response()->json([
+                'message' => 'Este cio já está registrado para esta fêmea nesta data.',
+            ], 422);
+        }
 
-            // Registra o cio na tabela femea_movimento
-            DB::table('femea_movimento')->insert([
-                'femea_id' => (int) $validated['femea_id'],
-                'femea_id_primaria' => $row->id_primaria,
-                'acao' => 'cio',
-                'data' => $data->toDateString(),
-                'peso' => $validated['peso'] ?? null,
-                'criado_em' => now(),
-                'atualizado_em' => now(),
-            ]);
+        DB::table('gestacao_cio')->insert([
+            'femea_id' => (int) $validated['femea_id'],
+            'data' => $data->toDateString(),
+            'peso' => $validated['peso'] ?? null,
+            'criado_em' => now(),
+            'atualizado_em' => now(),
+        ]);
 
-            // Atualizar o peso_atual da fêmea se informado
-            if (isset($validated['peso']) && $validated['peso'] !== null) {
-                $peso = floatval($validated['peso']);
-                if ($peso > 0) {
-                    DB::table('femea')->where('id', (int) $validated['femea_id'])->update([
-                        'peso_atual' => $peso,
-                        'atualizado_em' => now(),
-                    ]);
-                }
+        // Registra o cio na tabela femea_movimento
+        DB::table('femea_movimento')->insert([
+            'femea_id' => (int) $validated['femea_id'],
+            'femea_id_primaria' => $row->id_primaria,
+            'acao' => 'cio',
+            'data' => $data->toDateString(),
+            'peso' => $validated['peso'] ?? null,
+            'criado_em' => now(),
+            'atualizado_em' => now(),
+        ]);
+
+        // Atualizar o peso_atual da fêmea se informado
+        if (isset($validated['peso']) && $validated['peso'] !== null) {
+            $peso = floatval($validated['peso']);
+            if ($peso > 0) {
+                DB::table('femea')->where('id', (int) $validated['femea_id'])->update([
+                    'peso_atual' => $peso,
+                    'atualizado_em' => now(),
+                ]);
             }
-
-
         }
 
         return response()->json([

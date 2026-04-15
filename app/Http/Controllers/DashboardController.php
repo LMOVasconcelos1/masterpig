@@ -215,22 +215,15 @@ class DashboardController extends Controller
                 }
             }
 
-            // Cio Previsto (Lógica Existente)
+            // Cio Previsto (Só alerta se houver registro de cio anterior e tiver passado 21 dias)
             $prevCio = null;
             if ($lastCob) {
                 $prevCio = (clone $lastCob)->addDays($cfg['gestacao_dias'] + $cfg['lactacao_min_dias'] + $cfg['intervalo_desmame_cio_dias']);
-            } else {
-                $lastEvento = $lastCio ?: $lastSalta;
-                if ($lastEvento) {
-                    $prevCio = (clone $lastEvento)->addDays(max(1, $cfg['dias_ate_cio']));
-                } else {
-                    // Fallback para leitoas: maturidade + intervalo até 1º cio
-                    $tipo = (string) $row->tipo_compra;
-                    if ($tipo === 'leitoa' && ! empty($row->data_nascimento)) {
-                        $nasc = Carbon::parse($row->data_nascimento)->startOfDay();
-                        $maturityStart = (clone $nasc)->addDays(max(0, $cfg['maturidade_min_dias']));
-                        $prevCio = (clone $maturityStart)->addDays(max(1, $cfg['dias_ate_cio']));
-                    }
+            } elseif ($lastCio) {
+                // Só calcula cio previsto se houver registro de cio anterior E tiver passado 21 dias
+                $diasDesdeUltimoCio = $today->diffInDays($lastCio);
+                if ($diasDesdeUltimoCio >= 21) {
+                    $prevCio = (clone $lastCio)->addDays(max(1, $cfg['dias_ate_cio']));
                 }
             }
 

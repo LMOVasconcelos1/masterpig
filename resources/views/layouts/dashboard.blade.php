@@ -263,7 +263,20 @@
                                 class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50 border border-amber-200"
                                 x-cloak
                             >
-                                <!-- Menu items will be added here -->
+                                <a href="{{ route('profile.edit', [], false) }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 transition-colors">
+                                    <i class="fa-solid fa-user mr-3 text-amber-600"></i>
+                                    Meu Perfil
+                                </a>
+                                
+                                <hr class="my-2 border-gray-100">
+                                
+                                <form method="POST" action="{{ route('logout', [], false) }}">
+                                    @csrf
+                                    <button type="submit" class="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left">
+                                        <i class="fa-solid fa-right-from-bracket mr-3"></i>
+                                        Sair
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>

@@ -152,7 +152,7 @@ class PlantelApiController extends Controller
                 if (\App\Services\PigCycleService::getCalendarType() === \App\Services\PigCycleService::CALENDAR_1000_DAYS && $row->ultima_data) {
                     $base = Carbon::parse(\App\Services\PigCycleService::PIG_BASE_DATE)->startOfDay();
                     $dt = Carbon::parse($row->ultima_data)->startOfDay();
-                    $row->ultima_data_formatada = (string) ((int) $base->diffInDays($dt, false) + 1);
+                    $row->ultima_data_formatada = (string) ((int) $base->diffInDays($dt, false));
                 } else {
                     $row->ultima_data_formatada = $row->ultima_data ? PigCycleService::formatDisplayDate(Carbon::parse($row->ultima_data)) : '-';
                 }

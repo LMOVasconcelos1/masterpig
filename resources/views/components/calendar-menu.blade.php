@@ -103,7 +103,7 @@
 
 <script>
     // Definir constantes e funções globais para o componente
-    window.PIG_BASE_DATE = window.PIG_BASE_DATE || '1969-01-01';
+    window.PIG_BASE_DATE = window.PIG_BASE_DATE || '1968-12-31';
     var PIG_BASE_DATE = window.PIG_BASE_DATE;
 
     function toPigDay(date) {
@@ -112,11 +112,12 @@
         const end = new Date(date);
         end.setHours(0, 0, 0, 0);
         const diff = Math.floor((end.getTime() - start.getTime()) / 86400000);
-        const absoluteDay = diff + 1;
         
-        // Aplicar ciclo de 1000 dias com offset -1 para corresponder ao pig1000.com
-        // Fórmula: ((absoluto - 2) % 1000) + 1
-        return ((absoluteDay - 2) % 1000) + 1;
+        // Dia PIG Absoluto = quantidade de dias desde 31/12/1968
+        const absoluteDay = diff;
+        
+        // Dia PIG = últimos 3 dígitos do Dia PIG Absoluto
+        return absoluteDay % 1000;
     }
 
     document.addEventListener('alpine:init', () => {
@@ -198,35 +199,37 @@
         },
 
         get currentDayFormatted() {
-            // Fixar o dia atual como 901 conforme solicitado
-            const daysDiff = 901;
+            // Usar o dia PIG atual (924)
+            const today = new Date();
+            const currentPigDay = toPigDay(today.toISOString().split('T')[0]);
             let range = '';
             
-            if (daysDiff >= 0 && daysDiff <= 100) {
+            if (currentPigDay >= 0 && currentPigDay <= 100) {
                 range = '0-100';
-            } else if (daysDiff >= 101 && daysDiff <= 200) {
+            } else if (currentPigDay >= 101 && currentPigDay <= 200) {
                 range = '101-200';
-            } else if (daysDiff >= 201 && daysDiff <= 300) {
+            } else if (currentPigDay >= 201 && currentPigDay <= 300) {
                 range = '201-300';
-            } else if (daysDiff >= 301 && daysDiff <= 1000) {
+            } else if (currentPigDay >= 301 && currentPigDay <= 1000) {
                 range = '301-1000';
             }
             
-            return `Dia ${daysDiff} (${range})`;
+            return `Dia ${currentPigDay} (${range})`;
         },
 
         get todayRange() {
-            // Fixar o dia atual como 901 conforme solicitado
-            const daysDiff = 901;
+            // Usar o dia PIG atual (924)
+            const today = new Date();
+            const currentPigDay = toPigDay(today.toISOString().split('T')[0]);
             let range = '';
             
-            if (daysDiff >= 0 && daysDiff <= 100) {
+            if (currentPigDay >= 0 && currentPigDay <= 100) {
                 range = '0-100';
-            } else if (daysDiff >= 101 && daysDiff <= 200) {
+            } else if (currentPigDay >= 101 && currentPigDay <= 200) {
                 range = '101-200';
-            } else if (daysDiff >= 201 && daysDiff <= 300) {
+            } else if (currentPigDay >= 201 && currentPigDay <= 300) {
                 range = '201-300';
-            } else if (daysDiff >= 301 && daysDiff <= 1000) {
+            } else if (currentPigDay >= 301 && currentPigDay <= 1000) {
                 range = '301-1000';
             }
             

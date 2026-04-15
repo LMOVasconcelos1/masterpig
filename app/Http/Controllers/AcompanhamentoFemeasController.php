@@ -196,11 +196,12 @@ class AcompanhamentoFemeasController extends Controller
             $durations = PigCycleService::getCycleDurations();
             $cioFim = (clone $lastCio)->addDays($durations['cio']);
             if ($now->betweenIncluded($lastCio, $cioFim)) {
+                $nextCio = (clone $lastCio)->addDays(max(1, $cfg['dias_ate_cio']));
                 return [
                     'fase_anterior' => 'Maturidade Reprodutiva',
                     'fase' => $cioAtualLabel,
                     'proxima_fase' => $podeCobrirAgora ? 'Cobertura' : $cioProximoLabel,
-                    'prevista_em' => PigCycleService::formatDisplayDate($lastCio),
+                    'prevista_em' => PigCycleService::formatDisplayDate($nextCio),
                 ];
             }
         }
