@@ -553,6 +553,26 @@
     <!-- Alpine.js (local) -->
     <script defer src="{{ asset('js/vendor/alpine-collapse.min.js') }}"></script>
     <script defer src="{{ asset('js/vendor/alpine.min.js') }}"></script>
+    
+    <!-- Script de verificação e fallback para Alpine.js -->
+    <script src="{{ asset('js/check-alpine.js') }}"></script>
+    
+    <!-- Fallback para Alpine.js via CDN (apenas em produção) -->
+    @if(app()->environment('production'))
+    <script>
+        // Verifica se Alpine.js foi carregado após 2 segundos
+        setTimeout(function() {
+            if (typeof Alpine === 'undefined') {
+                console.warn('Alpine.js não foi carregado dos arquivos locais, carregando do CDN...');
+                var script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js';
+                script.defer = true;
+                document.head.appendChild(script);
+            }
+        }, 2000);
+    </script>
+    @endif
+    
     @stack('scripts')
 </body>
 </html>
