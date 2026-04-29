@@ -45,9 +45,9 @@
             <a href="{{ route('dashboard') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
                 <i class="fa-solid fa-arrow-left mr-2"></i> Voltar
             </a>
-            <button class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors shadow-sm">
+            <a href="{{ route('admin.plantel.femeas.ficha-pdf', $femea->id, false) }}" target="_blank" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold hover:bg-primary-700 transition-colors shadow-sm">
                 <i class="fa-solid fa-print mr-2"></i> Imprimir Ficha
-            </button>
+            </a>
         </div>
     </div>
 

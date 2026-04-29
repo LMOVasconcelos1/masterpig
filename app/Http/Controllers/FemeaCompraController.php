@@ -193,6 +193,43 @@ class FemeaCompraController extends Controller
                     'message' => 'Leitoa não deve ter ciclos até a compra.',
                 ], 422);
             }
+
+            // Validar peso mínimo e máximo para leitoa
+            if (isset($validated['peso_compra']) && $validated['peso_compra'] !== null) {
+                $pesoMinimo = $this->metaInt('criterio_leitoa_peso_min', 0);
+                $pesoMaximo = $this->metaInt('criterio_leitoa_peso_max', 999);
+                
+                if ($pesoMinimo > 0 && $validated['peso_compra'] < $pesoMinimo) {
+                    return response()->json([
+                        'message' => "O peso da leitoa deve ser no mínimo {$pesoMinimo}kg. Peso informado: {$validated['peso_compra']}kg.",
+                    ], 422);
+                }
+                
+                if ($pesoMaximo > 0 && $validated['peso_compra'] > $pesoMaximo) {
+                    return response()->json([
+                        'message' => "O peso da leitoa deve ser no máximo {$pesoMaximo}kg. Peso informado: {$validated['peso_compra']}kg.",
+                    ], 422);
+                }
+            }
+
+            // Validar idade mínima e máxima para leitoa
+            if ($dataNasc) {
+                $idadeDias = $dataNasc->diffInDays($dataCompra);
+                $idadeMinima = $this->metaInt('criterio_leitoa_idade_min', 0);
+                $idadeMaxima = $this->metaInt('criterio_leitoa_idade_max', 999);
+                
+                if ($idadeMinima > 0 && $idadeDias < $idadeMinima) {
+                    return response()->json([
+                        'message' => "A idade mínima para entrada de leitoa é de {$idadeMinima} dias. Idade atual: {$idadeDias} dias.",
+                    ], 422);
+                }
+                
+                if ($idadeMaxima > 0 && $idadeDias > $idadeMaxima) {
+                    return response()->json([
+                        'message' => "A idade máxima para entrada de leitoa é de {$idadeMaxima} dias. Idade atual: {$idadeDias} dias.",
+                    ], 422);
+                }
+            }
         }
 
         if ($validated['tipo_compra'] === 'matriz_gestante' && empty($validated['data_cobertura'])) {
