@@ -216,6 +216,12 @@
                 else if (this.activePicker === 'morte') this.dataMorte = pigDay;
                 else if (this.activePicker === 'descarte') this.dataDescarte = pigDay;
                 else if (this.activePicker === 'venda') this.dataVenda = pigDay;
+                else if (this.activePicker === 'semen_compra') {
+                    if (this.semenForm) this.semenForm.data_compra = pigDay;
+                }
+                else if (this.activePicker === 'semen_nascimento') {
+                    if (this.semenForm) this.semenForm.data_nascimento = pigDay;
+                }
                 else if (this.activePicker === 'editCio') {
                     if (this.editCioData) this.editCioData.data = pigDay;
                 }
@@ -236,6 +242,8 @@
                 else if (this.activePicker === 'morte') raw = this.dataMorte;
                 else if (this.activePicker === 'descarte') raw = this.dataDescarte;
                 else if (this.activePicker === 'venda') raw = this.dataVenda;
+                else if (this.activePicker === 'semen_compra') raw = (this.semenForm ? this.semenForm.data_compra : '');
+                else if (this.activePicker === 'semen_nascimento') raw = (this.semenForm ? this.semenForm.data_nascimento : '');
                 else if (this.activePicker === 'editCio') raw = (this.editCioData ? this.editCioData.data : '');
             }
             const iso = this.parseBrDate(raw);
@@ -535,6 +543,29 @@
         item: 'femeas',
         mov: 'compra',
         compraFemeasTipo: 'leitoa',
+        semenOpenCreate: false,
+        semenItems: [],
+        semenLoading: false,
+        semenSearch: '',
+        semenRacaId: '',
+        semenFornecedorId: '',
+        semenDataInicial: '',
+        semenDataFinal: '',
+        semenPage: 1,
+        semenLimit: 200,
+        semenTotal: 0,
+        semenPages: 1,
+        semenRacas: [],
+        semenFornecedores: [],
+        semenForm: {
+            id_primaria: '',
+            id_secundaria: '',
+            raca_id: '',
+            data_nascimento: '',
+            data_compra: '',
+            valor_compra: '',
+            fornecedor_id: '',
+        },
         openNovo: false,
         openNovoTab: 'principal',
         nascimentoAuto: true,
@@ -566,6 +597,161 @@
         dataCio: '',
         diaCicloCio: '',
         causaMorteId: '',
+
+        semenInit() {
+            this.semenLoadRacas();
+            this.semenLoadFornecedores();
+            this.semenLoadItems();
+        },
+        semenLoadRacas() {
+            fetch('/api/racas', { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => { this.semenRacas = Array.isArray(data) ? data : []; })
+                .catch(() => { this.semenRacas = []; });
+        },
+        semenLoadFornecedores() {
+            fetch('/api/fornecedores', { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => { this.semenFornecedores = Array.isArray(data) ? data : []; })
+                .catch(() => { this.semenFornecedores = []; });
+        },
+        semenLoadItems() {
+            this.semenLoading = true;
+            const params = new URLSearchParams({
+                limit: this.semenLimit,
+                page: this.semenPage,
+                search: this.semenSearch,
+                raca_id: this.semenRacaId,
+                fornecedor_id: this.semenFornecedorId,
+                data_inicial: this.semenDataInicial,
+                data_final: this.semenDataFinal,
+            });
+
+            fetch('/api/semen?' + params.toString(), { headers: { 'Accept': 'application/json' } })
+                .then(async (r) => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(data?.message || 'Não foi possível carregar os registros de sêmen.');
+                    return data;
+                })
+                .then(data => {
+                    this.semenItems = data.items || [];
+                    this.semenTotal = data.total || 0;
+                    this.semenPages = data.pages || 1;
+                })
+                .catch(e => {
+                    this.semenItems = [];
+                    this.semenTotal = 0;
+                    this.semenPages = 1;
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Não foi possível carregar os registros de sêmen.', type: 'error' } }));
+                })
+                .finally(() => { this.semenLoading = false; });
+        },
+        semenResetForm() {
+            this.semenForm = {
+                id_primaria: '',
+                id_secundaria: '',
+                raca_id: '',
+                data_nascimento: '',
+                data_compra: '',
+                valor_compra: '',
+                fornecedor_id: '',
+            };
+        },
+        semenSave() {
+            if (!this.semenForm.id_primaria || !this.semenForm.data_compra) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Preencha os campos obrigatórios.', type: 'error' } }));
+                return;
+            }
+
+            let dataCompraIso;
+            let dataNascimentoIso;
+
+            if (/^\d+$/.test(this.semenForm.data_compra)) {
+                dataCompraIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.semenForm.data_compra) : null;
+            } else {
+                dataCompraIso = this.parseBrDate(this.semenForm.data_compra);
+            }
+
+            if (this.semenForm.data_nascimento) {
+                if (/^\d+$/.test(this.semenForm.data_nascimento)) {
+                    dataNascimentoIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.semenForm.data_nascimento) : null;
+                } else {
+                    dataNascimentoIso = this.parseBrDate(this.semenForm.data_nascimento);
+                }
+            } else {
+                dataNascimentoIso = null;
+            }
+
+            if (!dataCompraIso) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Data de compra inválida.', type: 'error' } }));
+                return;
+            }
+
+            const payload = {
+                id_primaria: this.semenForm.id_primaria,
+                id_secundaria: this.semenForm.id_secundaria || null,
+                raca_id: this.semenForm.raca_id ? Number(this.semenForm.raca_id) : null,
+                data_nascimento: dataNascimentoIso,
+                data_compra: dataCompraIso,
+                valor_compra: this.semenForm.valor_compra === '' ? null : Number(this.semenForm.valor_compra),
+                fornecedor_id: this.semenForm.fornecedor_id ? Number(this.semenForm.fornecedor_id) : null,
+            };
+
+            fetch('/api/semen', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
+                },
+                body: JSON.stringify(payload),
+            })
+                .then(async (r) => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) {
+                        if (data?.errors) {
+                            const firstField = Object.keys(data.errors)[0];
+                            if (firstField && data.errors[firstField] && data.errors[firstField][0]) {
+                                throw new Error(data.errors[firstField][0]);
+                            }
+                        }
+                        throw new Error(data?.message || 'Erro ao salvar sêmen.');
+                    }
+                    return data;
+                })
+                .then(data => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Sêmen cadastrado com sucesso!', type: 'success' } }));
+                    this.semenOpenCreate = false;
+                    this.semenResetForm();
+                    this.semenLoadItems();
+                })
+                .catch(e => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar sêmen.', type: 'error' } }));
+                });
+        },
+        semenDelete(id) {
+            if (!confirm('Excluir este registro de sêmen?')) return;
+
+            fetch(`/api/semen/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
+                },
+            })
+                .then(async (r) => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(data?.message || 'Erro ao excluir sêmen.');
+                    return data;
+                })
+                .then(data => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Sêmen excluído com sucesso!', type: 'success' } }));
+                    this.semenLoadItems();
+                })
+                .catch(e => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao excluir sêmen.', type: 'error' } }));
+                });
+        },
 
 
 
@@ -816,7 +1002,8 @@
             if (this.mov === 'descarte') return `Descarte - ${this.itemLabel}`;
             if (this.mov === 'venda') return `Venda - ${this.itemLabel}`;
             if (this.mov === 'cio') return `Cio - ${this.itemLabel}`;
-            return `${this.movLabel} - ${this.itemLabel}`;
+            if (this.item === 'semen') return `Cadastro de ${this.itemLabel}`;
+            return `${this.itemLabel}`;
         },
         get modalTitle() {
             if (this.item === 'femeas' && this.mov === 'compra') {
@@ -2149,7 +2336,7 @@
                         <button type="button" @click="item = 'machos'; mov = 'compra'; loadComprasMachos()" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg" :class="item === 'machos' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30 scale-105' : 'text-gray-700 hover:text-gray-800 hover:bg-white/80'">
                             <i class="fa-solid fa-piggy-bank text-primary-600 transition-colors duration-300" :class="item === 'machos' ? 'text-primary-600' : 'text-gray-600'"></i> Machos
                         </button>
-                        <button type="button" @click="item = 'semen'; mov = null" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg" :class="item === 'semen' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30 scale-105' : 'text-gray-700 hover:text-gray-800 hover:bg-white/80'">
+                        <button type="button" @click="item = 'semen'; mov = null; semenOpenCreate = false; semenInit();" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg" :class="item === 'semen' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30 scale-105' : 'text-gray-700 hover:text-gray-800 hover:bg-white/80'">
                             <i class="fa-solid fa-vial text-primary-600 transition-colors duration-300" :class="item === 'semen' ? 'text-primary-600' : 'text-gray-600'"></i> Sêmen
                         </button>
                     </div>
@@ -2251,6 +2438,11 @@
                             <i class="fa-solid fa-hand-holding-dollar"></i>
                         </button>
                     </template>
+                    <template x-if="item === 'semen'">
+                        <button type="button" @click="semenOpenCreate = true; semenResetForm();" title="Cadastrar sêmen" class="inline-flex items-center justify-center w-11 h-11 rounded-2xl border border-transparent shadow-sm bg-orange-600 text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors">
+                            <i class="fa-solid fa-vial"></i>
+                        </button>
+                    </template>
                     <template x-if="item === 'machos' && mov === 'venda'">
                         <button type="button" @click="openNovoVendaMacho()" title="Registrar venda" class="inline-flex items-center justify-center w-11 h-11 rounded-2xl border border-transparent shadow-sm bg-emerald-600 text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
                             <i class="fa-solid fa-hand-holding-dollar"></i>
@@ -2259,6 +2451,269 @@
                 </div>
             </div>
             <div class="p-6">
+                <template x-if="item === 'semen'">
+                    <div class="space-y-4">
+                        <div class="bg-gray-50/50 border border-gray-100 rounded-xl p-3">
+                            <div class="grid grid-cols-1 md:grid-cols-6 gap-2">
+                                <div class="md:col-span-2">
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Buscar</label>
+                                    <input type="text" x-model="semenSearch" @input="semenPage = 1; semenLoadItems()" class="block w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-primary-500 focus:border-primary-500" placeholder="ID, raça, fornecedor...">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Raça</label>
+                                    <select x-model="semenRacaId" @change="semenPage = 1; semenLoadItems()" class="block w-full pl-2 pr-8 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-primary-500 focus:border-primary-500">
+                                        <option value="">Todas</option>
+                                        <template x-for="r in semenRacas" :key="r.id">
+                                            <option :value="r.id" x-text="r.nome"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Fornecedor</label>
+                                    <select x-model="semenFornecedorId" @change="semenPage = 1; semenLoadItems()" class="block w-full pl-2 pr-8 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-primary-500 focus:border-primary-500">
+                                        <option value="">Todos</option>
+                                        <template x-for="f in semenFornecedores" :key="f.id">
+                                            <option :value="f.id" x-text="f.nome"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Data inicial</label>
+                                    <input type="date" x-model="semenDataInicial" @change="semenPage = 1; semenLoadItems()" class="block w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-primary-500 focus:border-primary-500">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Data final</label>
+                                    <input type="date" x-model="semenDataFinal" @change="semenPage = 1; semenLoadItems()" class="block w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-primary-500 focus:border-primary-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto border border-gray-100 rounded-2xl">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Ação</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Primária</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Secundária</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Raça</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Data compra</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Valor</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Fornecedor</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr x-show="semenLoading" x-cloak>
+                                        <td colspan="7" class="px-4 py-10 text-sm text-gray-500 text-center italic">Carregando...</td>
+                                    </tr>
+                                    <template x-for="row in semenItems" :key="row.id">
+                                        <tr class="hover:bg-gray-50 transition-colors">
+                                            <td class="px-4 py-3">
+                                                <button @click="semenDelete(row.id)" class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all" title="Excluir sêmen">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm font-semibold text-primary-700" x-text="row.id_primaria"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="row.id_secundaria || '-'"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="row.raca_nome || '-'"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="row.data_compra ? new Date(row.data_compra).toLocaleDateString('pt-BR') : '-'"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="row.valor_compra ? ('R$ ' + Number(row.valor_compra).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) : '-'"></td>
+                                            <td class="px-4 py-3 text-sm text-gray-600" x-text="row.fornecedor_nome || '-'"></td>
+                                        </tr>
+                                    </template>
+                                    <tr x-show="!semenLoading && semenItems.length === 0" x-cloak>
+                                        <td colspan="7" class="px-4 py-12 text-sm text-gray-500 text-center italic">Nenhum registro de sêmen encontrado.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm text-gray-500">
+                                Mostrando <span x-text="semenItems.length"></span> de <span x-text="semenTotal"></span> registros
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button @click="semenPage = Math.max(1, semenPage - 1); semenLoadItems()" :disabled="semenPage <= 1" class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <span class="text-sm text-gray-500 px-3">
+                                    Página <span x-text="semenPage"></span> de <span x-text="semenPages"></span>
+                                </span>
+                                <button @click="semenPage = Math.min(semenPages, semenPage + 1); semenLoadItems()" :disabled="semenPage >= semenPages" class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div x-show="semenOpenCreate" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+                            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                                <div x-show="semenOpenCreate" @click="semenOpenCreate = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900/50 transition-opacity" aria-hidden="true"></div>
+                                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                                <div x-show="semenOpenCreate" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-2xl text-left overflow-visible shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-100">
+                                    <div class="bg-white px-6 pt-6 pb-4">
+                                        <div class="flex items-start justify-between">
+                                            <h3 class="text-lg leading-6 font-semibold text-gray-900">Novo Sêmen</h3>
+                                            <button type="button" @click="semenOpenCreate = false" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" title="Fechar">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">ID Primária *</label>
+                                                <input type="text" x-model="semenForm.id_primaria" required class="mt-1 w-full shadow-sm text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900" placeholder="Ex: SEM001">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">ID Secundária</label>
+                                                <input type="text" x-model="semenForm.id_secundaria" class="mt-1 w-full shadow-sm text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900" placeholder="Ex: SEC001">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Raça</label>
+                                                <select x-model="semenForm.raca_id" class="mt-1 w-full shadow-sm text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900">
+                                                    <option value="">Selecione...</option>
+                                                    <template x-for="r in semenRacas" :key="r.id">
+                                                        <option :value="r.id" x-text="r.nome"></option>
+                                                    </template>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Data Nascimento</label>
+                                                <div class="mt-1 relative">
+                                                    <input type="text"
+                                                           x-model="semenForm.data_nascimento"
+                                                           @input="semenForm.data_nascimento = $event.target.value.replace(/\D/g, '')"
+                                                           @click="activePicker = 'semen_nascimento'"
+                                                           class="mt-1 w-full shadow-sm text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 pr-10 bg-white text-gray-900"
+                                                           placeholder="Dia PIG"
+                                                           inputmode="numeric"
+                                                           autocomplete="off">
+                                                    <button type="button" @click="activePicker = 'semen_nascimento'" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                                        <i class="fa-solid fa-calendar"></i>
+                                                    </button>
+
+                                                    <div x-show="activePicker === 'semen_nascimento'" x-cloak class="absolute z-50 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg p-4 w-[calc(100vw-2rem)] max-w-xs sm:w-72 left-0 right-0 mx-auto sm:left-auto sm:right-0"
+                                                         @click.away="activePicker = null">
+                                                        <div class="flex items-center justify-between mb-3">
+                                                            <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 rounded">
+                                                                <i class="fa-solid fa-chevron-left"></i>
+                                                            </button>
+                                                            <span class="font-medium text-gray-900" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                            <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 rounded">
+                                                                <i class="fa-solid fa-chevron-right"></i>
+                                                            </button>
+                                                        </div>
+
+                                                        <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                                                            <template x-for="day in ['D','S','T','Q','Q','S','S']">
+                                                                <div class="font-medium text-gray-500 py-1" x-text="day"></div>
+                                                            </template>
+                                                        </div>
+
+                                                        <div class="grid grid-cols-7 gap-1">
+                                                            <template x-for="day in getCalendarDays()" :key="day.date">
+                                                                <div class="text-center">
+                                                                    <button type="button"
+                                                                            @click.stop="selectCalendarDate(day.date)"
+                                                                            :class="day.isCurrentMonth ? 'text-gray-900 hover:bg-primary-50' : 'text-gray-400'"
+                                                                            :disabled="!day.isCurrentMonth"
+                                                                            class="p-2 text-sm rounded-lg transition-colors w-full"
+                                                                            x-text="day.day">
+                                                                    </button>
+                                                                    <div class="text-[8px] text-gray-500 mt-1" x-show="day.isCurrentMonth && day.pigDay" x-text="day.pigDay"></div>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+
+                                                        <div class="mt-3 pt-3 border-t border-gray-200">
+                                                            <div class="text-xs text-gray-500">
+                                                                <span x-text="calendarType === '1000_dias' ? 'Dia PIG: ' + getSelectedPigDay() : 'Data: ' + semenForm.data_nascimento"></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Data Compra *</label>
+                                                <div class="mt-1 relative">
+                                                    <input type="text"
+                                                           x-model="semenForm.data_compra"
+                                                           @input="semenForm.data_compra = $event.target.value.replace(/\D/g, '')"
+                                                           @click="activePicker = 'semen_compra'"
+                                                           class="mt-1 w-full shadow-sm text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 pr-10 bg-white text-gray-900"
+                                                           placeholder="Dia PIG"
+                                                           inputmode="numeric"
+                                                           autocomplete="off">
+                                                    <button type="button" @click="activePicker = 'semen_compra'" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                                        <i class="fa-solid fa-calendar"></i>
+                                                    </button>
+
+                                                    <div x-show="activePicker === 'semen_compra'" x-cloak class="absolute z-50 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg p-4 w-[calc(100vw-2rem)] max-w-xs sm:w-72 left-0 right-0 mx-auto sm:left-auto sm:right-0"
+                                                         @click.away="activePicker = null">
+                                                        <div class="flex items-center justify-between mb-3">
+                                                            <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 rounded">
+                                                                <i class="fa-solid fa-chevron-left"></i>
+                                                            </button>
+                                                            <span class="font-medium text-gray-900" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                            <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 rounded">
+                                                                <i class="fa-solid fa-chevron-right"></i>
+                                                            </button>
+                                                        </div>
+
+                                                        <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                                                            <template x-for="day in ['D','S','T','Q','Q','S','S']">
+                                                                <div class="font-medium text-gray-500 py-1" x-text="day"></div>
+                                                            </template>
+                                                        </div>
+
+                                                        <div class="grid grid-cols-7 gap-1">
+                                                            <template x-for="day in getCalendarDays()" :key="day.date">
+                                                                <div class="text-center">
+                                                                    <button type="button"
+                                                                            @click.stop="selectCalendarDate(day.date)"
+                                                                            :class="day.isCurrentMonth ? 'text-gray-900 hover:bg-primary-50' : 'text-gray-400'"
+                                                                            :disabled="!day.isCurrentMonth"
+                                                                            class="p-2 text-sm rounded-lg transition-colors w-full"
+                                                                            x-text="day.day">
+                                                                    </button>
+                                                                    <div class="text-[8px] text-gray-500 mt-1" x-show="day.isCurrentMonth && day.pigDay" x-text="day.pigDay"></div>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+
+                                                        <div class="mt-3 pt-3 border-t border-gray-200">
+                                                            <div class="text-xs text-gray-500">
+                                                                <span x-text="calendarType === '1000_dias' ? 'Dia PIG: ' + getSelectedPigDay() : 'Data: ' + semenForm.data_compra"></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Valor Compra</label>
+                                                <input type="number" x-model="semenForm.valor_compra" step="0.01" min="0" class="mt-1 w-full shadow-sm text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900" placeholder="0,00">
+                                            </div>
+                                            <div class="sm:col-span-2">
+                                                <label class="block text-sm font-medium text-gray-700">Fornecedor</label>
+                                                <select x-model="semenForm.fornecedor_id" class="mt-1 w-full shadow-sm text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900">
+                                                    <option value="">Selecione...</option>
+                                                    <template x-for="f in semenFornecedores" :key="f.id">
+                                                        <option :value="f.id" x-text="f.nome"></option>
+                                                    </template>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-white border-t border-gray-100 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3">
+                                        <button type="button" @click="semenSave()" class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:w-auto">
+                                            Salvar
+                                        </button>
+                                        <button type="button" @click="semenOpenCreate = false" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 shadow-sm px-5 py-2.5 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:w-auto">
+                                            Cancelar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
                 <template x-if="item === 'femeas' && mov === 'compra'">
                     <div class="space-y-4">
                         <div class="flex items-center justify-between mb-2">
