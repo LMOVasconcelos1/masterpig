@@ -1858,8 +1858,10 @@
                 // Limpar apenas IDs e manter modal aberto
                 this.idPrimaria = '';
                 this.idSecundaria = '';
-                // Manter modal aberto e dados preenchidos para próxima inserção
-                // A lista será recarregada quando o modal for fechado
+                this.pesoCompra = '';
+                this.valorCompra = '';
+                this.comprasFemeasLoaded = false;
+                this.loadComprasFemeas(true);
             })
             .catch(e => {
                 window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar', type: 'error' } }));

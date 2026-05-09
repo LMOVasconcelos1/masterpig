@@ -14,7 +14,12 @@
         error: '',
 
         matrizes: [],
+        matrizSearch: '',
+        machoSearch: '',
+        semenSearch: '',
         machos: [],
+        semens: [],
+        semensLoading: false,
         usuarios: [],
         coberturas: [],
         perdas: [],
@@ -87,6 +92,7 @@
             modo: 'macho',
             machoId: '',
             semen: '',
+            semens: [],
             data: '',
             hora: '',
             presencaCio: '',
@@ -161,6 +167,12 @@
             this.saltaCio.data = `${dd}/${mm}/${yyyy}`;
             this.cobertura.hora = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
 
+            this.$watch('cobertura.modo', (value) => {
+                if (value === 'semen') {
+                    this.loadSemens();
+                }
+            });
+
             fetch('/api/plantel/femeas?previsao_cio=1')
                 .then(r => r.json())
                 .then(data => {
@@ -199,6 +211,150 @@
             this.loadCoberturas();
             this.loadPerdas();
             this.loadSaltaCio();
+        },
+
+        get matrizesFiltradas() {
+            const q = String(this.matrizSearch || '').trim().toLowerCase();
+            if (!q) return this.matrizes;
+            return this.matrizes.filter((f) => String(f?.id_primaria || '').toLowerCase().includes(q));
+        },
+
+        get machosFiltrados() {
+            const q = String(this.machoSearch || '').trim().toLowerCase();
+            if (!q) return this.machos;
+            return this.machos.filter((m) => String(m?.id_primaria || '').toLowerCase().includes(q));
+        },
+
+        get semensFiltrados() {
+            const q = String(this.semenSearch || '').trim().toLowerCase();
+            if (!q) return this.semens;
+            return this.semens.filter((s) => String(s?.id_primaria || '').toLowerCase().includes(q));
+        },
+
+        selecionarMatrizPorIdPrimaria(strict = false) {
+            const q = String(this.matrizSearch || '').trim().toLowerCase();
+            if (!q) {
+                this.cobertura.femeaId = '';
+                return;
+            }
+
+            const exact = this.matrizes.find((f) => String(f?.id_primaria || '').toLowerCase() === q);
+            if (strict) {
+                this.cobertura.femeaId = exact ? String(exact.id) : '';
+                return;
+            }
+
+            const filtered = this.matrizesFiltradas;
+            const match = exact || (filtered.length === 1 ? filtered[0] : filtered[0]);
+
+            if (!match) {
+                this.cobertura.femeaId = '';
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Nenhuma matriz encontrada.', type: 'error' } }));
+                return;
+            }
+
+            this.cobertura.femeaId = String(match.id);
+            this.matrizSearch = String(match.id_primaria || this.matrizSearch);
+        },
+
+        selecionarMachoPorIdPrimaria(strict = false) {
+            const q = String(this.machoSearch || '').trim().toLowerCase();
+            if (!q) {
+                this.cobertura.machoId = '';
+                return;
+            }
+
+            const exact = this.machos.find((m) => String(m?.id_primaria || '').toLowerCase() === q);
+            if (strict) {
+                this.cobertura.machoId = exact ? String(exact.id) : '';
+                return;
+            }
+
+            const filtered = this.machosFiltrados;
+            const match = exact || (filtered.length === 1 ? filtered[0] : filtered[0]);
+
+            if (!match) {
+                this.cobertura.machoId = '';
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Nenhum macho encontrado.', type: 'error' } }));
+                return;
+            }
+
+            this.cobertura.machoId = String(match.id);
+            this.machoSearch = String(match.id_primaria || this.machoSearch);
+        },
+
+        selecionarSemenPorIdPrimaria(strict = false) {
+            const q = String(this.semenSearch || '').trim().toLowerCase();
+            if (!q) {
+                this.cobertura.semen = '';
+                return;
+            }
+
+            const exact = this.semens.find((s) => String(s?.id_primaria || '').toLowerCase() === q);
+            if (strict) {
+                this.cobertura.semen = exact ? String(exact.id_primaria) : '';
+                return;
+            }
+
+            const filtered = this.semensFiltrados;
+            const match = exact || (filtered.length === 1 ? filtered[0] : filtered[0]);
+
+            if (!match) {
+                this.cobertura.semen = '';
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Nenhum sêmen encontrado.', type: 'error' } }));
+                return;
+            }
+
+            this.cobertura.semen = String(match.id_primaria);
+            this.semenSearch = String(match.id_primaria || this.semenSearch);
+        },
+
+        adicionarSemenNaCobertura() {
+            if (this.semensLoading) return;
+            this.selecionarSemenPorIdPrimaria(false);
+            const value = String(this.cobertura.semen || '').trim();
+            if (!value) return;
+
+            if (!Array.isArray(this.cobertura.semens)) this.cobertura.semens = [];
+            if (this.cobertura.semens.includes(value)) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Este sêmen já foi incluído.', type: 'error' } }));
+                this.cobertura.semen = '';
+                this.semenSearch = '';
+                return;
+            }
+
+            this.cobertura.semens.push(value);
+            this.cobertura.semen = '';
+            this.semenSearch = '';
+        },
+
+        removerSemenNaCobertura(value) {
+            const v = String(value || '').trim();
+            if (!v || !Array.isArray(this.cobertura.semens)) return;
+            this.cobertura.semens = this.cobertura.semens.filter((s) => String(s) !== v);
+        },
+
+        loadSemens() {
+            if (this.semensLoading) return;
+            if (this.semens.length > 0) return;
+
+            this.semensLoading = true;
+            fetch('/api/semen?limit=5000&page=1', { headers: { 'Accept': 'application/json' } })
+                .then(async (r) => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(data?.message || 'Não foi possível carregar os semens cadastrados.');
+                    return data;
+                })
+                .then((data) => {
+                    this.semens = Array.isArray(data?.items) ? data.items : [];
+                })
+                .catch((e) => {
+                    this.semens = [];
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Não foi possível carregar os semens cadastrados.', type: 'error' } }));
+                })
+                .finally(() => {
+                    this.semensLoading = false;
+                });
         },
 
         loadCoberturas() {
@@ -291,7 +447,14 @@
             this.error = '';
             this.coberturaTab = 'principal';
             this.cobertura.presencaCio = 'sim';
+            this.matrizSearch = '';
+            this.machoSearch = '';
+            this.semenSearch = '';
+            this.cobertura.machoId = '';
+            this.cobertura.semen = '';
+            this.cobertura.semens = [];
             this.openCobertura = true;
+            if (this.cobertura.modo === 'semen') this.loadSemens();
         },
         openPerdaModal() {
             this.error = '';
@@ -333,8 +496,8 @@
                 return;
             }
 
-            if (this.cobertura.modo === 'semen' && !this.cobertura.semen.trim()) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe o sêmen', type: 'error' } }));
+            if (this.cobertura.modo === 'semen' && (!Array.isArray(this.cobertura.semens) || this.cobertura.semens.length === 0)) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe o sêmen utilizado', type: 'error' } }));
                 return;
             }
 
@@ -342,7 +505,7 @@
                 femea_id: Number(this.cobertura.femeaId),
                 usuario_id: Number(this.cobertura.usuarioId),
                 macho_id: this.cobertura.modo === 'macho' ? Number(this.cobertura.machoId) : null,
-                semen: this.cobertura.modo === 'semen' ? this.cobertura.semen.trim() : null,
+                semens: this.cobertura.modo === 'semen' ? this.cobertura.semens : null,
                 data: this.brToIso(this.cobertura.data),
                 hora: this.cobertura.hora,
                 presenca_cio: this.cobertura.presencaCio,
@@ -790,12 +953,12 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700">Matriz</label>
-                                <select x-model="cobertura.femeaId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500">
-                                    <option value="">Selecione...</option>
-                                    <template x-for="f in matrizes" :key="f.id">
-                                        <option :value="String(f.id)" x-text="f.id_primaria"></option>
+                                <input type="text" x-model="matrizSearch" list="matrizes-list" @keydown.enter.prevent="selecionarMatrizPorIdPrimaria(false)" @change="selecionarMatrizPorIdPrimaria(true)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500" placeholder="Digite o ID primária e pressione Enter">
+                                <datalist id="matrizes-list">
+                                    <template x-for="f in matrizesFiltradas.slice(0, 50)" :key="`m-${f.id}`">
+                                        <option :value="f.id_primaria" x-text="f.id_secundaria ? `${f.id_primaria} / ${f.id_secundaria}` : f.id_primaria"></option>
                                     </template>
-                                </select>
+                                </datalist>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Data</label>
@@ -819,16 +982,38 @@
                             </div>
                             <div x-show="cobertura.modo === 'macho'" class="md:col-span-2" x-cloak>
                                 <label class="block text-sm font-medium text-gray-700">Macho</label>
-                                <select x-model="cobertura.machoId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
-                                    <option value="">Selecione...</option>
-                                    <template x-for="m in machos" :key="m.id">
-                                        <option :value="String(m.id)" x-text="m.id_primaria"></option>
+                                <input type="text" x-model="machoSearch" list="machos-list" @keydown.enter.prevent="selecionarMachoPorIdPrimaria(false)" @change="selecionarMachoPorIdPrimaria(true)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Digite o ID primária e pressione Enter">
+                                <datalist id="machos-list">
+                                    <template x-for="m in machosFiltrados.slice(0, 50)" :key="`macho-${m.id}`">
+                                        <option :value="m.id_primaria" x-text="m.id_secundaria ? `${m.id_primaria} / ${m.id_secundaria}` : m.id_primaria"></option>
                                     </template>
-                                </select>
+                                </datalist>
                             </div>
                             <div x-show="cobertura.modo === 'semen'" class="md:col-span-2" x-cloak>
                                 <label class="block text-sm font-medium text-gray-700">Sêmen utilizado</label>
-                                <input type="text" x-model="cobertura.semen" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: Lote/Identificação do sêmen">
+                                <div class="mt-1">
+                                    <div class="flex gap-2">
+                                        <input type="text" x-model="semenSearch" :disabled="semensLoading" list="semens-list" @keydown.enter.prevent="adicionarSemenNaCobertura()" @change="selecionarSemenPorIdPrimaria(true)" class="flex-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50" :placeholder="semensLoading ? 'Carregando...' : 'Digite o ID primária e pressione Enter'">
+                                        <button type="button" @click="adicionarSemenNaCobertura()" :disabled="semensLoading" class="inline-flex items-center justify-center w-11 h-11 rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                                            <i class="fa-solid fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <datalist id="semens-list">
+                                        <template x-for="s in semensFiltrados.slice(0, 50)" :key="`semen-${s.id}`">
+                                            <option :value="s.id_primaria" x-text="`${s.id_primaria}${s.id_secundaria ? ' / ' + s.id_secundaria : ''}${s.raca_nome ? ' - ' + s.raca_nome : ''}${s.fornecedor_nome ? ' (' + s.fornecedor_nome + ')' : ''}`"></option>
+                                        </template>
+                                    </datalist>
+                                    <div class="mt-2 flex flex-wrap gap-2" x-show="Array.isArray(cobertura.semens) && cobertura.semens.length > 0" x-cloak>
+                                        <template x-for="(s, idx) in cobertura.semens" :key="`sel-semen-${idx}-${s}`">
+                                            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-800">
+                                                <span x-text="s"></span>
+                                                <button type="button" @click="removerSemenNaCobertura(s)" class="text-gray-500 hover:text-gray-700">
+                                                    <i class="fa-solid fa-xmark"></i>
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

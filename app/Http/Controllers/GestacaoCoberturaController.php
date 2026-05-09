@@ -76,13 +76,39 @@ class GestacaoCoberturaController extends Controller
             ->select($select)
             ->limit($limit);
 
-        $items = $query->get()->map(function ($row) {
+        $rows = $query->get();
+
+        $semenByCoberturaId = [];
+        if (Schema::hasTable('gestacao_cobertura_semen') && $rows->isNotEmpty()) {
+            $ids = $rows->pluck('id')->map(fn ($v) => (int) $v)->filter()->values()->all();
+            if (! empty($ids)) {
+                $semenByCoberturaId = DB::table('gestacao_cobertura_semen')
+                    ->whereIn('cobertura_id', $ids)
+                    ->orderBy('id')
+                    ->get(['cobertura_id', 'semen'])
+                    ->groupBy('cobertura_id')
+                    ->map(fn ($group) => $group->pluck('semen')->filter()->map(fn ($v) => (string) $v)->values()->all())
+                    ->all();
+            }
+        }
+
+        $items = $rows->map(function ($row) use ($semenByCoberturaId) {
+            $coberturaId = (int) $row->id;
+            $semens = $semenByCoberturaId[$coberturaId] ?? [];
+            $semenDisplay = null;
+            if (! empty($semens)) {
+                $semenDisplay = implode(' + ', $semens);
+            } elseif ($row->semen !== null && trim((string) $row->semen) !== '') {
+                $semenDisplay = (string) $row->semen;
+            }
+
             return [
-                'id' => (int) $row->id,
+                'id' => $coberturaId,
                 'matriz' => (string) $row->id_primaria,
                 'matriz_secundaria' => $row->id_secundaria === null ? null : (string) $row->id_secundaria,
                 'macho' => $row->macho_id_primaria === null ? null : (string) $row->macho_id_primaria,
-                'semen' => $row->semen === null ? null : (string) $row->semen,
+                'semen' => $semenDisplay,
+                'semens' => $semens,
                 'data' => Carbon::parse($row->data)->format('d/m/Y'),
                 'hora' => $row->hora === null ? null : (string) $row->hora,
                 'usuario' => $row->usuario_nome === null ? null : (string) $row->usuario_nome,
@@ -113,6 +139,8 @@ class GestacaoCoberturaController extends Controller
             'usuario_id' => ['required', 'exists:usuario,id'],
             'macho_id' => ['nullable', 'exists:macho,id'],
             'semen' => ['nullable', 'string', 'max:120'],
+            'semens' => ['nullable', 'array', 'min:1', 'max:10'],
+            'semens.*' => ['required', 'string', 'max:120'],
             'data' => ['required', 'date'],
             'hora' => ['required', 'date_format:H:i'],
             'presenca_cio' => ['required', 'in:sim'],
@@ -292,12 +320,33 @@ class GestacaoCoberturaController extends Controller
             }
         }
 
+        $semens = [];
+        if (array_key_exists('semens', $validated) && is_array($validated['semens'])) {
+            $semens = collect($validated['semens'])
+                ->map(fn ($v) => trim((string) $v))
+                ->filter(fn ($v) => $v !== '')
+                ->unique()
+                ->values()
+                ->all();
+        }
+
         $semen = trim((string) ($validated['semen'] ?? ''));
+        if ($semen !== '') {
+            $semens = array_values(array_unique(array_merge($semens, [$semen])));
+        }
+
         $machoId = $validated['macho_id'] ?? null;
 
-        if ($machoId === null && $semen === '') {
+        if ($machoId === null && empty($semens)) {
             return response()->json([
                 'message' => 'Informe o macho ou o sêmen utilizado.',
+            ], 422);
+        }
+
+        if (count($semens) > 1 && ! Schema::hasTable('gestacao_cobertura_semen')) {
+            return response()->json([
+                'message' => 'Para informar mais de um sêmen, é necessário criar a tabela gestacao_cobertura_semen no banco.',
+                'sql' => "CREATE TABLE IF NOT EXISTS `gestacao_cobertura_semen` (\n  `id` bigint unsigned NOT NULL AUTO_INCREMENT,\n  `cobertura_id` bigint unsigned NOT NULL,\n  `semen` varchar(120) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,\n  `criado_em` timestamp NULL DEFAULT NULL,\n  `atualizado_em` timestamp NULL DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  KEY `idx_gcs_cobertura` (`cobertura_id`),\n  CONSTRAINT `fk_gcs_cobertura` FOREIGN KEY (`cobertura_id`) REFERENCES `gestacao_cobertura` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;",
             ], 422);
         }
 
@@ -313,7 +362,7 @@ class GestacaoCoberturaController extends Controller
             'femea_id' => (int) $validated['femea_id'],
             'usuario_id' => Schema::hasColumn('gestacao_cobertura', 'usuario_id') ? (int) $validated['usuario_id'] : null,
             'macho_id' => $machoId === null ? null : (int) $machoId,
-            'semen' => $semen === '' ? null : $semen,
+            'semen' => empty($semens) ? null : $semens[0],
             'data' => Carbon::parse($validated['data'])->toDateString(),
             'hora' => (string) $validated['hora'],
             'localizacao' => $validated['localizacao'] ?? null,
@@ -348,8 +397,22 @@ class GestacaoCoberturaController extends Controller
 
         $coberturaId = null;
 
-        DB::transaction(function () use ($payload, $warnings, &$coberturaId) {
+        DB::transaction(function () use ($payload, $warnings, $semens, &$coberturaId) {
             $coberturaId = (int) DB::table('gestacao_cobertura')->insertGetId($payload);
+
+            if (count($semens) > 1 && Schema::hasTable('gestacao_cobertura_semen')) {
+                $now = now();
+                DB::table('gestacao_cobertura_semen')->insert(
+                    array_map(function ($semen) use ($coberturaId, $now) {
+                        return [
+                            'cobertura_id' => $coberturaId,
+                            'semen' => $semen,
+                            'criado_em' => $now,
+                            'atualizado_em' => $now,
+                        ];
+                    }, $semens)
+                );
+            }
 
             $updateFemea = [];
             if (Schema::hasColumn('femea', 'data_cobertura')) {
@@ -417,6 +480,9 @@ class GestacaoCoberturaController extends Controller
         $femeaId = (int) $row->femea_id;
 
         DB::transaction(function () use ($id, $femeaId) {
+            if (Schema::hasTable('gestacao_cobertura_semen')) {
+                DB::table('gestacao_cobertura_semen')->where('cobertura_id', $id)->delete();
+            }
             DB::table('gestacao_cobertura')->where('id', $id)->delete();
 
             if (Schema::hasTable('criterio_log')) {
