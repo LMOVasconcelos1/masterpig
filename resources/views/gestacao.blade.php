@@ -26,6 +26,11 @@
         saltasCio: [],
 
         criteriosLoaded: false,
+        calendarType: 'gregoriano',
+        activePicker: null,
+        calendarMonth: new Date().getMonth(),
+        calendarYear: new Date().getFullYear(),
+        calendarMonths: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
         criterios: {
             enabled: false,
             coberturaIdadeMin: '210',
@@ -155,6 +160,78 @@
             if (!iso) return null;
             return new Date(iso + 'T00:00:00');
         },
+        coberturaDataToIso() {
+            const raw = String(this.cobertura.data || '').trim();
+            if (!raw) return null;
+            if (this.calendarType === '1000_dias') {
+                if (typeof pigDayToDate !== 'function') return null;
+                const cleaned = raw.replace(/\D/g, '');
+                if (!cleaned) return null;
+                return pigDayToDate(cleaned);
+            }
+            return this.brToIso(raw);
+        },
+        coberturaDataToDate() {
+            const iso = this.coberturaDataToIso();
+            if (!iso) return null;
+            return new Date(iso + 'T00:00:00');
+        },
+        prevCalendarMonth() {
+            if (this.calendarMonth === 0) {
+                this.calendarMonth = 11;
+                this.calendarYear--;
+            } else {
+                this.calendarMonth--;
+            }
+        },
+        nextCalendarMonth() {
+            if (this.calendarMonth === 11) {
+                this.calendarMonth = 0;
+                this.calendarYear++;
+            } else {
+                this.calendarMonth++;
+            }
+        },
+        getCalendarDays() {
+            const firstDay = new Date(this.calendarYear, this.calendarMonth, 1);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+            const selectedIso = this.coberturaDataToIso();
+            const days = [];
+            for (let i = 0; i < 42; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                const pad = (n) => String(n).padStart(2, '0');
+                const iso = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+                days.push({
+                    date: iso,
+                    day: date.getDate(),
+                    isCurrentMonth: date.getMonth() === this.calendarMonth,
+                    isSelected: selectedIso ? iso === selectedIso : false,
+                    pigDay: typeof toPigDay === 'function' ? toPigDay(iso + 'T00:00:00') : ''
+                });
+            }
+            return days;
+        },
+        openCoberturaDatePicker() {
+            const iso = this.coberturaDataToIso();
+            const base = iso && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(iso + 'T12:00:00') : new Date();
+            this.calendarMonth = base.getMonth();
+            this.calendarYear = base.getFullYear();
+            this.activePicker = 'cobertura';
+        },
+        selectCalendarDate(dateStr) {
+            const m = String(dateStr || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            const formatted = m ? `${m[3]}/${m[2]}/${m[1]}` : '';
+            const pigDay = typeof toPigDay === 'function' ? toPigDay(dateStr + 'T00:00:00') : '';
+            this.cobertura.data = this.calendarType === '1000_dias' ? String(pigDay) : formatted;
+            this.activePicker = null;
+        },
+        getCoberturaSelectedPigDay() {
+            const iso = this.coberturaDataToIso();
+            if (!iso) return '';
+            return typeof toPigDay === 'function' ? toPigDay(iso + 'T00:00:00') : '';
+        },
 
         init() {
             const now = new Date();
@@ -204,6 +281,14 @@
                     this.criterios.coberturaPresencaCio = (items.criterio_cobertura_presenca_cio === null || items.criterio_cobertura_presenca_cio === undefined || String(items.criterio_cobertura_presenca_cio).trim() === '') ? 'sim' : String(items.criterio_cobertura_presenca_cio);
                     this.criterios.leitoaMinDias = (items.criterio_leitoa_idade_min_dias === null || items.criterio_leitoa_idade_min_dias === undefined || String(items.criterio_leitoa_idade_min_dias).trim() === '') ? '150' : String(items.criterio_leitoa_idade_min_dias);
                     this.criterios.leitoaMaxDias = (items.criterio_leitoa_idade_max_dias === null || items.criterio_leitoa_idade_max_dias === undefined || String(items.criterio_leitoa_idade_max_dias).trim() === '') ? '210' : String(items.criterio_leitoa_idade_max_dias);
+                    this.calendarType = (items.criterio_calendario_tipo === null || items.criterio_calendario_tipo === undefined || String(items.criterio_calendario_tipo).trim() === '') ? 'gregoriano' : String(items.criterio_calendario_tipo);
+                    if (this.calendarType === '1000_dias' && typeof toPigDay === 'function') {
+                        const now2 = new Date();
+                        const pad2 = (n) => String(n).padStart(2, '0');
+                        const isoNow = `${now2.getFullYear()}-${pad2(now2.getMonth() + 1)}-${pad2(now2.getDate())}`;
+                        const pigDay = toPigDay(isoNow + 'T00:00:00');
+                        if (pigDay !== null && pigDay !== undefined) this.cobertura.data = String(pigDay);
+                    }
                     this.criteriosLoaded = true;
                 })
                 .catch(() => { this.criteriosLoaded = true; });
@@ -501,12 +586,13 @@
                 return;
             }
 
+            const dataIso = this.coberturaDataToIso();
             const payload = {
                 femea_id: Number(this.cobertura.femeaId),
                 usuario_id: Number(this.cobertura.usuarioId),
                 macho_id: this.cobertura.modo === 'macho' ? Number(this.cobertura.machoId) : null,
                 semens: this.cobertura.modo === 'semen' ? this.cobertura.semens : null,
-                data: this.brToIso(this.cobertura.data),
+                data: dataIso,
                 hora: this.cobertura.hora,
                 presenca_cio: this.cobertura.presencaCio,
                 localizacao: this.cobertura.localizacao || null,
@@ -517,7 +603,7 @@
             };
 
             if (!payload.data) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe a data (dd/mm/aaaa)', type: 'error' } }));
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: this.calendarType === '1000_dias' ? 'Informe a data (Dia PIG)' : 'Informe a data (dd/mm/aaaa)', type: 'error' } }));
                 return;
             }
 
@@ -589,7 +675,7 @@
 
             const warnings = [];
             const femea = this.matrizes.find(f => String(f.id) === String(this.cobertura.femeaId));
-            const dataCobertura = this.brToDate(this.cobertura.data);
+            const dataCobertura = this.coberturaDataToDate();
             const dataNascimento = femea && femea.data_nascimento ? new Date(String(femea.data_nascimento) + 'T00:00:00') : null;
 
             const parseNumberOrNull = (value) => {
@@ -930,7 +1016,7 @@
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div x-show="openCobertura" @click="openCobertura = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900/50 dark:bg-black/60 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div x-show="openCobertura" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-100 dark:border-gray-800">
+            <div x-show="openCobertura" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-2xl text-left overflow-visible shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-100 dark:border-gray-800">
                 <div class="bg-white dark:bg-gray-900 px-6 pt-6 pb-4">
                     <div class="flex items-start justify-between">
                         <h3 class="text-lg leading-6 font-semibold text-gray-900 dark:text-gray-100">Registrar cobertura</h3>
@@ -962,7 +1048,59 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Data</label>
-                                <input type="text" inputmode="numeric" placeholder="dd/mm/aaaa" x-model="cobertura.data" @blur="cobertura.data = normalizeBrDate(cobertura.data)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500">
+                                <div class="mt-1 relative">
+                                    <input type="text"
+                                           x-model="cobertura.data"
+                                           @click="openCoberturaDatePicker()"
+                                           class="w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500 pr-10"
+                                           :placeholder="calendarType === '1000_dias' ? 'Dia PIG' : 'DD/MM/AAAA'"
+                                           inputmode="numeric"
+                                           autocomplete="off"
+                                           readonly>
+                                    <button type="button" @click="openCoberturaDatePicker()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                        <i class="fa-solid fa-calendar"></i>
+                                    </button>
+
+                                    <div x-show="activePicker === 'cobertura'" x-cloak class="absolute z-[200] mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-[calc(100vw-2rem)] max-w-xs sm:w-72 left-0 right-0 mx-auto sm:left-auto sm:right-0 max-h-[calc(100vh-12rem)] overflow-y-auto"
+                                         @click.away="activePicker = null">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                <i class="fa-solid fa-chevron-left"></i>
+                                            </button>
+                                            <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                            <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                <i class="fa-solid fa-chevron-right"></i>
+                                            </button>
+                                        </div>
+
+                                        <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                                            <template x-for="day in ['D','S','T','Q','Q','S','S']">
+                                                <div class="font-medium text-gray-500 dark:text-gray-400 py-1" x-text="day"></div>
+                                            </template>
+                                        </div>
+
+                                        <div class="grid grid-cols-7 gap-1">
+                                            <template x-for="day in getCalendarDays()" :key="day.date">
+                                                <div class="text-center">
+                                                    <button type="button"
+                                                            @click.stop="selectCalendarDate(day.date)"
+                                                            :class="day.isSelected ? 'bg-primary-600 text-white' : (day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400')"
+                                                            :disabled="!day.isCurrentMonth"
+                                                            class="p-2 text-sm rounded-lg transition-colors w-full">
+                                                        <span x-text="day.day"></span>
+                                                    </button>
+                                                    <div class="text-[8px] text-gray-500 dark:text-gray-400 mt-1" x-show="day.isCurrentMonth && day.pigDay" x-text="day.pigDay"></div>
+                                                </div>
+                                            </template>
+                                        </div>
+
+                                        <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                <span x-text="calendarType === '1000_dias' ? 'Dia PIG: ' + getCoberturaSelectedPigDay() : 'Data: ' + cobertura.data"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Hora</label>

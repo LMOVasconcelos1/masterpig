@@ -109,7 +109,9 @@
     function toPigDay(date) {
         if (!date) return null;
         const start = new Date(PIG_BASE_DATE + 'T00:00:00');
-        const end = new Date(date);
+        const end = (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date))
+            ? new Date(date + 'T00:00:00')
+            : new Date(date);
         end.setHours(0, 0, 0, 0);
         const diff = Math.floor((end.getTime() - start.getTime()) / 86400000);
         
@@ -118,6 +120,32 @@
         
         // Dia PIG = últimos 3 dígitos do Dia PIG Absoluto
         return absoluteDay % 1000;
+    }
+
+    function pigDayToDate(pigDay) {
+        const raw = String(pigDay ?? '').trim();
+        if (!raw) return null;
+        const parsed = parseInt(raw, 10);
+        if (!Number.isFinite(parsed)) return null;
+
+        const day = ((parsed % 1000) + 1000) % 1000;
+        const base = new Date(PIG_BASE_DATE + 'T00:00:00');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const absToday = Math.floor((today.getTime() - base.getTime()) / 86400000);
+        const modToday = ((absToday % 1000) + 1000) % 1000;
+        let delta = day - modToday;
+        if (delta > 500) delta -= 1000;
+        if (delta < -500) delta += 1000;
+
+        const target = new Date(base);
+        target.setDate(base.getDate() + absToday + delta);
+
+        const y = target.getFullYear();
+        const m = String(target.getMonth() + 1).padStart(2, '0');
+        const d = String(target.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
     }
 
     document.addEventListener('alpine:init', () => {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\PigCycleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -298,8 +299,8 @@ class PlantelRelatorioController extends Controller
                 'ciclo' => $row->calculated_ciclo,
                 'estado' => $row->calculated_estado . ($row->calculated_dias > 0 ? ' ('.$row->calculated_dias.'d)' : ''),
                 'peso' => $row->peso_atual ? number_format($row->peso_atual, 2, ',', '.') : '-',
-                'idade' => $row->data_nascimento ? Carbon::parse($row->data_nascimento)->diffInDays(Carbon::now()) : '-',
-                'data_compra' => $row->data_compra ? Carbon::parse($row->data_compra)->format('d/m/Y') : null,
+                'idade' => $row->data_nascimento ? (int) Carbon::parse($row->data_nascimento)->startOfDay()->diffInDays(Carbon::today()) : '-',
+                'data_compra' => $row->data_compra ? PigCycleService::formatDisplayDate(Carbon::parse($row->data_compra)) : null,
                 'ultima_operacao' => $ultimaOperacao,
                 'status' => $status,
             ];
