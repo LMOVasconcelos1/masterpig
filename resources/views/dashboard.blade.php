@@ -5,7 +5,7 @@
 
 @section('content')
 <div x-data="{ 
-        tab: (function(){ const t = (new URLSearchParams(window.location.search).get('tab') || 'visao'); return ['visao','lancamentos','acompanhamento','analise','relatorios'].includes(t) ? t : 'visao'; })(), 
+        tab: (function(){ const t = (new URLSearchParams(window.location.search).get('tab') || 'visao'); if (t === 'relatorios') return 'analise'; return ['visao','lancamentos','acompanhamento','analise'].includes(t) ? t : 'visao'; })(), 
         toastOpen: false, 
         toastMessage: '', 
         toastType: 'success',
@@ -317,11 +317,6 @@
                 :class="tab === 'analise' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
                 class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
                 Análise
-            </button>
-            <button type="button" @click="tab = 'relatorios'" 
-                :class="tab === 'relatorios' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
-                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
-                Relatórios
             </button>
         </nav>
     </div>
@@ -3304,8 +3299,8 @@
         <div x-show="openNovo" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" x-cloak>
             <div class="flex items-center justify-center min-h-screen p-4">
                 <div x-show="openNovo" @click="openNovo = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
-                <div x-show="openNovo" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 translate-y-4 scale-95" class="relative bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all max-w-5xl w-full border border-gray-100 max-h-[85vh] z-10">
-                    <div class="bg-gradient-to-r from-primary-700 to-primary-600 px-6 py-5">
+                <div x-show="openNovo" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 translate-y-4 scale-95" class="relative bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all max-w-5xl w-full border border-gray-100 max-h-[calc(100vh-2rem)] z-10 flex flex-col">
+                    <div class="bg-gradient-to-r from-primary-700 to-primary-600 px-6 py-5 shrink-0">
                         <div class="flex items-start justify-between">
                             <div class="text-left">
                                 <h3 class="text-lg leading-6 font-semibold text-white" x-text="(item === 'femeas' && mov === 'morte') ? 'Registrar morte' : ((item === 'femeas' && mov === 'descarte') ? 'Registrar descarte' : ((item === 'femeas' && mov === 'venda') ? 'Registrar venda' : modalTitle))"></h3>
@@ -4420,7 +4415,7 @@
                                                     </div>
                         </template>
                     </div>
-                    <div class="bg-white border-t border-gray-100 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3">
+                    <div class="bg-white border-t border-gray-100 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3 shrink-0">
                         <template x-if="item === 'femeas' && mov === 'morte'">
                             <button type="button" @click="saveMorteFemea()" :disabled="saving" class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-red-600 text-sm font-semibold text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
                                 <template x-if="!saving"><span>Salvar</span></template>
@@ -4876,7 +4871,7 @@
 
 <div x-show="tab === 'analise'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-4">
     <div x-data="{
-        analiseSubTab: 'desempenho',
+        analiseSubTab: (function(){ const p = new URLSearchParams(window.location.search); const t = p.get('tab'); const s = p.get('subtab'); if (s && ['desempenho','listagem','formulario'].includes(s)) return s; if (t === 'relatorios') return 'listagem'; return 'desempenho'; })(),
         loading: false,
         loaded: false,
         error: '',
@@ -5349,358 +5344,130 @@
                     <button type="button" @click="analiseSubTab = 'desempenho'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors" :class="analiseSubTab === 'desempenho' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
                         <i class="fa-solid fa-chart-line mr-2"></i>Desempenho
                     </button>
+                    <button type="button" @click="analiseSubTab = 'listagem'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors" :class="analiseSubTab === 'listagem' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
+                        <i class="fa-solid fa-list mr-2"></i>Listagem
+                    </button>
+                    <button type="button" @click="analiseSubTab = 'formulario'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors" :class="analiseSubTab === 'formulario' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
+                        <i class="fa-solid fa-file-lines mr-2"></i>Formulário
+                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Conteúdo da subcategoria Desempenho -->
         <div x-show="analiseSubTab === 'desempenho'" x-cloak>
-            <!-- Card Retenção de Fêmeas -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6 transition-all duration-300 hover:shadow-md">
-                <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-emerald-50 via-emerald-50/80 to-emerald-100/50 cursor-pointer select-none" @click="retencaoExpanded = !retencaoExpanded">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div class="flex items-center gap-4">
-                            <div class="group w-10 h-10 rounded-xl bg-white border-2 border-emerald-200 text-emerald-600 flex items-center justify-center transition-all duration-300 shadow-sm hover:bg-emerald-500 hover:text-white hover:border-emerald-500">
-                                <i class="fa-solid fa-chevron-down text-sm transition-transform duration-300 ease-in-out" :class="retencaoExpanded ? 'rotate-180' : ''"></i>
-                            </div>
-                            <div>
-                                <h6 class="font-bold text-emerald-700 uppercase text-xs tracking-wider">
-                                    Retenção de Fêmeas
-                                </h6>
-                                <div class="text-sm text-gray-500 mt-1.5">Taxa de retenção ao longo do tempo de vida reprodutiva.</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-emerald-50 via-emerald-50/80 to-emerald-100/50">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-white border-2 border-emerald-200 text-emerald-600 flex items-center justify-center">
+                                    <i class="fa-solid fa-chart-line"></i>
+                                </div>
+                                <div>
+                                    <h6 class="font-bold text-emerald-700 uppercase text-xs tracking-wider">Retenção de Fêmeas</h6>
+                                    <div class="text-sm text-gray-500 mt-1.5">Taxa de retenção ao longo do tempo de vida reprodutiva.</div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div x-show="retencaoExpanded" x-collapse.duration.500ms>
                     <div class="p-6">
-                        <!-- Filtros -->
-                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-200 mb-6">
-                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Filtros de Análise</div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Data Inicial</label>
-                                    <input type="text" x-model="retencaoDataInicial" @input="retencaoDataInicial = normalizeDateInput($event.target.value)" @focus="loadRacasRetencao()" class="block w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 shadow-sm hover:border-emerald-300" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Data Final</label>
-                                    <input type="text" x-model="retencaoDataFinal" @input="retencaoDataFinal = normalizeDateInput($event.target.value)" class="block w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 shadow-sm hover:border-emerald-300" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Raça</label>
-                                    <select x-model="retencaoFiltroRaca" class="block w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 shadow-sm hover:border-emerald-300 appearance-none cursor-pointer">
-                                        <option value="">Todas</option>
-                                        <template x-for="r in racasRetencao" :key="r.id">
-                                            <option :value="String(r.id)" x-text="r.nome"></option>
-                                        </template>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tipo de Entrada</label>
-                                    <select x-model="retencaoFiltroTipo" class="block w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 shadow-sm hover:border-emerald-300 appearance-none cursor-pointer">
-                                        <option value="leitoas">Somente leitoas</option>
-                                        <option value="ciclo1">Fêmeas com entrada no ciclo 1</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="mt-4 flex justify-end">
-                                <button type="button" @click="loadRetencaoData()" :disabled="retencaoLoading" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white transition-all duration-300 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <i class="fa-solid fa-chart-line text-xs"></i>
-                                    <template x-if="!retencaoLoading"><span>Analisar</span></template>
-                                    <template x-if="retencaoLoading"><span>Carregando...</span></template>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div x-show="retencaoLoading" class="text-center py-8">
-                            <i class="fa-solid fa-spinner fa-spin text-emerald-500 text-3xl"></i>
-                            <div class="text-sm text-gray-500 mt-3">Carregando dados de retenção...</div>
-                        </div>
-
-                        <div x-show="retencaoError" class="bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm mb-4" x-text="retencaoError"></div>
-
-                        <div x-show="retencaoData && !retencaoLoading">
-                            <!-- Cards de Indicadores -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                                <div class="bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl p-4 border border-emerald-200">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center">
-                                            <i class="fa-solid fa-piggy-bank"></i>
-                                        </div>
-                                        <div>
-                                            <div class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Total Entradas</div>
-                                            <div class="text-2xl font-bold text-emerald-900" x-text="retencaoData?.total_entradas ?? '-'"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border border-blue-200">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-blue-500 text-white flex items-center justify-center">
-                                            <i class="fa-solid fa-check-circle"></i>
-                                        </div>
-                                        <div>
-                                            <div class="text-xs font-bold text-blue-700 uppercase tracking-wider">Retidas</div>
-                                            <div class="text-2xl font-bold text-blue-900" x-text="retencaoData?.retidas ?? '-'"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-4 border border-amber-200">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-amber-500 text-white flex items-center justify-center">
-                                            <i class="fa-solid fa-percentage"></i>
-                                        </div>
-                                        <div>
-                                            <div class="text-xs font-bold text-amber-700 uppercase tracking-wider">Taxa Retenção</div>
-                                            <div class="text-2xl font-bold text-amber-900" x-text="(retencaoData?.taxa_retencao ?? '-') + '%'"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-4 border border-purple-200">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-purple-500 text-white flex items-center justify-center">
-                                            <i class="fa-solid fa-list-ol"></i>
-                                        </div>
-                                        <div>
-                                            <div class="text-xs font-bold text-purple-700 uppercase tracking-wider">Média Ciclos</div>
-                                            <div class="text-2xl font-bold text-purple-900" x-text="retencaoData?.media_ciclos ?? '-'"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Tabela de Retenção por Ordem de Parto -->
-                            <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                                <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">Retenção por Ordem de Parto</div>
-                                <div class="overflow-x-auto">
-                                    <table class="min-w-full divide-y divide-gray-200">
-                                        <thead class="bg-white">
-                                            <tr>
-                                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Ordem</th>
-                                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Entradas</th>
-                                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Retidas</th>
-                                                <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Taxa</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="bg-white divide-y divide-gray-100">
-                                            <template x-for="row in (retencaoData?.por_ordem_parto ?? [])" :key="row.ordem">
-                                                <tr class="hover:bg-gray-50">
-                                                    <td class="px-4 py-3 text-sm font-semibold text-gray-900" x-text="'Ciclo ' + row.ordem"></td>
-                                                    <td class="px-4 py-3 text-sm text-gray-700" x-text="row.entradas"></td>
-                                                    <td class="px-4 py-3 text-sm text-gray-700" x-text="row.retidas"></td>
-                                                    <td class="px-4 py-3 text-sm font-semibold" :class="row.taxa >= 80 ? 'text-emerald-600' : (row.taxa >= 60 ? 'text-amber-600' : 'text-red-600')" x-text="row.taxa + '%'"></td>
-                                                </tr>
-                                            </template>
-                                            <tr x-show="!retencaoData?.por_ordem_parto || retencaoData.por_ordem_parto.length === 0">
-                                                <td colspan="4" class="px-4 py-6 text-sm text-gray-500 text-center italic">Sem dados para o período selecionado.</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Mensagem quando não há dados -->
-                        <div x-show="!retencaoData && !retencaoLoading && !retencaoError" class="text-center py-8">
-                            <i class="fa-solid fa-chart-pie text-4xl text-gray-300 mb-3"></i>
-                            <div class="text-sm text-gray-500">Selecione o período e clique em "Analisar" para visualizar a taxa de retenção.</div>
-                        </div>
+                        <a href="{{ route('plantel.analises.retencao') }}" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white transition-all duration-300 shadow-sm hover:shadow-md">
+                            <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                            Abrir análise
+                        </a>
                     </div>
                 </div>
-            </div>
 
-            <!-- Card Ficha da Matriz -->
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden mb-6 transition-all duration-300 hover:shadow-md" x-data="{ fichaExpanded: true }">
-                <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-primary-50/50 dark:from-primary-900/20 via-primary-50/30 dark:via-primary-900/10 to-primary-100/20 dark:to-primary-900/5">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div class="flex items-center gap-4">
-                            <button type="button" @click="fichaExpanded = !fichaExpanded" class="group w-10 h-10 rounded-xl bg-white border-2 border-primary-200 text-primary-600 hover:bg-primary-600 hover:border-primary-600 hover:text-white flex items-center justify-center transition-all duration-300 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95">
-                                <i class="fa-solid fa-chevron-down text-sm transition-transform duration-300 ease-in-out" :class="fichaExpanded ? 'rotate-180' : ''"></i>
-                            </button>
-                            <div>
-                                <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">
-                                    Ficha da Matriz
-                                </h6>
-                                <div class="text-sm text-gray-500 dark:text-gray-400 mt-1.5">Análise de informações e índices gerais de todos os ciclos reprodutivos.</div>
-                            </div>
-                        </div>
-                        <div class="w-full sm:w-72 relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i class="fa-solid fa-magnifying-glass text-gray-400 text-sm"></i>
-                            </div>
-                            <select x-model="fichaSelectedId" @change="loadFichaData()" @focus="loadFichaFemeas()" class="block w-full pl-10 pr-10 py-3 text-sm border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 shadow-sm hover:border-primary-300 dark:hover:border-primary-600 hover:shadow-md appearance-none cursor-pointer">
-                                <option value="">Selecione uma fêmea...</option>
-                                <template x-for="f in fichaFemeas" :key="f.id">
-                                    <option :value="String(f.id)" x-text="f.id_primaria + (f.id_secundaria ? ' (' + f.id_secundaria + ')' : '')"></option>
-                                </template>
-                            </select>
-                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                <i class="fa-solid fa-chevron-down text-gray-400 text-xs"></i>
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-primary-50/50 via-primary-50/30 to-primary-100/20">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-white border-2 border-primary-200 text-primary-600 flex items-center justify-center">
+                                    <i class="fa-solid fa-clipboard-list"></i>
+                                </div>
+                                <div>
+                                    <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Ficha da Matriz</h6>
+                                    <div class="text-sm text-gray-500 mt-1.5">Análise de informações e índices gerais de todos os ciclos reprodutivos.</div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <div x-show="fichaExpanded" x-collapse>
                     <div class="p-6">
-                        <div x-show="fichaLoading" class="text-center py-4">
-                            <i class="fa-solid fa-spinner fa-spin text-primary-500 text-2xl"></i>
-                            <div class="text-sm text-gray-500 mt-2">Carregando dados...</div>
-                        </div>
-
-                        <div x-show="fichaError" class="bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm mb-4" x-text="fichaError"></div>
-
-                        <div x-show="fichaData && !fichaLoading">
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border border-blue-200">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-blue-500 text-white flex items-center justify-center">
-                                            <i class="fa-solid fa-calendar-days"></i>
-                                        </div>
-                                        <div>
-                                            <div class="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Dias de Gestação</div>
-                                            <div class="text-2xl font-bold text-blue-900 dark:text-blue-100" x-text="fichaData?.dias_gestacao ?? '-'"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="bg-gradient-to-br from-pink-50 dark:from-pink-900/20 to-pink-100/50 dark:to-pink-900/10 rounded-xl p-4 border border-pink-200 dark:border-pink-900/30">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-pink-500 text-white flex items-center justify-center">
-                                            <i class="fa-solid fa-baby"></i>
-                                        </div>
-                                        <div>
-                                            <div class="text-xs font-bold text-pink-700 uppercase tracking-wider">Dias de Lactação</div>
-                                            <div class="text-2xl font-bold text-pink-900" x-text="fichaData?.dias_lactacao ?? '-'"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="bg-gradient-to-br from-green-50 dark:from-green-900/20 to-green-100/50 dark:to-green-100/10 rounded-xl p-4 border border-green-200 dark:border-green-900/30">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-green-500 text-white flex items-center justify-center">
-                                            <i class="fa-solid fa-egg"></i>
-                                        </div>
-                                        <div>
-                                            <div class="text-xs font-bold text-green-700 uppercase tracking-wider">Nascidos Totais</div>
-                                            <div class="text-2xl font-bold text-green-900" x-text="fichaData?.nascidos_totais ?? '-'"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl p-4 border border-emerald-200">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center">
-                                            <i class="fa-solid fa-heart-pulse"></i>
-                                        </div>
-                                        <div>
-                                            <div class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Nascidos Vivos</div>
-                                            <div class="text-2xl font-bold text-emerald-900" x-text="fichaData?.nascidos_vivos ?? '-'"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="bg-gradient-to-br from-amber-50 to-amber-100/50 rounded-xl p-4 border border-amber-200">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-amber-500 text-white flex items-center justify-center">
-                                            <i class="fa-solid fa-child"></i>
-                                        </div>
-                                        <div>
-                                            <div class="text-xs font-bold text-amber-700 uppercase tracking-wider">Desmamados</div>
-                                            <div class="text-2xl font-bold text-amber-900" x-text="fichaData?.desmamados ?? '-'"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="bg-gradient-to-br from-red-50 dark:from-red-900/20 to-red-100/50 dark:to-red-900/10 rounded-xl p-4 border border-red-200 dark:border-red-900/30">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-lg bg-red-500 text-white flex items-center justify-center">
-                                            <i class="fa-solid fa-skull-crossbones"></i>
-                                        </div>
-                                        <div>
-                                            <div class="text-xs font-bold text-red-700 uppercase tracking-wider">Mortalidade</div>
-                                            <div class="text-2xl font-bold text-red-900" x-text="fichaData?.mortalidade ?? '-'"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Informações adicionais da fêmea selecionada -->
-                            <div class="mt-6 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                                <div class="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">Informações da Fêmea Selecionada</div>
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                    <div>
-                                        <span class="text-gray-500">ID Primária:</span>
-                                        <span class="font-semibold text-gray-900 ml-1" x-text="fichaData?.id_primaria ?? '-'"></span>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-500">ID Secundária:</span>
-                                        <span class="font-semibold text-gray-900 ml-1" x-text="fichaData?.id_secundaria ?? '-'"></span>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-500">Total de Ciclos:</span>
-                                        <span class="font-semibold text-gray-900 ml-1" x-text="fichaData?.total_ciclos ?? '-'"></span>
-                                    </div>
-                                    <div>
-                                        <span class="text-gray-500">Status:</span>
-                                        <span class="font-semibold text-gray-900 ml-1" x-text="fichaData?.status ?? '-'"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Mensagem quando não há fêmea selecionada -->
-                        <div x-show="!fichaData && !fichaLoading && !fichaError" class="text-center py-8">
-                            <i class="fa-solid fa-piggy-bank text-4xl text-gray-300 mb-3"></i>
-                            <div class="text-sm text-gray-500">Selecione uma fêmea para visualizar a ficha completa com índices de desempenho.</div>
-                        </div>
+                        <a href="{{ route('plantel.analises.ficha') }}" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 border-primary-200 bg-white text-primary-700 hover:bg-primary-600 hover:border-primary-600 hover:text-white transition-all duration-300 shadow-sm hover:shadow-md">
+                            <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                            Abrir análise
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div x-show="error" class="bg-amber-50 border border-amber-100 text-amber-800 rounded-xl px-4 py-3 text-sm" x-text="error" x-cloak></div>
+        <div x-show="error && analiseSubTab === 'desempenho'" class="bg-amber-50 border border-amber-100 text-amber-800 rounded-xl px-4 py-3 text-sm" x-text="error" x-cloak></div>
 
-        <!-- Modal de Seleção de Fêmea para Ficha -->
-        <div x-show="fichaModalOpen" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" x-cloak>
-            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div x-show="fichaModalOpen" @click="fichaModalOpen = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
-                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                <div x-show="fichaModalOpen" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-flex flex-col align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100">
-                    <div class="bg-gradient-to-r from-primary-700 to-primary-600 px-6 py-5">
-                        <div class="flex items-start justify-between">
-                            <div class="text-left">
-                                <h3 class="text-lg leading-6 font-semibold text-white">Selecionar Fêmea para Ficha</h3>
-                                <p class="mt-1 text-xs text-primary-100">Escolha a fêmea para visualizar a análise de desempenho dos ciclos reprodutivos.</p>
-                            </div>
-                            <button type="button" @click="fichaModalOpen = false" class="text-white/80 hover:text-white transition-colors">
-                                <i class="fa-solid fa-xmark text-lg"></i>
-                            </button>
-                        </div>
+        <div x-show="analiseSubTab === 'listagem'" x-cloak>
+            <div class="mb-4 bg-amber-50 border border-amber-100 text-amber-900 rounded-xl px-4 py-3 text-sm">
+                Relatórios em desenvolvimento.
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                        <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Relatório de Fêmeas</h6>
+                        <div class="text-sm text-gray-500 mt-1">Lista completa do plantel de fêmeas com status e última operação.</div>
                     </div>
-                    <div class="bg-white px-6 py-6">
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Selecione a Fêmea</label>
-                                <select x-model="fichaSelectedId" @change="loadFichaData()" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
-                                    <option value="">Escolha uma fêmea...</option>
-                                    <template x-for="f in fichaFemeas" :key="f.id">
-                                        <option :value="String(f.id)" x-text="f.id_primaria + (f.id_secundaria ? ' (' + f.id_secundaria + ')' : '')"></option>
-                                    </template>
-                                </select>
-                            </div>
-
-                            <div x-show="fichaLoading" class="text-center py-4">
-                                <i class="fa-solid fa-spinner fa-spin text-primary-500 text-2xl"></i>
-                                <div class="text-sm text-gray-500 mt-2">Carregando dados...</div>
-                            </div>
-
-                            <div x-show="fichaError" class="bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm" x-text="fichaError"></div>
-                        </div>
+                    <div class="p-6">
+                        <a href="{{ route('admin.relatorios.plantel.femeas', [], false) }}" target="_blank" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <i class="fa-solid fa-eye mr-2"></i>
+                            Pré-visualizar
+                        </a>
                     </div>
-                    <div class="bg-white border-t border-gray-100 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3">
-                        <button type="button" @click="fichaModalOpen = false" class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:w-auto">
-                            Fechar
-                        </button>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                        <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Relatório de Machos</h6>
+                        <div class="text-sm text-gray-500 mt-1">Lista completa do plantel de machos com status e última operação.</div>
+                    </div>
+                    <div class="p-6">
+                        <a href="{{ route('admin.relatorios.plantel.machos', [], false) }}" target="_blank" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <i class="fa-solid fa-eye mr-2"></i>
+                            Pré-visualizar
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div x-show="analiseSubTab === 'formulario'" x-cloak>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <a href="{{ route('plantel.analises.formularios.cio-leitoa.pdf', [], false) }}" target="_blank" class="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-primary-50/60 via-primary-50/40 to-primary-100/20">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-white border-2 border-primary-200 text-primary-600 flex items-center justify-center">
+                                    <i class="fa-solid fa-file-pdf"></i>
+                                </div>
+                                <div>
+                                    <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Formulário cio de leitoa</h6>
+                                    <div class="text-sm text-gray-500 mt-1.5">Abrir PDF para impressão e preenchimento.</div>
+                                </div>
+                            </div>
+                            <div class="text-primary-600 group-hover:text-primary-700 transition-colors">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 border-primary-200 bg-white text-primary-700 group-hover:bg-primary-600 group-hover:border-primary-600 group-hover:text-white transition-all duration-300 shadow-sm hover:shadow-md">
+                            <i class="fa-solid fa-eye text-xs"></i>
+                            Abrir formulário
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div x-show="analiseSubTab === 'desempenho'" x-cloak class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                     <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Fêmeas</h6>
@@ -5831,39 +5598,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div x-show="tab === 'relatorios'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-4">
-    <div class="mb-4 bg-amber-50 border border-amber-100 text-amber-900 rounded-xl px-4 py-3 text-sm">
-        Relatórios em desenvolvimento.
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Relatório de Fêmeas</h6>
-                <div class="text-sm text-gray-500 mt-1">Lista completa do plantel de fêmeas com status e última operação.</div>
-            </div>
-            <div class="p-6">
-                <a href="{{ route('admin.relatorios.plantel.femeas', [], false) }}" target="_blank" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                    <i class="fa-solid fa-eye mr-2"></i>
-                    Pré-visualizar
-                </a>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Relatório de Machos</h6>
-                <div class="text-sm text-gray-500 mt-1">Lista completa do plantel de machos com status e última operação.</div>
-            </div>
-            <div class="p-6">
-                <a href="{{ route('admin.relatorios.plantel.machos', [], false) }}" target="_blank" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                    <i class="fa-solid fa-eye mr-2"></i>
-                    Pré-visualizar
-                </a>
             </div>
         </div>
     </div>

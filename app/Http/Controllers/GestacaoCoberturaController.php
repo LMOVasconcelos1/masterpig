@@ -92,7 +92,54 @@ class GestacaoCoberturaController extends Controller
             }
         }
 
-        $items = $rows->map(function ($row) use ($semenByCoberturaId) {
+        $montasByCoberturaId = [];
+        $machoIdPrimariaById = [];
+        $usuarioNomeById = [];
+        if (Schema::hasTable('gestacao_cobertura_monta') && $rows->isNotEmpty()) {
+            $ids = $rows->pluck('id')->map(fn ($v) => (int) $v)->filter()->values()->all();
+            if (! empty($ids)) {
+                $montasRows = DB::table('gestacao_cobertura_monta')
+                    ->whereIn('cobertura_id', $ids)
+                    ->orderBy('cobertura_id')
+                    ->orderBy('ordem')
+                    ->orderBy('id')
+                    ->get([
+                        'cobertura_id',
+                        'ordem',
+                        'tipo',
+                        'macho_id',
+                        'semen',
+                        'data',
+                        'hora',
+                        'usuario_id',
+                    ]);
+
+                $machoIds = $montasRows->pluck('macho_id')->map(fn ($v) => (int) $v)->filter()->unique()->values()->all();
+                if (! empty($machoIds) && Schema::hasTable('macho')) {
+                    $machoIdPrimariaById = DB::table('macho')
+                        ->whereIn('id', $machoIds)
+                        ->pluck('id_primaria', 'id')
+                        ->map(fn ($v) => $v === null ? null : (string) $v)
+                        ->all();
+                }
+
+                $usuarioIds = $montasRows->pluck('usuario_id')->map(fn ($v) => (int) $v)->filter()->unique()->values()->all();
+                if (! empty($usuarioIds) && Schema::hasTable('usuario')) {
+                    $usuarioNomeById = DB::table('usuario')
+                        ->whereIn('id', $usuarioIds)
+                        ->pluck('nome', 'id')
+                        ->map(fn ($v) => $v === null ? null : (string) $v)
+                        ->all();
+                }
+
+                $montasByCoberturaId = $montasRows
+                    ->groupBy('cobertura_id')
+                    ->map(fn ($group) => $group->values()->all())
+                    ->all();
+            }
+        }
+
+        $items = $rows->map(function ($row) use ($semenByCoberturaId, $montasByCoberturaId, $machoIdPrimariaById, $usuarioNomeById) {
             $coberturaId = (int) $row->id;
             $semens = $semenByCoberturaId[$coberturaId] ?? [];
             $semenDisplay = null;
@@ -102,6 +149,38 @@ class GestacaoCoberturaController extends Controller
                 $semenDisplay = (string) $row->semen;
             }
 
+            $montas = [];
+            if (array_key_exists($coberturaId, $montasByCoberturaId)) {
+                $montas = array_map(function ($m) use ($machoIdPrimariaById, $usuarioNomeById) {
+                    $tipo = (string) ($m->tipo ?? '');
+                    $machoId = $m->macho_id === null ? null : (int) $m->macho_id;
+                    $machoPrimaria = $machoId !== null ? ($machoIdPrimariaById[$machoId] ?? null) : null;
+                    $usuarioId = $m->usuario_id === null ? null : (int) $m->usuario_id;
+
+                    return [
+                        'tipo' => $tipo,
+                        'macho' => $tipo === 'macho' ? ($machoPrimaria === null ? null : (string) $machoPrimaria) : null,
+                        'semen' => $tipo === 'semen' ? (empty($m->semen) ? null : (string) $m->semen) : null,
+                        'data' => Carbon::parse($m->data)->format('d/m/Y'),
+                        'hora' => $m->hora === null ? null : (string) $m->hora,
+                        'usuario' => $usuarioId !== null ? ($usuarioNomeById[$usuarioId] ?? null) : null,
+                    ];
+                }, $montasByCoberturaId[$coberturaId]);
+            }
+
+            $montasSummary = null;
+            if (! empty($montas)) {
+                $refs = array_values(array_filter(array_map(function ($m) {
+                    if (($m['tipo'] ?? null) === 'macho' && ! empty($m['macho'])) return 'M-'.$m['macho'];
+                    if (($m['tipo'] ?? null) === 'semen' && ! empty($m['semen'])) return 'S-'.$m['semen'];
+                    return null;
+                }, $montas)));
+
+                if (! empty($refs)) {
+                    $montasSummary = count($refs) === 1 ? $refs[0] : ($refs[0].' + '.(count($refs) - 1));
+                }
+            }
+
             return [
                 'id' => $coberturaId,
                 'matriz' => (string) $row->id_primaria,
@@ -109,6 +188,8 @@ class GestacaoCoberturaController extends Controller
                 'macho' => $row->macho_id_primaria === null ? null : (string) $row->macho_id_primaria,
                 'semen' => $semenDisplay,
                 'semens' => $semens,
+                'montas' => $montas,
+                'montas_summary' => $montasSummary,
                 'data' => Carbon::parse($row->data)->format('d/m/Y'),
                 'hora' => $row->hora === null ? null : (string) $row->hora,
                 'usuario' => $row->usuario_nome === null ? null : (string) $row->usuario_nome,
@@ -149,7 +230,16 @@ class GestacaoCoberturaController extends Controller
             'peso_matriz' => ['nullable', 'numeric', 'min:0', 'max:99999.99'],
             'caracteristicas' => ['nullable', 'string', 'max:500'],
             'observacoes' => ['nullable', 'string', 'max:500'],
+            'montas' => ['nullable', 'array', 'min:1', 'max:20'],
+            'montas.*.tipo' => ['required', 'in:macho,semen'],
+            'montas.*.macho_id' => ['nullable'],
+            'montas.*.semen' => ['nullable', 'string', 'max:120'],
+            'montas.*.data' => ['required', 'date'],
+            'montas.*.hora' => ['required', 'date_format:H:i'],
+            'montas.*.usuario_id' => ['required', 'exists:usuario,id'],
         ]);
+
+        $warnings = [];
 
         $femeaRow = DB::table('femea')
             ->where('id', (int) $validated['femea_id'])
@@ -320,34 +410,86 @@ class GestacaoCoberturaController extends Controller
             }
         }
 
+        $montas = [];
+        if (array_key_exists('montas', $validated) && is_array($validated['montas'])) {
+            if (! Schema::hasTable('gestacao_cobertura_monta')) {
+                return response()->json([
+                    'message' => 'Para registrar as montas/inseminações, é necessário criar a tabela gestacao_cobertura_monta no banco.',
+                    'sql' => "CREATE TABLE IF NOT EXISTS `gestacao_cobertura_monta` (\n  `id` bigint unsigned NOT NULL AUTO_INCREMENT,\n  `cobertura_id` bigint unsigned NOT NULL,\n  `ordem` int unsigned NOT NULL DEFAULT 1,\n  `tipo` enum('macho','semen') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,\n  `macho_id` bigint unsigned DEFAULT NULL,\n  `semen` varchar(120) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `data` date NOT NULL,\n  `hora` time NOT NULL,\n  `usuario_id` bigint unsigned DEFAULT NULL,\n  `criado_em` timestamp NULL DEFAULT NULL,\n  `atualizado_em` timestamp NULL DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  KEY `idx_gcm_cobertura` (`cobertura_id`),\n  KEY `idx_gcm_data` (`data`),\n  KEY `idx_gcm_macho` (`macho_id`),\n  KEY `idx_gcm_usuario` (`usuario_id`),\n  CONSTRAINT `fk_gcm_cobertura` FOREIGN KEY (`cobertura_id`) REFERENCES `gestacao_cobertura` (`id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_gcm_macho` FOREIGN KEY (`macho_id`) REFERENCES `macho` (`id`) ON DELETE SET NULL,\n  CONSTRAINT `fk_gcm_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuario` (`id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;",
+                ], 422);
+            }
+
+            foreach (array_values($validated['montas']) as $i => $m) {
+                $tipo = (string) ($m['tipo'] ?? '');
+                $machoId = $m['macho_id'] ?? null;
+                $semen = trim((string) ($m['semen'] ?? ''));
+
+                if ($tipo === 'macho') {
+                    $machoId = is_numeric($machoId) ? (int) $machoId : null;
+                    if (! $machoId || ! Schema::hasTable('macho') || ! DB::table('macho')->where('id', $machoId)->exists()) {
+                        return response()->json(['message' => 'Monta '.($i + 1).': macho inválido.'], 422);
+                    }
+                    $semen = '';
+                } elseif ($tipo === 'semen') {
+                    if ($semen === '') {
+                        return response()->json(['message' => 'Monta '.($i + 1).': sêmen inválido.'], 422);
+                    }
+                    $machoId = null;
+                } else {
+                    return response()->json(['message' => 'Monta '.($i + 1).': tipo inválido.'], 422);
+                }
+
+                $montas[] = [
+                    'ordem' => $i + 1,
+                    'tipo' => $tipo,
+                    'macho_id' => $machoId,
+                    'semen' => $semen === '' ? null : $semen,
+                    'data' => Carbon::parse($m['data'])->toDateString(),
+                    'hora' => (string) $m['hora'],
+                    'usuario_id' => (int) $m['usuario_id'],
+                ];
+            }
+        }
+
         $semens = [];
-        if (array_key_exists('semens', $validated) && is_array($validated['semens'])) {
-            $semens = collect($validated['semens'])
-                ->map(fn ($v) => trim((string) $v))
-                ->filter(fn ($v) => $v !== '')
-                ->unique()
-                ->values()
-                ->all();
-        }
+        $machoId = null;
 
-        $semen = trim((string) ($validated['semen'] ?? ''));
-        if ($semen !== '') {
-            $semens = array_values(array_unique(array_merge($semens, [$semen])));
-        }
+        if (! empty($montas)) {
+            $first = $montas[0];
+            if ($first['tipo'] === 'macho') {
+                $machoId = $first['macho_id'];
+            } else {
+                $semens = [$first['semen']];
+            }
+        } else {
+            if (array_key_exists('semens', $validated) && is_array($validated['semens'])) {
+                $semens = collect($validated['semens'])
+                    ->map(fn ($v) => trim((string) $v))
+                    ->filter(fn ($v) => $v !== '')
+                    ->unique()
+                    ->values()
+                    ->all();
+            }
 
-        $machoId = $validated['macho_id'] ?? null;
+            $semen = trim((string) ($validated['semen'] ?? ''));
+            if ($semen !== '') {
+                $semens = array_values(array_unique(array_merge($semens, [$semen])));
+            }
 
-        if ($machoId === null && empty($semens)) {
-            return response()->json([
-                'message' => 'Informe o macho ou o sêmen utilizado.',
-            ], 422);
-        }
+            $machoId = $validated['macho_id'] ?? null;
 
-        if (count($semens) > 1 && ! Schema::hasTable('gestacao_cobertura_semen')) {
-            return response()->json([
-                'message' => 'Para informar mais de um sêmen, é necessário criar a tabela gestacao_cobertura_semen no banco.',
-                'sql' => "CREATE TABLE IF NOT EXISTS `gestacao_cobertura_semen` (\n  `id` bigint unsigned NOT NULL AUTO_INCREMENT,\n  `cobertura_id` bigint unsigned NOT NULL,\n  `semen` varchar(120) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,\n  `criado_em` timestamp NULL DEFAULT NULL,\n  `atualizado_em` timestamp NULL DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  KEY `idx_gcs_cobertura` (`cobertura_id`),\n  CONSTRAINT `fk_gcs_cobertura` FOREIGN KEY (`cobertura_id`) REFERENCES `gestacao_cobertura` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;",
-            ], 422);
+            if ($machoId === null && empty($semens)) {
+                return response()->json([
+                    'message' => 'Informe o macho ou o sêmen utilizado.',
+                ], 422);
+            }
+
+            if (count($semens) > 1 && ! Schema::hasTable('gestacao_cobertura_semen')) {
+                return response()->json([
+                    'message' => 'Para informar mais de um sêmen, é necessário criar a tabela gestacao_cobertura_semen no banco.',
+                    'sql' => "CREATE TABLE IF NOT EXISTS `gestacao_cobertura_semen` (\n  `id` bigint unsigned NOT NULL AUTO_INCREMENT,\n  `cobertura_id` bigint unsigned NOT NULL,\n  `semen` varchar(120) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,\n  `criado_em` timestamp NULL DEFAULT NULL,\n  `atualizado_em` timestamp NULL DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  KEY `idx_gcs_cobertura` (`cobertura_id`),\n  CONSTRAINT `fk_gcs_cobertura` FOREIGN KEY (`cobertura_id`) REFERENCES `gestacao_cobertura` (`id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;",
+                ], 422);
+            }
         }
 
         $usuarioNome = DB::table('usuario')->where('id', (int) $validated['usuario_id'])->value('nome');
@@ -393,11 +535,11 @@ class GestacaoCoberturaController extends Controller
             $payload['presenca_cio'] = (string) $validated['presenca_cio'];
         }
 
-        $warnings = $this->criteriosWarnings($payload);
+        $warnings = array_values(array_merge($warnings, $this->criteriosWarnings($payload)));
 
         $coberturaId = null;
 
-        DB::transaction(function () use ($payload, $warnings, $semens, &$coberturaId) {
+        DB::transaction(function () use ($payload, $warnings, $semens, $montas, &$coberturaId) {
             $coberturaId = (int) DB::table('gestacao_cobertura')->insertGetId($payload);
 
             if (count($semens) > 1 && Schema::hasTable('gestacao_cobertura_semen')) {
@@ -411,6 +553,26 @@ class GestacaoCoberturaController extends Controller
                             'atualizado_em' => $now,
                         ];
                     }, $semens)
+                );
+            }
+
+            if (! empty($montas) && Schema::hasTable('gestacao_cobertura_monta')) {
+                $now = now();
+                DB::table('gestacao_cobertura_monta')->insert(
+                    array_map(function ($m) use ($coberturaId, $now) {
+                        return [
+                            'cobertura_id' => $coberturaId,
+                            'ordem' => (int) ($m['ordem'] ?? 1),
+                            'tipo' => (string) ($m['tipo'] ?? ''),
+                            'macho_id' => empty($m['macho_id']) ? null : (int) $m['macho_id'],
+                            'semen' => empty($m['semen']) ? null : (string) $m['semen'],
+                            'data' => (string) $m['data'],
+                            'hora' => (string) $m['hora'],
+                            'usuario_id' => empty($m['usuario_id']) ? null : (int) $m['usuario_id'],
+                            'criado_em' => $now,
+                            'atualizado_em' => $now,
+                        ];
+                    }, $montas)
                 );
             }
 
@@ -480,6 +642,9 @@ class GestacaoCoberturaController extends Controller
         $femeaId = (int) $row->femea_id;
 
         DB::transaction(function () use ($id, $femeaId) {
+            if (Schema::hasTable('gestacao_cobertura_monta')) {
+                DB::table('gestacao_cobertura_monta')->where('cobertura_id', $id)->delete();
+            }
             if (Schema::hasTable('gestacao_cobertura_semen')) {
                 DB::table('gestacao_cobertura_semen')->where('cobertura_id', $id)->delete();
             }

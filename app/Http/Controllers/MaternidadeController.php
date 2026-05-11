@@ -136,6 +136,8 @@ class MaternidadeController extends Controller
                     $previsaoParto = (clone $dataC)->addDays($gestacaoDias);
                     $matrizesAptas[] = [
                         'id' => $ra->id,
+                        'id_primaria' => (string) $ra->id_primaria,
+                        'id_secundaria' => $ra->id_secundaria === null ? null : (string) $ra->id_secundaria,
                         'identificacao' => (string) $ra->id_primaria . ($ra->id_secundaria ? " ({$ra->id_secundaria})" : ""),
                         'previsao_parto' => $previsaoParto->toDateString(),
                         'cobertura_id' => $ra->cobertura_id

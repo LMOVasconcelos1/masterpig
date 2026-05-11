@@ -15,8 +15,6 @@
 
         matrizes: [],
         matrizSearch: '',
-        machoSearch: '',
-        semenSearch: '',
         machos: [],
         semens: [],
         semensLoading: false,
@@ -94,12 +92,9 @@
         cobertura: {
             femeaId: '',
             usuarioId: '',
-            modo: 'macho',
-            machoId: '',
-            semen: '',
-            semens: [],
             data: '',
             hora: '',
+            montas: [],
             presencaCio: '',
             localizacao: '',
             baia: '',
@@ -192,11 +187,20 @@
                 this.calendarMonth++;
             }
         },
+        getPickerSelectedIso() {
+            const key = String(this.activePicker || '');
+            if (key.startsWith('monta-')) {
+                const idx = Number(key.replace('monta-', ''));
+                const row = Array.isArray(this.cobertura.montas) ? this.cobertura.montas[idx] : null;
+                return row ? this.montaDataToIso(row.data) : null;
+            }
+            return this.coberturaDataToIso();
+        },
         getCalendarDays() {
             const firstDay = new Date(this.calendarYear, this.calendarMonth, 1);
             const startDate = new Date(firstDay);
             startDate.setDate(startDate.getDate() - firstDay.getDay());
-            const selectedIso = this.coberturaDataToIso();
+            const selectedIso = this.getPickerSelectedIso();
             const days = [];
             for (let i = 0; i < 42; i++) {
                 const date = new Date(startDate);
@@ -213,22 +217,33 @@
             }
             return days;
         },
-        openCoberturaDatePicker() {
-            const iso = this.coberturaDataToIso();
+        openMontaDatePicker(idx) {
+            const row = Array.isArray(this.cobertura.montas) ? this.cobertura.montas[idx] : null;
+            const iso = row ? this.montaDataToIso(row.data) : null;
             const base = iso && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(iso + 'T12:00:00') : new Date();
             this.calendarMonth = base.getMonth();
             this.calendarYear = base.getFullYear();
-            this.activePicker = 'cobertura';
+            this.activePicker = `monta-${idx}`;
         },
         selectCalendarDate(dateStr) {
             const m = String(dateStr || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
             const formatted = m ? `${m[3]}/${m[2]}/${m[1]}` : '';
             const pigDay = typeof toPigDay === 'function' ? toPigDay(dateStr + 'T00:00:00') : '';
-            this.cobertura.data = this.calendarType === '1000_dias' ? String(pigDay) : formatted;
+            const key = String(this.activePicker || '');
+            if (key.startsWith('monta-')) {
+                const idx = Number(key.replace('monta-', ''));
+                const row = Array.isArray(this.cobertura.montas) ? this.cobertura.montas[idx] : null;
+                if (row) {
+                    row.data = this.calendarType === '1000_dias' ? String(pigDay) : formatted;
+                    if (idx === 0) this.cobertura.data = row.data;
+                }
+            } else {
+                this.cobertura.data = this.calendarType === '1000_dias' ? String(pigDay) : formatted;
+            }
             this.activePicker = null;
         },
-        getCoberturaSelectedPigDay() {
-            const iso = this.coberturaDataToIso();
+        getPickerSelectedPigDay() {
+            const iso = this.getPickerSelectedIso();
             if (!iso) return '';
             return typeof toPigDay === 'function' ? toPigDay(iso + 'T00:00:00') : '';
         },
@@ -243,12 +258,11 @@
             this.perda.data = `${dd}/${mm}/${yyyy}`;
             this.saltaCio.data = `${dd}/${mm}/${yyyy}`;
             this.cobertura.hora = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-
-            this.$watch('cobertura.modo', (value) => {
-                if (value === 'semen') {
-                    this.loadSemens();
-                }
-            });
+            this.cobertura.montas = [
+                { tipo: '', macho_id: '', semen: '', data: this.cobertura.data, hora: this.cobertura.hora, usuario_id: '', ref: '' },
+                { tipo: '', macho_id: '', semen: '', data: this.cobertura.data, hora: this.cobertura.hora, usuario_id: '', ref: '' },
+                { tipo: '', macho_id: '', semen: '', data: this.cobertura.data, hora: this.cobertura.hora, usuario_id: '', ref: '' },
+            ];
 
             fetch('/api/plantel/femeas?previsao_cio=1')
                 .then(r => r.json())
@@ -304,18 +318,6 @@
             return this.matrizes.filter((f) => String(f?.id_primaria || '').toLowerCase().includes(q));
         },
 
-        get machosFiltrados() {
-            const q = String(this.machoSearch || '').trim().toLowerCase();
-            if (!q) return this.machos;
-            return this.machos.filter((m) => String(m?.id_primaria || '').toLowerCase().includes(q));
-        },
-
-        get semensFiltrados() {
-            const q = String(this.semenSearch || '').trim().toLowerCase();
-            if (!q) return this.semens;
-            return this.semens.filter((s) => String(s?.id_primaria || '').toLowerCase().includes(q));
-        },
-
         selecionarMatrizPorIdPrimaria(strict = false) {
             const q = String(this.matrizSearch || '').trim().toLowerCase();
             if (!q) {
@@ -342,81 +344,74 @@
             this.matrizSearch = String(match.id_primaria || this.matrizSearch);
         },
 
-        selecionarMachoPorIdPrimaria(strict = false) {
-            const q = String(this.machoSearch || '').trim().toLowerCase();
-            if (!q) {
-                this.cobertura.machoId = '';
-                return;
-            }
-
-            const exact = this.machos.find((m) => String(m?.id_primaria || '').toLowerCase() === q);
-            if (strict) {
-                this.cobertura.machoId = exact ? String(exact.id) : '';
-                return;
-            }
-
-            const filtered = this.machosFiltrados;
-            const match = exact || (filtered.length === 1 ? filtered[0] : filtered[0]);
-
-            if (!match) {
-                this.cobertura.machoId = '';
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Nenhum macho encontrado.', type: 'error' } }));
-                return;
-            }
-
-            this.cobertura.machoId = String(match.id);
-            this.machoSearch = String(match.id_primaria || this.machoSearch);
+        normalizeMontaRef(raw) {
+            const v = String(raw || '').trim();
+            if (!v) return '';
+            if (/^(m-|s-)/i.test(v)) return v.toUpperCase();
+            if (/^(macho:|semen:)/i.test(v)) return v.toLowerCase().startsWith('macho:') ? `M-${v.split(':')[1]}` : `S-${v.split(':')[1]}`;
+            return v;
         },
+        applyMontaRef(idx) {
+            const row = this.cobertura.montas[idx];
+            if (!row) return;
+            const raw = this.normalizeMontaRef(row.ref || '');
+            row.ref = raw;
+            row.tipo = '';
+            row.macho_id = '';
+            row.semen = '';
 
-        selecionarSemenPorIdPrimaria(strict = false) {
-            const q = String(this.semenSearch || '').trim().toLowerCase();
-            if (!q) {
-                this.cobertura.semen = '';
+            const m = raw.match(/^M-(.+)$/i);
+            if (m) {
+                const idPrimaria = String(m[1] || '').trim();
+                const macho = this.machos.find((x) => String(x?.id_primaria || '').trim() === idPrimaria);
+                if (!macho) {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Macho não encontrado.', type: 'error' } }));
+                    return;
+                }
+                row.tipo = 'macho';
+                row.macho_id = String(macho.id);
+            }
+
+            const s = raw.match(/^S-(.+)$/i);
+            if (s) {
+                const idPrimaria = String(s[1] || '').trim();
+                const semen = this.semens.find((x) => String(x?.id_primaria || '').trim() === idPrimaria);
+                if (!semen) {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Sêmen não encontrado.', type: 'error' } }));
+                    return;
+                }
+                row.tipo = 'semen';
+                row.semen = String(semen.id_primaria);
+            }
+
+            if (!row.tipo) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe M-<ID do macho> ou S-<ID do sêmen>.', type: 'error' } }));
                 return;
             }
 
-            const exact = this.semens.find((s) => String(s?.id_primaria || '').toLowerCase() === q);
-            if (strict) {
-                this.cobertura.semen = exact ? String(exact.id_primaria) : '';
-                return;
+            if (idx === 0) {
+                this.cobertura.usuarioId = String(row.usuario_id || '');
+                this.cobertura.data = String(row.data || '');
+                this.cobertura.hora = String(row.hora || '');
             }
-
-            const filtered = this.semensFiltrados;
-            const match = exact || (filtered.length === 1 ? filtered[0] : filtered[0]);
-
-            if (!match) {
-                this.cobertura.semen = '';
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Nenhum sêmen encontrado.', type: 'error' } }));
-                return;
-            }
-
-            this.cobertura.semen = String(match.id_primaria);
-            this.semenSearch = String(match.id_primaria || this.semenSearch);
         },
-
-        adicionarSemenNaCobertura() {
-            if (this.semensLoading) return;
-            this.selecionarSemenPorIdPrimaria(false);
-            const value = String(this.cobertura.semen || '').trim();
-            if (!value) return;
-
-            if (!Array.isArray(this.cobertura.semens)) this.cobertura.semens = [];
-            if (this.cobertura.semens.includes(value)) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Este sêmen já foi incluído.', type: 'error' } }));
-                this.cobertura.semen = '';
-                this.semenSearch = '';
-                return;
-            }
-
-            this.cobertura.semens.push(value);
-            this.cobertura.semen = '';
-            this.semenSearch = '';
+        addMonta() {
+            this.cobertura.montas.push({ tipo: '', macho_id: '', semen: '', data: this.cobertura.data, hora: this.cobertura.hora, usuario_id: this.cobertura.usuarioId, ref: '' });
         },
-
-        removerSemenNaCobertura(value) {
-            const v = String(value || '').trim();
-            if (!v || !Array.isArray(this.cobertura.semens)) return;
-            this.cobertura.semens = this.cobertura.semens.filter((s) => String(s) !== v);
+        removeMonta() {
+            if (this.cobertura.montas.length <= 1) return;
+            this.cobertura.montas.pop();
+        },
+        montaDataToIso(raw) {
+            const v = String(raw || '').trim();
+            if (!v) return null;
+            if (this.calendarType === '1000_dias') {
+                if (typeof pigDayToDate !== 'function') return null;
+                const cleaned = v.replace(/\D/g, '');
+                if (!cleaned) return null;
+                return pigDayToDate(cleaned);
+            }
+            return this.brToIso(v);
         },
 
         loadSemens() {
@@ -533,13 +528,14 @@
             this.coberturaTab = 'principal';
             this.cobertura.presencaCio = 'sim';
             this.matrizSearch = '';
-            this.machoSearch = '';
-            this.semenSearch = '';
-            this.cobertura.machoId = '';
-            this.cobertura.semen = '';
-            this.cobertura.semens = [];
+            this.cobertura.usuarioId = '';
+            this.cobertura.montas = [
+                { tipo: '', macho_id: '', semen: '', data: this.cobertura.data, hora: this.cobertura.hora, usuario_id: '', ref: '' },
+                { tipo: '', macho_id: '', semen: '', data: this.cobertura.data, hora: this.cobertura.hora, usuario_id: '', ref: '' },
+                { tipo: '', macho_id: '', semen: '', data: this.cobertura.data, hora: this.cobertura.hora, usuario_id: '', ref: '' },
+            ];
             this.openCobertura = true;
-            if (this.cobertura.modo === 'semen') this.loadSemens();
+            this.loadSemens();
         },
         openPerdaModal() {
             this.error = '';
@@ -557,16 +553,6 @@
                 return;
             }
 
-            if (!this.cobertura.usuarioId) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Selecione o usuário', type: 'error' } }));
-                return;
-            }
-
-            if (!this.cobertura.data || !this.cobertura.hora) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe data e hora', type: 'error' } }));
-                return;
-            }
-
             if (!this.cobertura.presencaCio) {
                 window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe a presença de cio', type: 'error' } }));
                 return;
@@ -576,36 +562,85 @@
                 return;
             }
 
-            if (this.cobertura.modo === 'macho' && !this.cobertura.machoId) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Selecione o macho', type: 'error' } }));
+            const montasRaw = Array.isArray(this.cobertura.montas) ? this.cobertura.montas : [];
+            const montasFilledIdx = montasRaw
+                .map((r, i) => ({ r, i }))
+                .filter(({ r }) => String(r?.ref || '').trim() !== '');
+
+            if (montasFilledIdx.length === 0) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe ao menos uma monta/inseminação.', type: 'error' } }));
                 return;
             }
 
-            if (this.cobertura.modo === 'semen' && (!Array.isArray(this.cobertura.semens) || this.cobertura.semens.length === 0)) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe o sêmen utilizado', type: 'error' } }));
+            montasFilledIdx.forEach(({ i }) => this.applyMontaRef(i));
+
+            const montasPayload = montasFilledIdx.map(({ r, i }) => {
+                const dataIso = this.montaDataToIso(r.data);
+                return {
+                    tipo: String(r.tipo || ''),
+                    macho_id: r.tipo === 'macho' ? Number(r.macho_id) : null,
+                    semen: r.tipo === 'semen' ? String(r.semen || '').trim() : null,
+                    data: dataIso,
+                    hora: String(r.hora || '').trim(),
+                    usuario_id: Number(r.usuario_id),
+                    _idx: i,
+                };
+            });
+
+            const first = montasPayload[0];
+            if (!first.usuario_id || !Number.isFinite(first.usuario_id) || first.usuario_id <= 0) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe o funcionário na primeira monta.', type: 'error' } }));
+                return;
+            }
+            if (!first.data || !first.hora) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe data e hora na primeira monta.', type: 'error' } }));
                 return;
             }
 
-            const dataIso = this.coberturaDataToIso();
+            for (const m of montasPayload) {
+                if (m.tipo !== 'macho' && m.tipo !== 'semen') {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: `Monta ${m._idx + 1}: informe Macho ou Sêmen.`, type: 'error' } }));
+                    return;
+                }
+                if (m.tipo === 'macho' && (!m.macho_id || !Number.isFinite(m.macho_id))) {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: `Monta ${m._idx + 1}: macho inválido.`, type: 'error' } }));
+                    return;
+                }
+                if (m.tipo === 'semen' && (!m.semen || String(m.semen).trim() === '')) {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: `Monta ${m._idx + 1}: sêmen inválido.`, type: 'error' } }));
+                    return;
+                }
+                if (!m.data) {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: `Monta ${m._idx + 1}: ${this.calendarType === '1000_dias' ? 'informe a data (Dia PIG)' : 'informe a data (dd/mm/aaaa)'}.`, type: 'error' } }));
+                    return;
+                }
+                if (!/^\d{2}:\d{2}$/.test(m.hora)) {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: `Monta ${m._idx + 1}: informe a hora.`, type: 'error' } }));
+                    return;
+                }
+                if (!m.usuario_id || !Number.isFinite(m.usuario_id) || m.usuario_id <= 0) {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: `Monta ${m._idx + 1}: informe o funcionário.`, type: 'error' } }));
+                    return;
+                }
+            }
+
+            this.cobertura.usuarioId = String(first.usuario_id);
+            this.cobertura.data = String(montasRaw[0]?.data || '');
+            this.cobertura.hora = String(montasRaw[0]?.hora || '');
+
             const payload = {
                 femea_id: Number(this.cobertura.femeaId),
-                usuario_id: Number(this.cobertura.usuarioId),
-                macho_id: this.cobertura.modo === 'macho' ? Number(this.cobertura.machoId) : null,
-                semens: this.cobertura.modo === 'semen' ? this.cobertura.semens : null,
-                data: dataIso,
-                hora: this.cobertura.hora,
+                usuario_id: first.usuario_id,
+                data: first.data,
+                hora: first.hora,
                 presenca_cio: this.cobertura.presencaCio,
                 localizacao: this.cobertura.localizacao || null,
                 baia: this.cobertura.baia || null,
                 peso_matriz: this.cobertura.pesoMatriz === '' ? null : Number(this.cobertura.pesoMatriz),
                 caracteristicas: this.cobertura.caracteristicas ? this.cobertura.caracteristicas.trim() : null,
                 observacoes: this.cobertura.observacoes ? this.cobertura.observacoes.trim() : null,
+                montas: montasPayload.map(({ _idx, ...rest }) => rest),
             };
-
-            if (!payload.data) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: this.calendarType === '1000_dias' ? 'Informe a data (Dia PIG)' : 'Informe a data (dd/mm/aaaa)', type: 'error' } }));
-                return;
-            }
 
             const criteriosWarnings = this.checkCriteriosCobertura();
             if (criteriosWarnings.length > 0) {
@@ -634,7 +669,11 @@
             })
                 .then(async (r) => {
                     const data = await r.json().catch(() => ({}));
-                    if (!r.ok) throw new Error(data?.message || 'Erro ao salvar cobertura');
+                    if (!r.ok) {
+                        const err = new Error(data?.message || 'Erro ao salvar cobertura');
+                        err.sql = data?.sql || null;
+                        throw err;
+                    }
                     return data;
                 })
                 .then((data) => {
@@ -649,6 +688,9 @@
                 })
                 .catch(e => {
                     window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar cobertura', type: 'error' } }));
+                    if (e && e.sql) {
+                        window.prompt('SQL necessário para o banco:', String(e.sql));
+                    }
                 })
                 .finally(() => { this.saving = false; });
         },
@@ -916,7 +958,7 @@
                                             </button>
                                         </td>
                                         <td class="py-2 pr-4" x-text="c.matriz"></td>
-                                        <td class="py-2 pr-4" x-text="c.macho || c.semen || '-'"></td>
+                                        <td class="py-2 pr-4" x-text="c.montas_summary || c.macho || c.semen || '-'"></td>
                                         <td class="py-2 pr-4" x-text="c.data"></td>
                                         <td class="py-2 pr-4" x-text="c.hora || '-'"></td>
                                     </tr>
@@ -1046,111 +1088,106 @@
                                     </template>
                                 </datalist>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Data</label>
-                                <div class="mt-1 relative">
-                                    <input type="text"
-                                           x-model="cobertura.data"
-                                           @click="openCoberturaDatePicker()"
-                                           class="w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500 pr-10"
-                                           :placeholder="calendarType === '1000_dias' ? 'Dia PIG' : 'DD/MM/AAAA'"
-                                           inputmode="numeric"
-                                           autocomplete="off"
-                                           readonly>
-                                    <button type="button" @click="openCoberturaDatePicker()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
-                                        <i class="fa-solid fa-calendar"></i>
-                                    </button>
-
-                                    <div x-show="activePicker === 'cobertura'" x-cloak class="absolute z-[200] mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-[calc(100vw-2rem)] max-w-xs sm:w-72 left-0 right-0 mx-auto sm:left-auto sm:right-0 max-h-[calc(100vh-12rem)] overflow-y-auto"
-                                         @click.away="activePicker = null">
-                                        <div class="flex items-center justify-between mb-3">
-                                            <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-                                                <i class="fa-solid fa-chevron-left"></i>
-                                            </button>
-                                            <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
-                                            <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-                                                <i class="fa-solid fa-chevron-right"></i>
-                                            </button>
-                                        </div>
-
-                                        <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
-                                            <template x-for="day in ['D','S','T','Q','Q','S','S']">
-                                                <div class="font-medium text-gray-500 dark:text-gray-400 py-1" x-text="day"></div>
-                                            </template>
-                                        </div>
-
-                                        <div class="grid grid-cols-7 gap-1">
-                                            <template x-for="day in getCalendarDays()" :key="day.date">
-                                                <div class="text-center">
-                                                    <button type="button"
-                                                            @click.stop="selectCalendarDate(day.date)"
-                                                            :class="day.isSelected ? 'bg-primary-600 text-white' : (day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400')"
-                                                            :disabled="!day.isCurrentMonth"
-                                                            class="p-2 text-sm rounded-lg transition-colors w-full">
-                                                        <span x-text="day.day"></span>
-                                                    </button>
-                                                    <div class="text-[8px] text-gray-500 dark:text-gray-400 mt-1" x-show="day.isCurrentMonth && day.pigDay" x-text="day.pigDay"></div>
-                                                </div>
-                                            </template>
-                                        </div>
-
-                                        <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                                            <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                <span x-text="calendarType === '1000_dias' ? 'Dia PIG: ' + getCoberturaSelectedPigDay() : 'Data: ' + cobertura.data"></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Hora</label>
-                                <input type="time" x-model="cobertura.hora" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
-                            </div>
                             <div class="md:col-span-2">
-                                <div class="flex items-center gap-4">
-                                    <label class="flex items-center gap-2 text-sm text-gray-700">
-                                        <input type="radio" value="macho" x-model="cobertura.modo" class="text-primary-600 focus:ring-primary-500">
-                                        Macho
-                                    </label>
-                                    <label class="flex items-center gap-2 text-sm text-gray-700">
-                                        <input type="radio" value="semen" x-model="cobertura.modo" class="text-primary-600 focus:ring-primary-500">
-                                        Sêmen
-                                    </label>
+                                <div class="flex items-center justify-between">
+                                    <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Dados das montas/inseminações</div>
                                 </div>
-                            </div>
-                            <div x-show="cobertura.modo === 'macho'" class="md:col-span-2" x-cloak>
-                                <label class="block text-sm font-medium text-gray-700">Macho</label>
-                                <input type="text" x-model="machoSearch" list="machos-list" @keydown.enter.prevent="selecionarMachoPorIdPrimaria(false)" @change="selecionarMachoPorIdPrimaria(true)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Digite o ID primária e pressione Enter">
-                                <datalist id="machos-list">
-                                    <template x-for="m in machosFiltrados.slice(0, 50)" :key="`macho-${m.id}`">
-                                        <option :value="m.id_primaria" x-text="m.id_secundaria ? `${m.id_primaria} / ${m.id_secundaria}` : m.id_primaria"></option>
+
+                                <datalist id="montas-ref-list">
+                                    <template x-for="m in machos.slice(0, 500)" :key="`m-ref-${m.id}`">
+                                        <option :value="`M-${m.id_primaria}`" x-text="`M-${m.id_primaria}${m.id_secundaria ? ' / ' + m.id_secundaria : ''}`"></option>
+                                    </template>
+                                    <template x-for="s in semens.slice(0, 500)" :key="`s-ref-${s.id}`">
+                                        <option :value="`S-${s.id_primaria}`" x-text="`S-${s.id_primaria}${s.id_secundaria ? ' / ' + s.id_secundaria : ''}${s.raca_nome ? ' - ' + s.raca_nome : ''}${s.fornecedor_nome ? ' (' + s.fornecedor_nome + ')' : ''}`"></option>
                                     </template>
                                 </datalist>
-                            </div>
-                            <div x-show="cobertura.modo === 'semen'" class="md:col-span-2" x-cloak>
-                                <label class="block text-sm font-medium text-gray-700">Sêmen utilizado</label>
-                                <div class="mt-1">
-                                    <div class="flex gap-2">
-                                        <input type="text" x-model="semenSearch" :disabled="semensLoading" list="semens-list" @keydown.enter.prevent="adicionarSemenNaCobertura()" @change="selecionarSemenPorIdPrimaria(true)" class="flex-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50" :placeholder="semensLoading ? 'Carregando...' : 'Digite o ID primária e pressione Enter'">
-                                        <button type="button" @click="adicionarSemenNaCobertura()" :disabled="semensLoading" class="inline-flex items-center justify-center w-11 h-11 rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50">
-                                            <i class="fa-solid fa-plus"></i>
-                                        </button>
-                                    </div>
-                                    <datalist id="semens-list">
-                                        <template x-for="s in semensFiltrados.slice(0, 50)" :key="`semen-${s.id}`">
-                                            <option :value="s.id_primaria" x-text="`${s.id_primaria}${s.id_secundaria ? ' / ' + s.id_secundaria : ''}${s.raca_nome ? ' - ' + s.raca_nome : ''}${s.fornecedor_nome ? ' (' + s.fornecedor_nome + ')' : ''}`"></option>
-                                        </template>
-                                    </datalist>
-                                    <div class="mt-2 flex flex-wrap gap-2" x-show="Array.isArray(cobertura.semens) && cobertura.semens.length > 0" x-cloak>
-                                        <template x-for="(s, idx) in cobertura.semens" :key="`sel-semen-${idx}-${s}`">
-                                            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-sm text-gray-800">
-                                                <span x-text="s"></span>
-                                                <button type="button" @click="removerSemenNaCobertura(s)" class="text-gray-500 hover:text-gray-700">
-                                                    <i class="fa-solid fa-xmark"></i>
+
+                                <div class="mt-3 space-y-3">
+                                    <template x-for="(m, idx) in cobertura.montas" :key="`monta-${idx}`">
+                                        <div class="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Macho/Sêmen</label>
+                                                <input type="text" x-model="m.ref" list="montas-ref-list" @keydown.enter.prevent="applyMontaRef(idx)" @blur="applyMontaRef(idx)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="M-123 ou S-456">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Data</label>
+                                                <div class="mt-1 relative">
+                                                    <input type="text"
+                                                           x-model="m.data"
+                                                           @click="openMontaDatePicker(idx)"
+                                                           class="w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500 pr-10"
+                                                           :placeholder="calendarType === '1000_dias' ? 'Dia PIG' : 'DD/MM/AAAA'"
+                                                           inputmode="numeric"
+                                                           autocomplete="off"
+                                                           readonly>
+                                                    <button type="button" @click="openMontaDatePicker(idx)" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                                        <i class="fa-solid fa-calendar"></i>
+                                                    </button>
+
+                                                    <div x-show="activePicker === `monta-${idx}`" x-cloak class="absolute z-[200] mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-[calc(100vw-2rem)] max-w-xs sm:w-72 left-0 right-0 mx-auto sm:left-auto sm:right-0 max-h-[calc(100vh-12rem)] overflow-y-auto"
+                                                         @click.away="activePicker = null">
+                                                        <div class="flex items-center justify-between mb-3">
+                                                            <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                                <i class="fa-solid fa-chevron-left"></i>
+                                                            </button>
+                                                            <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                            <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                                <i class="fa-solid fa-chevron-right"></i>
+                                                            </button>
+                                                        </div>
+
+                                                        <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                                                            <template x-for="day in ['D','S','T','Q','Q','S','S']">
+                                                                <div class="font-medium text-gray-500 dark:text-gray-400 py-1" x-text="day"></div>
+                                                            </template>
+                                                        </div>
+
+                                                        <div class="grid grid-cols-7 gap-1">
+                                                            <template x-for="day in getCalendarDays()" :key="day.date">
+                                                                <div class="text-center">
+                                                                    <button type="button"
+                                                                            @click.stop="selectCalendarDate(day.date)"
+                                                                            :class="day.isSelected ? 'bg-primary-600 text-white' : (day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400')"
+                                                                            :disabled="!day.isCurrentMonth"
+                                                                            class="p-2 text-sm rounded-lg transition-colors w-full">
+                                                                        <span x-text="day.day"></span>
+                                                                    </button>
+                                                                    <div class="text-[8px] text-gray-500 dark:text-gray-400 mt-1" x-show="day.isCurrentMonth && day.pigDay" x-text="day.pigDay"></div>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+
+                                                        <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                                <span x-text="calendarType === '1000_dias' ? 'Dia PIG: ' + getPickerSelectedPigDay() : 'Data: ' + m.data"></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Hora</label>
+                                                <input type="time" x-model="m.hora" @change="if (idx === 0) cobertura.hora = m.hora" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Funcionário</label>
+                                                <select x-model="m.usuario_id" @change="if (idx === 0) cobertura.usuarioId = m.usuario_id" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
+                                                    <option value="">Selecione...</option>
+                                                    <template x-for="u in usuarios" :key="`u-monta-${u.id}`">
+                                                        <option :value="String(u.id)" x-text="u.nome"></option>
+                                                    </template>
+                                                </select>
+                                            </div>
+                                            <div class="flex items-center justify-end gap-2" x-show="idx === (cobertura.montas.length - 1)" x-cloak>
+                                                <button type="button" @click="addMonta()" class="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50" title="Adicionar">
+                                                    <i class="fa-solid fa-plus"></i>
+                                                </button>
+                                                <button type="button" @click="removeMonta()" :disabled="cobertura.montas.length <= 1" class="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50" title="Remover">
+                                                    <i class="fa-solid fa-minus"></i>
                                                 </button>
                                             </div>
-                                        </template>
-                                    </div>
+                                        </div>
+                                    </template>
                                 </div>
                             </div>
                         </div>
@@ -1158,15 +1195,6 @@
 
                     <div class="mt-4" x-show="coberturaTab === 'complementar'" x-cloak>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700">Usuário</label>
-                                <select x-model="cobertura.usuarioId" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
-                                    <option value="">Selecione...</option>
-                                    <template x-for="u in usuarios" :key="`u-${u.id}`">
-                                        <option :value="String(u.id)" x-text="u.nome"></option>
-                                    </template>
-                                </select>
-                            </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700">Presença de cio</label>
                                 <select x-model="cobertura.presencaCio" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">

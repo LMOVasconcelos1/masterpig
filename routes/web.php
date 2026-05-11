@@ -28,6 +28,7 @@ use App\Http\Controllers\MachoMorteController;
 use App\Http\Controllers\MachoMovimentoController;
 use App\Http\Controllers\MachoVendaController;
 use App\Http\Controllers\MaternidadeController;
+use App\Http\Controllers\CrecheController;
 use App\Http\Controllers\MetasController;
 use App\Http\Controllers\PlantelApiController;
 use App\Http\Controllers\PlantelRelatorioController;
@@ -46,6 +47,36 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', DashboardController::class)->middleware(['auth'])->name('dashboard');
+Route::get('/plantel/analises/retencao', function () { return view('plantel.analises.retencao'); })->middleware(['auth'])->name('plantel.analises.retencao');
+Route::get('/plantel/analises/ficha', function () { return view('plantel.analises.ficha'); })->middleware(['auth'])->name('plantel.analises.ficha');
+Route::get('/plantel/analises/formularios/cio-leitoa/pdf', function () {
+    $linhas = request()->has('linhas') ? (int) request('linhas') : 24;
+    if ($linhas < 10) $linhas = 10;
+    if ($linhas > 50) $linhas = 50;
+
+    $pageHeightMm = 297;
+    $marginTopMm = 10;
+    $marginBottomMm = 12;
+    $headerBlockMm = 14;
+    $tableHeadMm = 10;
+    $footerReserveMm = 10;
+    $availableBodyMm = $pageHeightMm - $marginTopMm - $marginBottomMm - $headerBlockMm - $tableHeadMm - $footerReserveMm - 2;
+    if ($availableBodyMm < 120) $availableBodyMm = 120;
+
+    $rowHeightMm = round($availableBodyMm / $linhas, 1);
+    if ($rowHeightMm < 5.0) $rowHeightMm = 5.0;
+    if ($rowHeightMm > 10.0) $rowHeightMm = 10.0;
+    $filename = 'formulario-cio-leitoa-'.now()->format('Ymd-Hi').'.pdf';
+
+    $response = \Barryvdh\DomPDF\Facade\Pdf::loadView('plantel.analises.formularios.cio-leitoa', compact('linhas', 'rowHeightMm'))
+        ->setPaper('a4', 'portrait')
+        ->stream($filename);
+
+    return $response
+        ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        ->header('Pragma', 'no-cache')
+        ->header('Expires', '0');
+})->middleware(['auth'])->name('plantel.analises.formularios.cio-leitoa.pdf');
 Route::get('/gestacao', GestacaoController::class)->middleware(['auth'])->name('gestacao');
 Route::get('/gestacao/formulario-cobertura/pdf', function() {
     return response()->view('gestacao.formulario-cobertura', [
@@ -61,12 +92,13 @@ Route::get('/gestacao/formulario-cobertura/pdf', function() {
     ])->header('Content-Type', 'text/html');
 })->middleware(['auth'])->name('gestacao.formulario.pdf');
 Route::get('/maternidade', [MaternidadeController::class, 'index'])->middleware(['auth'])->name('maternidade');
-Route::get('/creche', function() {
-    return view('creche');
-})->middleware(['auth'])->name('creche');
+Route::get('/creche', [CrecheController::class, 'index'])->middleware(['auth'])->name('creche');
 Route::get('/terminacao', function() {
     return view('terminacao');
 })->middleware(['auth'])->name('terminacao');
+Route::post('/creche/lotes', [CrecheController::class, 'storeLote'])->middleware(['auth'])->name('creche.lotes.store');
+Route::post('/creche/compras', [CrecheController::class, 'storeCompra'])->middleware(['auth'])->name('creche.compras.store');
+Route::post('/creche/mortes', [CrecheController::class, 'storeMorte'])->middleware(['auth'])->name('creche.mortes.store');
 Route::post('/maternidade/partos', [MaternidadeController::class, 'storeParto'])->middleware(['auth'])->name('maternidade.partos.store');
 Route::post('/maternidade/desmames', [MaternidadeController::class, 'storeDesmame'])->middleware(['auth'])->name('maternidade.desmames.store');
 Route::post('/maternidade/mortes', [MaternidadeController::class, 'storeMorteLeitao'])->middleware(['auth'])->name('maternidade.mortes.store');

@@ -11,6 +11,22 @@ use Illuminate\Support\Facades\Schema;
 
 class FemeaCompraController extends Controller
 {
+    private function metaInt(string $key, int $default): int
+    {
+        if (! Schema::hasTable('meta')) {
+            return $default;
+        }
+
+        $raw = DB::table('meta')->where('chave', $key)->value('valor');
+        if ($raw === null || trim((string) $raw) === '') {
+            return $default;
+        }
+
+        $n = (int) $raw;
+
+        return $n < 0 ? $default : $n;
+    }
+
     /**
      * Lista todas as compras de fêmeas registradas
      * Retorna dados paginados com filtros por busca, raça, fornecedor, localização, baia e período
@@ -181,6 +197,10 @@ class FemeaCompraController extends Controller
             'baia' => ['nullable', 'string', 'max:60'],
         ]);
 
+        $dataCompra = Carbon::parse($validated['data_compra'])->startOfDay();
+        $dataNasc = empty($validated['data_nascimento']) ? null : Carbon::parse($validated['data_nascimento'])->startOfDay();
+        $dataCob = empty($validated['data_cobertura']) ? null : Carbon::parse($validated['data_cobertura'])->startOfDay();
+
         if ($validated['tipo_compra'] === 'leitoa') {
             if (! empty($validated['data_cobertura'])) {
                 return response()->json([
@@ -215,8 +235,8 @@ class FemeaCompraController extends Controller
             // Validar idade mínima e máxima para leitoa
             if ($dataNasc) {
                 $idadeDias = $dataNasc->diffInDays($dataCompra);
-                $idadeMinima = $this->metaInt('criterio_leitoa_idade_min', 0);
-                $idadeMaxima = $this->metaInt('criterio_leitoa_idade_max', 999);
+                $idadeMinima = $this->metaInt('criterio_leitoa_idade_min_dias', 0);
+                $idadeMaxima = $this->metaInt('criterio_leitoa_idade_max_dias', 999);
                 
                 if ($idadeMinima > 0 && $idadeDias < $idadeMinima) {
                     return response()->json([
@@ -247,11 +267,8 @@ class FemeaCompraController extends Controller
         if (empty($validated['data_nascimento']) && isset($validated['ciclos_ate_compra'])) {
             $dias = (int) $validated['ciclos_ate_compra'] * 21;
             $validated['data_nascimento'] = Carbon::parse($validated['data_compra'])->subDays($dias)->format('Y-m-d');
+            $dataNasc = Carbon::parse($validated['data_nascimento'])->startOfDay();
         }
-
-        $dataCompra = Carbon::parse($validated['data_compra'])->startOfDay();
-        $dataNasc = empty($validated['data_nascimento']) ? null : Carbon::parse($validated['data_nascimento'])->startOfDay();
-        $dataCob = empty($validated['data_cobertura']) ? null : Carbon::parse($validated['data_cobertura'])->startOfDay();
 
         if ($dataNasc && $dataNasc->gt($dataCompra)) {
             return response()->json([
