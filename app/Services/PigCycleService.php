@@ -23,9 +23,10 @@ class PigCycleService
         return in_array($type, [self::CALENDAR_GREGORIAN, self::CALENDAR_1000_DAYS]) ? $type : self::CALENDAR_1000_DAYS;
     }
 
-    public static function toPigDay(?Carbon $date): ?int
+    public static function toPigDay(?\DateTimeInterface $date): ?int
     {
         if (!$date) return null;
+        $date = Carbon::instance($date);
         $base = Carbon::parse(self::PIG_BASE_DATE)->startOfDay();
         // Dia PIG Absoluto = quantidade de dias desde 31/12/1968
         $absoluteDay = (int) $base->diffInDays($date->startOfDay(), false);
@@ -125,9 +126,10 @@ class PigCycleService
         return (int) $raw;
     }
 
-    public static function formatDisplayDate(?Carbon $date, ?Carbon $unused = null): string
+    public static function formatDisplayDate(?\DateTimeInterface $date, ?\DateTimeInterface $unused = null): string
     {
         if (!$date) return '-';
+        $date = Carbon::instance($date);
         
         $type = self::getCalendarType();
         if ($type === self::CALENDAR_1000_DAYS) {
