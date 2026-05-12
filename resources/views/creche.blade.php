@@ -399,41 +399,47 @@
                 <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Resumo dos Lotes Abertos</h6>
                 <div class="text-sm text-gray-500 mt-1">Acompanhamento dos lotes atualmente ativos na creche</div>
             </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
-                    <thead>
-                        <tr class="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50/50">
-                            <th class="px-6 py-3 w-10"></th>
-                            <th class="px-6 py-3">Lote</th>
-                            <th class="px-6 py-3">Data Abertura</th>
-                            <th class="px-6 py-3">Qtd. Animais</th>
-                            <th class="px-6 py-3">Dias de Alojamento</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
-                        @forelse($lotes as $lote)
-                        <tr class="text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50/50 transition-colors">
-                            <td class="px-6 py-4">
-                                <a href="{{ route('creche.lotes.show', ['id' => $lote['id']], false) }}"
-                                   class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors"
-                                   title="Ver ficha do lote">
-                                    <i class="fa-solid fa-file-lines"></i>
-                                </a>
-                            </td>
-                            <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">{{ $lote['identificacao'] }}</td>
-                            <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ $lote['data_abertura'] }}</td>
-                            <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ $lote['quantidade'] }}</td>
-                            <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ $lote['dias_alojamento'] }}</td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="5" class="px-6 py-8 text-center text-gray-500 italic">
-                                Nenhum lote aberto no momento.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+            <div class="p-6">
+                @if(empty($lotes))
+                    <div class="py-8 text-center text-gray-500 italic">
+                        Nenhum lote aberto no momento.
+                    </div>
+                @else
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        @foreach($lotes as $lote)
+                            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all">
+                                <div class="p-4">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <div class="text-xs font-bold text-primary-600 uppercase tracking-wider">Lote</div>
+                                            <div class="mt-1 text-lg font-bold text-gray-900 truncate" title="{{ $lote['identificacao'] }}">{{ $lote['identificacao'] }}</div>
+                                        </div>
+                                        <a href="{{ route('creche.lotes.show', ['id' => $lote['id']], false) }}"
+                                           class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors flex-shrink-0"
+                                           title="Ver ficha do lote">
+                                            <i class="fa-solid fa-file-lines"></i>
+                                        </a>
+                                    </div>
+
+                                    <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                                        <div class="rounded-xl bg-gray-50 border border-gray-100 px-3 py-2">
+                                            <div class="text-[11px] text-gray-500 uppercase tracking-wider font-semibold">Data abertura</div>
+                                            <div class="mt-1 font-bold text-gray-900">{{ $lote['data_abertura'] }}</div>
+                                        </div>
+                                        <div class="rounded-xl bg-gray-50 border border-gray-100 px-3 py-2">
+                                            <div class="text-[11px] text-gray-500 uppercase tracking-wider font-semibold">Dias na fase</div>
+                                            <div class="mt-1 font-bold text-gray-900">{{ $lote['dias_alojamento'] }}</div>
+                                        </div>
+                                        <div class="rounded-xl bg-gray-50 border border-gray-100 px-3 py-2 col-span-2">
+                                            <div class="text-[11px] text-gray-500 uppercase tracking-wider font-semibold">Qtd. animais</div>
+                                            <div class="mt-1 font-bold text-gray-900">{{ $lote['quantidade'] }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             </div>
         </div>
 

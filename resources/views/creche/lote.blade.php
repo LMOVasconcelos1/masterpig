@@ -180,8 +180,65 @@
                 </div>
             </div>
 
-            <div x-show="tab !== 'desempenho'" x-cloak class="bg-gray-50 border border-gray-100 rounded-xl p-6 text-sm text-gray-600">
-                Selecione a aba Desempenho para visualizar os indicadores.
+            <div x-show="tab === 'movimentacoes'" x-cloak>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-100">
+                            <thead>
+                                <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider bg-gray-50/50">
+                                    <th class="px-6 py-3">Data</th>
+                                    <th class="px-6 py-3">Tipo</th>
+                                    <th class="px-6 py-3">Quantidade</th>
+                                    <th class="px-6 py-3">Peso total</th>
+                                    <th class="px-6 py-3">Localização</th>
+                                    <th class="px-6 py-3">Descrição</th>
+                                    <th class="px-6 py-3">Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @forelse(($movimentacoes ?? []) as $m)
+                                    <tr class="text-sm text-gray-700 hover:bg-gray-50/50 transition-colors">
+                                        <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ $m['data'] ?? '-' }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            @if(($m['tipo'] ?? '') === 'entrada')
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">Entrada</span>
+                                            @else
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-50 text-red-700 border border-red-100">Saída</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4 font-semibold text-gray-900">{{ (int) ($m['quantidade'] ?? 0) }}</td>
+                                        <td class="px-6 py-4 text-gray-700 whitespace-nowrap">
+                                            {{ isset($m['peso_total']) && $m['peso_total'] !== null ? number_format((float) $m['peso_total'], 2, ',', '.') . ' kg' : '-' }}
+                                        </td>
+                                        <td class="px-6 py-4 text-gray-700">{{ ($m['localizacao'] ?? '') !== '' ? $m['localizacao'] : '-' }}</td>
+                                        <td class="px-6 py-4 text-gray-700 max-w-xl truncate" title="{{ $m['descricao'] ?? '' }}">{{ ($m['descricao'] ?? '') !== '' ? $m['descricao'] : '-' }}</td>
+                                        <td class="px-6 py-4 font-semibold text-gray-900">{{ (int) ($m['saldo'] ?? 0) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="px-6 py-10 text-center text-gray-500 italic">Nenhuma movimentação registrada para este lote.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div x-show="tab === 'nutricao'" x-cloak class="bg-gray-50 border border-gray-100 rounded-xl p-6 text-sm text-gray-600">
+                Em desenvolvimento.
+            </div>
+
+            <div x-show="tab === 'mortalidade'" x-cloak class="bg-gray-50 border border-gray-100 rounded-xl p-6 text-sm text-gray-600">
+                Em desenvolvimento.
+            </div>
+
+            <div x-show="tab === 'sanidade'" x-cloak class="bg-gray-50 border border-gray-100 rounded-xl p-6 text-sm text-gray-600">
+                Em desenvolvimento.
+            </div>
+
+            <div x-show="tab === 'historico'" x-cloak class="bg-gray-50 border border-gray-100 rounded-xl p-6 text-sm text-gray-600">
+                Em desenvolvimento.
             </div>
         </div>
     </div>

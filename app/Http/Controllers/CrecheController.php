@@ -327,11 +327,12 @@ class CrecheController extends Controller
         $pesoMedioEntrada = null;
 
         $metaDiasNaFase = 42;
+        $movimentacoes = [];
 
         if (Schema::hasTable('creche_compras')) {
             $compras = DB::table('creche_compras')
                 ->where('lote_id', $id)
-                ->get(['id', 'data_compra', 'data_nascimento', 'quantidade', 'peso_total', 'localizacao']);
+                ->get(['id', 'data_compra', 'data_nascimento', 'quantidade', 'peso_total', 'localizacao', 'nota_fiscal']);
 
             $entradasQtd = (int) $compras->sum('quantidade');
             $entradasPesoTotal = (float) $compras->sum('peso_total');
@@ -388,15 +389,81 @@ class CrecheController extends Controller
             if ($dataAbertura) {
                 $previsaoFechamento = $dataAbertura->copy()->addDays($metaDiasNaFase);
             }
+
+            $movimentacoes = array_merge($movimentacoes, $compras->map(function ($c) {
+                $data = empty($c->data_compra) ? null : Carbon::parse($c->data_compra)->startOfDay();
+                $qtd = (int) ($c->quantidade ?? 0);
+                $peso = $c->peso_total === null ? null : (float) $c->peso_total;
+                $origem = (string) ($c->nota_fiscal ?? '');
+
+                return [
+                    'data_raw' => $data?->toDateString(),
+                    'data' => PigCycleService::formatDisplayDate($data),
+                    'tipo' => 'entrada',
+                    'tipo_label' => 'Entrada',
+                    'quantidade' => $qtd,
+                    'peso_total' => $peso,
+                    'localizacao' => (string) ($c->localizacao ?? ''),
+                    'descricao' => $origem !== '' ? $origem : 'Entrada',
+                ];
+            })->all());
         }
 
         if (Schema::hasTable('creche_mortes')) {
             $mortesQtd = (int) (DB::table('creche_mortes')->where('lote_id', $id)->sum('quantidade') ?? 0);
+
+            $mortes = DB::table('creche_mortes')
+                ->where('lote_id', $id)
+                ->get(['id', 'data_morte', 'quantidade', 'localizacao', 'causa', 'origem_identificacao']);
+
+            $movimentacoes = array_merge($movimentacoes, $mortes->map(function ($m) {
+                $data = empty($m->data_morte) ? null : Carbon::parse($m->data_morte)->startOfDay();
+                $qtd = (int) ($m->quantidade ?? 0);
+                $causa = (string) ($m->causa ?? '');
+                $origem = (string) ($m->origem_identificacao ?? '');
+                $desc = $causa !== '' ? $causa : 'Morte';
+                if ($origem !== '') {
+                    $desc .= ' - ' . $origem;
+                }
+
+                return [
+                    'data_raw' => $data?->toDateString(),
+                    'data' => PigCycleService::formatDisplayDate($data),
+                    'tipo' => 'saida',
+                    'tipo_label' => 'Saída',
+                    'quantidade' => $qtd,
+                    'peso_total' => null,
+                    'localizacao' => (string) ($m->localizacao ?? ''),
+                    'descricao' => $desc,
+                ];
+            })->all());
         }
 
         $saldo = max(0, $entradasQtd - $mortesQtd);
         $mortalidadePct = $entradasQtd > 0 ? round(($mortesQtd / $entradasQtd) * 100, 2) : 0.0;
         $diasNaFase = $dataAbertura ? (int) $dataAbertura->diffInDays(Carbon::today()) : 0;
+
+        usort($movimentacoes, function ($a, $b) {
+            $da = (string) ($a['data_raw'] ?? '');
+            $db = (string) ($b['data_raw'] ?? '');
+            if ($da !== $db) {
+                return strcmp($da, $db);
+            }
+            $oa = ($a['tipo'] ?? '') === 'entrada' ? 0 : 1;
+            $ob = ($b['tipo'] ?? '') === 'entrada' ? 0 : 1;
+            return $oa <=> $ob;
+        });
+
+        $saldoCalc = 0;
+        foreach ($movimentacoes as $i => $mov) {
+            $q = (int) ($mov['quantidade'] ?? 0);
+            if (($mov['tipo'] ?? '') === 'entrada') {
+                $saldoCalc += $q;
+            } else {
+                $saldoCalc -= $q;
+            }
+            $movimentacoes[$i]['saldo'] = max(0, $saldoCalc);
+        }
 
         return view('creche.lote', [
             'lote' => [
@@ -427,6 +494,7 @@ class CrecheController extends Controller
                 'peso_medio_saida' => null,
                 'peso_proj_saida' => null,
             ],
+            'movimentacoes' => $movimentacoes,
         ]);
     }
 }
