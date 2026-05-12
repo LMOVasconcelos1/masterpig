@@ -403,25 +403,27 @@
                 <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
                     <thead>
                         <tr class="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider bg-gray-50/50">
+                            <th class="px-6 py-3 w-10"></th>
                             <th class="px-6 py-3">Lote</th>
                             <th class="px-6 py-3">Data Abertura</th>
                             <th class="px-6 py-3">Qtd. Animais</th>
                             <th class="px-6 py-3">Dias de Alojamento</th>
-                            <th class="px-6 py-3">Ações</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                         @forelse($lotes as $lote)
                         <tr class="text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50/50 transition-colors">
+                            <td class="px-6 py-4">
+                                <a href="{{ route('creche.lotes.show', ['id' => $lote['id']], false) }}"
+                                   class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors"
+                                   title="Ver ficha do lote">
+                                    <i class="fa-solid fa-file-lines"></i>
+                                </a>
+                            </td>
                             <td class="px-6 py-4 font-semibold text-gray-900 dark:text-gray-100">{{ $lote['identificacao'] }}</td>
                             <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ $lote['data_abertura'] }}</td>
                             <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ $lote['quantidade'] }}</td>
                             <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ $lote['dias_alojamento'] }}</td>
-                            <td class="px-6 py-4">
-                                <button class="text-primary-600 hover:text-primary-800 font-medium text-xs uppercase tracking-wider transition-colors">
-                                    Ver Detalhes
-                                </button>
-                            </td>
                         </tr>
                         @empty
                         <tr>
@@ -525,6 +527,7 @@
                             <table class="w-full text-left border-collapse">
                                 <thead>
                                     <tr class="bg-gray-50/50">
+                                        <th class="px-6 py-3 text-xs font-bold text-text-secondary uppercase tracking-wider w-10"></th>
                                         <th class="px-6 py-3 text-xs font-bold text-text-secondary uppercase tracking-wider">Nome</th>
                                         <th class="px-6 py-3 text-xs font-bold text-text-secondary uppercase tracking-wider">Características</th>
                                         <th class="px-6 py-3 text-xs font-bold text-text-secondary uppercase tracking-wider">Situação</th>
@@ -533,13 +536,20 @@
                                 <tbody class="divide-y divide-gray-100">
                                     @forelse(($lotesCadastrados ?? []) as $l)
                                         <tr class="hover:bg-gray-50/50 transition-colors">
+                                            <td class="px-6 py-4">
+                                                <a href="{{ route('creche.lotes.show', ['id' => $l['id']], false) }}"
+                                                   class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors"
+                                                   title="Ver ficha do lote">
+                                                    <i class="fa-solid fa-file-lines"></i>
+                                                </a>
+                                            </td>
                                             <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ $l['nome'] }}</td>
                                             <td class="px-6 py-4 text-sm text-gray-700">{{ $l['caracteristicas'] ?? '-' }}</td>
                                             <td class="px-6 py-4 text-sm text-gray-700">{{ $l['situacao'] ?? '-' }}</td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="3" class="px-6 py-8 text-center text-gray-500 italic">Nenhum lote cadastrado.</td>
+                                            <td colspan="4" class="px-6 py-8 text-center text-gray-500 italic">Nenhum lote cadastrado.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>

@@ -47,8 +47,12 @@ class CrecheController extends Controller
         }
 
         if (Schema::hasTable('creche_compras')) {
-            $estoque = (int) (DB::table('creche_compras')->sum('quantidade') ?? 0);
-            $stats['estoque_animais'] = max(0, $estoque);
+            $entradas = (int) (DB::table('creche_compras')->sum('quantidade') ?? 0);
+            $saidas = 0;
+            if (Schema::hasTable('creche_mortes')) {
+                $saidas = (int) (DB::table('creche_mortes')->sum('quantidade') ?? 0);
+            }
+            $stats['estoque_animais'] = max(0, $entradas - $saidas);
         }
 
         if (Schema::hasTable('creche_compras') && Schema::hasTable('creche_lotes')) {
@@ -123,16 +127,35 @@ class CrecheController extends Controller
         }
 
         if (Schema::hasTable('creche_lotes') && Schema::hasTable('creche_compras')) {
+            $comprasAgg = DB::table('creche_compras')
+                ->selectRaw('lote_id, MIN(data_compra) as data_abertura, COALESCE(SUM(quantidade), 0) as quantidade')
+                ->groupBy('lote_id');
+
+            $mortesAgg = null;
+            if (Schema::hasTable('creche_mortes')) {
+                $mortesAgg = DB::table('creche_mortes')
+                    ->selectRaw('lote_id, COALESCE(SUM(quantidade), 0) as mortes')
+                    ->groupBy('lote_id');
+            }
+
             $rows = DB::table('creche_lotes as l')
-                ->leftJoin('creche_compras as c', 'c.lote_id', '=', 'l.id')
+                ->leftJoinSub($comprasAgg, 'c', 'c.lote_id', '=', 'l.id');
+
+            $qtyExpr = 'GREATEST(0, COALESCE(c.quantidade, 0))';
+            if ($mortesAgg) {
+                $rows->leftJoinSub($mortesAgg, 'm', 'm.lote_id', '=', 'l.id');
+                $qtyExpr = 'GREATEST(0, COALESCE(c.quantidade, 0) - COALESCE(m.mortes, 0))';
+            }
+
+            $rows = $rows
                 ->where('l.situacao', 'aberto')
-                ->groupBy('l.id', 'l.nome')
+                ->groupBy('l.id', 'l.nome', 'c.data_abertura', 'c.quantidade')
                 ->orderBy('l.nome')
                 ->get([
                     'l.id',
                     'l.nome',
-                    DB::raw('MIN(c.data_compra) as data_abertura'),
-                    DB::raw('COALESCE(SUM(c.quantidade), 0) as quantidade'),
+                    'c.data_abertura',
+                    DB::raw($qtyExpr . ' as quantidade'),
                 ]);
 
             $lotesResumo = $rows->map(function ($r) {
@@ -268,5 +291,142 @@ class CrecheController extends Controller
         ]);
 
         return redirect()->route('creche')->with('success', 'Morte registrada com sucesso!');
+    }
+
+    public function showLote(int $id)
+    {
+        if (!Schema::hasTable('creche_lotes')) {
+            abort(404);
+        }
+
+        $lote = DB::table('creche_lotes')
+            ->where('id', $id)
+            ->first(['id', 'nome', 'caracteristicas', 'situacao']);
+
+        if (!$lote) {
+            abort(404);
+        }
+
+        $lotes = DB::table('creche_lotes')
+            ->orderBy('nome')
+            ->get(['id', 'nome'])
+            ->map(fn ($r) => ['id' => (int) $r->id, 'nome' => (string) $r->nome])
+            ->all();
+
+        $entradasQtd = 0;
+        $entradasPesoTotal = 0.0;
+        $mortesQtd = 0;
+        $saldo = 0;
+
+        $dataAbertura = null;
+        $previsaoFechamento = null;
+        $dataMediaNascimento = null;
+        $localizacao = null;
+
+        $idadeMediaEntrada = null;
+        $pesoMedioEntrada = null;
+
+        $metaDiasNaFase = 42;
+
+        if (Schema::hasTable('creche_compras')) {
+            $compras = DB::table('creche_compras')
+                ->where('lote_id', $id)
+                ->get(['id', 'data_compra', 'data_nascimento', 'quantidade', 'peso_total', 'localizacao']);
+
+            $entradasQtd = (int) $compras->sum('quantidade');
+            $entradasPesoTotal = (float) $compras->sum('peso_total');
+
+            $minData = $compras->min('data_compra');
+            $dataAbertura = $minData ? Carbon::parse($minData)->startOfDay() : null;
+
+            $localizacao = DB::table('creche_compras')
+                ->where('lote_id', $id)
+                ->whereNotNull('localizacao')
+                ->where('localizacao', '<>', '')
+                ->orderByDesc('data_compra')
+                ->orderByDesc('id')
+                ->value('localizacao');
+
+            $weightedBirthTs = 0.0;
+            $weightedBirthQty = 0;
+            $weightedAgeDays = 0.0;
+            $weightedAgeQty = 0;
+
+            foreach ($compras as $c) {
+                $q = (int) ($c->quantidade ?? 0);
+                if ($q <= 0) {
+                    continue;
+                }
+
+                if (!empty($c->data_nascimento)) {
+                    $birth = Carbon::parse($c->data_nascimento)->startOfDay();
+                    $weightedBirthTs += ($birth->getTimestamp() * $q);
+                    $weightedBirthQty += $q;
+                }
+
+                if (!empty($c->data_compra) && !empty($c->data_nascimento)) {
+                    $compra = Carbon::parse($c->data_compra)->startOfDay();
+                    $birth = Carbon::parse($c->data_nascimento)->startOfDay();
+                    $weightedAgeDays += ($birth->diffInDays($compra) * $q);
+                    $weightedAgeQty += $q;
+                }
+            }
+
+            if ($weightedBirthQty > 0) {
+                $avgTs = (int) round($weightedBirthTs / $weightedBirthQty);
+                $dataMediaNascimento = Carbon::createFromTimestamp($avgTs)->startOfDay();
+            }
+
+            if ($weightedAgeQty > 0) {
+                $idadeMediaEntrada = round($weightedAgeDays / $weightedAgeQty, 2);
+            }
+
+            if ($entradasQtd > 0) {
+                $pesoMedioEntrada = round($entradasPesoTotal / $entradasQtd, 2);
+            }
+
+            if ($dataAbertura) {
+                $previsaoFechamento = $dataAbertura->copy()->addDays($metaDiasNaFase);
+            }
+        }
+
+        if (Schema::hasTable('creche_mortes')) {
+            $mortesQtd = (int) (DB::table('creche_mortes')->where('lote_id', $id)->sum('quantidade') ?? 0);
+        }
+
+        $saldo = max(0, $entradasQtd - $mortesQtd);
+        $mortalidadePct = $entradasQtd > 0 ? round(($mortesQtd / $entradasQtd) * 100, 2) : 0.0;
+        $diasNaFase = $dataAbertura ? (int) $dataAbertura->diffInDays(Carbon::today()) : 0;
+
+        return view('creche.lote', [
+            'lote' => [
+                'id' => (int) $lote->id,
+                'nome' => (string) $lote->nome,
+                'caracteristicas' => (string) ($lote->caracteristicas ?? ''),
+                'situacao' => (string) ($lote->situacao ?? ''),
+            ],
+            'lotes' => $lotes,
+            'resumo' => [
+                'data_abertura' => $dataAbertura ? PigCycleService::formatDisplayDate($dataAbertura) : '-',
+                'previsao_fechamento' => $previsaoFechamento ? PigCycleService::formatDisplayDate($previsaoFechamento) : '-',
+                'data_media_nascimento' => $dataMediaNascimento ? PigCycleService::formatDisplayDate($dataMediaNascimento) : '-',
+                'localizacao' => $localizacao ? (string) $localizacao : '-',
+                'saldo_animais' => $saldo,
+            ],
+            'metricas' => [
+                'entrada' => $entradasQtd,
+                'idade_media_entrada' => $idadeMediaEntrada,
+                'peso_medio_entrada' => $pesoMedioEntrada,
+                'consumo_racao' => 0.0,
+                'consumo_racao_cab' => null,
+                'mortalidade_pct' => $mortalidadePct,
+                'dias_na_fase' => $diasNaFase,
+                'meta_dias_na_fase' => $metaDiasNaFase,
+                'saida' => $mortesQtd,
+                'idade_media_saida' => null,
+                'peso_medio_saida' => null,
+                'peso_proj_saida' => null,
+            ],
+        ]);
     }
 }

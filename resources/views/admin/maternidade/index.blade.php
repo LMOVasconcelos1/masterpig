@@ -13,6 +13,8 @@
     matrizesAptas: {{ json_encode($matrizesAptas) }},
     matrizPartoSearch: '',
     femeasLactantes: {{ json_encode($femeasLactantesFull) }},
+    lotesCreche: {{ json_encode($lotesCreche ?? []) }},
+    usuarios: {{ json_encode($usuarios ?? []) }},
     morteCausas: {{ json_encode($morteCausas) }},
     criteriosLoaded: false,
     calendarType: 'gregoriano',
@@ -23,6 +25,9 @@
     partoPickerTop: 0,
     partoPickerLeft: 0,
     partoPickerDirection: 'down',
+    desmamePickerTop: 0,
+    desmamePickerLeft: 0,
+    desmamePickerDirection: 'down',
     partoForm: {
         femea_id: '',
         cobertura_id: '',
@@ -37,6 +42,24 @@
         data: '{{ date('Y-m-d') }}',
         nova_causa_nome: ''
     },
+    desmameForm: {
+        femea_id: '',
+        parto_id: '',
+        dataIso: '{{ date('Y-m-d') }}',
+        data: '',
+        quantidade: '',
+        peso_medio: '',
+        lote_destino_id: '',
+        localizacao_destino: '',
+        destino_matriz: '',
+        baia_matriz: '',
+        peso_matriz: '',
+        escore_corporal: '',
+        caracteristicas_desmame: '',
+        funcionario: '',
+        observacao: ''
+    },
+    desmameFemeaSearch: '',
     
     isoToBr(iso) {
         const v = String(iso || '').trim();
@@ -125,6 +148,7 @@
     },
     getPickerSelectedIso() {
         if (this.activePicker === 'parto') return String(this.partoForm.dataIso || '');
+        if (this.activePicker === 'desmame') return String(this.desmameForm.dataIso || '');
         return '';
     },
     prevCalendarMonth() {
@@ -196,8 +220,37 @@
         const iso = String(dateStr || '').trim();
         const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
         if (!m) return;
-        this.setPartoDateIso(iso);
+        if (this.activePicker === 'parto') this.setPartoDateIso(iso);
+        if (this.activePicker === 'desmame') this.setDesmameDateIso(iso);
         this.activePicker = null;
+    },
+    openDesmameDatePicker() {
+        const iso = String(this.desmameForm.dataIso || '').trim();
+        const base = iso && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(iso + 'T12:00:00') : new Date();
+        this.calendarMonth = base.getMonth();
+        this.calendarYear = base.getFullYear();
+        this.activePicker = 'desmame';
+        this.$nextTick(() => {
+            const el = this.$refs && this.$refs.desmameDateInput ? this.$refs.desmameDateInput : null;
+            if (!el || typeof el.getBoundingClientRect !== 'function') return;
+            const rect = el.getBoundingClientRect();
+            const popW = window.innerWidth >= 640 ? 288 : Math.min(320, Math.max(260, window.innerWidth - 32));
+            const half = popW / 2;
+            const minLeft = half + 8;
+            const maxLeft = Math.max(minLeft, window.innerWidth - half - 8);
+            const centerLeft = rect.left + rect.width / 2;
+            const left = Math.min(maxLeft, Math.max(minLeft, centerLeft));
+
+            const desiredH = 360;
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const spaceAbove = rect.top;
+            const direction = (spaceBelow < desiredH && spaceAbove > spaceBelow) ? 'up' : 'down';
+            const top = direction === 'up' ? rect.top : rect.bottom;
+
+            this.desmamePickerLeft = left;
+            this.desmamePickerTop = top;
+            this.desmamePickerDirection = direction;
+        });
     },
     handlePartoSubmit(e) {
         this.selecionarMatrizPartoPorIdPrimaria(true);
@@ -214,12 +267,17 @@
     },
     init() {
         this.setPartoDateIso(this.partoForm.dataIso);
+        this.$watch('showDesmameModal', (open) => {
+            if (!open) return;
+            this.hydrateDesmameFromPartoId(this.selectedPartoId);
+        });
         fetch('/api/criterios', { headers: { 'Accept': 'application/json' } })
             .then(r => r.json())
             .then(data => {
                 const items = data.items || {};
                 this.calendarType = (items.criterio_calendario_tipo === null || items.criterio_calendario_tipo === undefined || String(items.criterio_calendario_tipo).trim() === '') ? 'gregoriano' : String(items.criterio_calendario_tipo);
                 this.setPartoDateIso(this.partoForm.dataIso);
+                this.setDesmameDateIso('{{ date('Y-m-d') }}');
                 this.criteriosLoaded = true;
             })
             .catch(() => { this.criteriosLoaded = true; });
@@ -234,6 +292,87 @@
             this.morteForm.parto_id = '';
             this.morteForm.disponiveis = 0;
         }
+    },
+
+    resetDesmameForm() {
+        this.desmameForm = {
+            femea_id: '',
+            parto_id: '',
+            dataIso: '',
+            data: '',
+            quantidade: '',
+            peso_medio: '',
+            lote_destino_id: '',
+            localizacao_destino: '',
+            destino_matriz: '',
+            baia_matriz: '',
+            peso_matriz: '',
+            escore_corporal: '',
+            caracteristicas_desmame: '',
+            funcionario: '',
+            observacao: ''
+        };
+        this.desmameFemeaSearch = '';
+        this.setDesmameDateIso('{{ date('Y-m-d') }}');
+    },
+    setDesmameDateIso(iso) {
+        const v = String(iso || '').trim();
+        if (!v) {
+            this.desmameForm.dataIso = '';
+            this.desmameForm.data = '';
+            return;
+        }
+        this.desmameForm.dataIso = v;
+        if (this.calendarType === '1000_dias' && typeof toPigDay === 'function') {
+            this.desmameForm.data = String(toPigDay(v + 'T00:00:00'));
+        } else {
+            this.desmameForm.data = this.isoToBr(v);
+        }
+    },
+    openDesmameModal(partoId = null) {
+        this.resetDesmameForm();
+        this.selectedPartoId = partoId;
+        this.showDesmameModal = true;
+    },
+    getDesmameSelectedLactante() {
+        const pid = this.selectedPartoId || this.desmameForm.parto_id;
+        if (pid) {
+            return this.femeasLactantes.find(f => String(f.parto_id) === String(pid)) || null;
+        }
+        const fid = this.desmameForm.femea_id;
+        if (fid) {
+            return this.femeasLactantes.find(f => String(f.id) === String(fid)) || null;
+        }
+        return null;
+    },
+    hydrateDesmameFromPartoId(partoId) {
+        if (!partoId) return;
+        const selected = this.femeasLactantes.find(f => String(f.parto_id) === String(partoId));
+        if (!selected) return;
+        this.desmameForm.femea_id = String(selected.id);
+        this.desmameForm.parto_id = String(selected.parto_id);
+        this.desmameFemeaSearch = String(selected.id_primaria || '');
+    },
+    selecionarMatrizDesmamePorIdPrimaria(strict = false) {
+        const q = String(this.desmameFemeaSearch || '').trim().toLowerCase();
+        if (!q) {
+            if (!strict) this.resetDesmameForm();
+            return;
+        }
+        const exact = this.femeasLactantes.find((f) => String(f?.id_primaria || '').toLowerCase() === q);
+        if (strict && !exact) return;
+        const match = exact || this.femeasLactantes.find((f) => String(f?.id_primaria || '').toLowerCase().includes(q));
+        if (!match) return;
+        this.desmameForm.femea_id = String(match.id);
+        this.desmameForm.parto_id = String(match.parto_id);
+        this.selectedPartoId = match.parto_id;
+        this.desmameFemeaSearch = String(match.id_primaria || this.desmameFemeaSearch);
+    },
+    desmamePesoTotal() {
+        const q = Number(String(this.desmameForm.quantidade || '').replace(',', '.'));
+        const pm = Number(String(this.desmameForm.peso_medio || '').replace(',', '.'));
+        if (!Number.isFinite(q) || !Number.isFinite(pm)) return 0;
+        return q * pm;
     },
 
     async adicionarCausa() {
@@ -394,7 +533,7 @@
                             <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ $inc['previsao_desmame'] }}</td>
                             <td class="px-6 py-4 font-semibold text-red-600 dark:text-red-400">{{ $inc['problema'] }}</td>
                             <td class="px-6 py-4">
-                                <button @click="selectedPartoId = {{ $inc['parto_id'] }}; showDesmameModal = true" 
+                                <button @click="openDesmameModal({{ $inc['parto_id'] }})" 
                                     class="inline-flex items-center px-3 py-2 bg-primary-600 text-white text-xs font-semibold rounded-xl hover:bg-primary-700 transition-colors">
                                     Cadastrar Desmame
                                 </button>
@@ -494,9 +633,62 @@
         </div>
 
         <!-- Conteúdo Sub-aba Desmames -->
-        <div x-show="subTab === 'desmames'" class="card p-8 text-center">
-            <i class="fa-solid fa-hourglass-half text-text-muted text-4xl mb-4"></i>
-            <p class="text-text-secondary text-sm italic">Módulo de listagem de desmames em desenvolvimento.</p>
+        <div x-show="subTab === 'desmames'" class="space-y-4">
+            <div class="flex justify-between items-center">
+                <h4 class="text-sm font-bold text-navy-900 uppercase tracking-wider">Desmames</h4>
+                <button @click="openDesmameModal(null)"
+                    class="inline-flex items-center px-4 py-2 bg-primary-600 text-white text-sm font-bold rounded-card hover:bg-primary-700 transition-colors">
+                    <i class="fa-solid fa-plus mr-2"></i> Novo Desmame
+                </button>
+            </div>
+
+            <div class="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50/50">
+                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Data</th>
+                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Fêmea</th>
+                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Desmamados</th>
+                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Peso Médio</th>
+                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Peso Total</th>
+                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Lote Destino</th>
+                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Localização Destino</th>
+                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Destino Matriz</th>
+                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Usuário</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                            @forelse($desmamesRegistrados as $d)
+                            <tr class="hover:bg-gray-50/50 transition-colors">
+                                <td class="px-6 py-4 text-sm text-navy-900">{{ \Carbon\Carbon::parse($d->data)->format('d/m/Y') }}</td>
+                                <td class="px-6 py-4 text-sm font-semibold text-navy-900">
+                                    {{ (string) $d->id_primaria . ($d->id_secundaria ? " ({$d->id_secundaria})" : "") }}
+                                </td>
+                                <td class="px-6 py-4 text-sm font-bold text-navy-900">{{ $d->quantidade }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700">{{ $d->peso_medio !== null ? number_format((float) $d->peso_medio, 2, ',', '.') . ' kg' : '-' }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700">
+                                    @php
+                                        $pesoTotal = ($d->peso_medio !== null && $d->quantidade !== null) ? ((float) $d->peso_medio * (int) $d->quantidade) : null;
+                                    @endphp
+                                    {{ $pesoTotal !== null ? number_format($pesoTotal, 2, ',', '.') . ' kg' : '-' }}
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-700">{{ $d->lote_destino ?? '-' }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700">{{ $d->localizacao_destino ?? '-' }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700">{{ $d->destino_matriz ?? '-' }}{{ ($d->baia_matriz ?? null) ? ' - ' . $d->baia_matriz : '' }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-700">{{ $d->funcionario ?? '-' }}</td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="9" class="px-6 py-8 text-center text-text-muted italic">
+                                    Nenhum desmame registrado recentemente.
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- Conteúdo Sub-aba Mortes -->
@@ -518,7 +710,7 @@
                                 <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Fêmea</th>
                                 <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Quant.</th>
                                 <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Causa</th>
-                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Funcionário</th>
+                                <th class="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Usuário</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
@@ -591,8 +783,13 @@
                             <input type="number" name="quantidade" required min="1" :max="morteForm.disponiveis" x-model="morteForm.quantidade" class="w-full rounded-lg border-gray-300 text-sm">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Funcionário</label>
-                            <input type="text" name="funcionario" class="w-full rounded-lg border-gray-300 text-sm" placeholder="Nome...">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
+                            <select name="funcionario" class="w-full rounded-lg border-gray-300 text-sm">
+                                <option value="">Selecione</option>
+                                <template x-for="u in usuarios" :key="`um-${u.id}`">
+                                    <option :value="u.name" x-text="u.name"></option>
+                                </template>
+                            </select>
                         </div>
                     </div>
 
@@ -745,14 +942,191 @@
     <div x-show="showDesmameModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="fixed inset-0 bg-gray-900/50 dark:bg-black/60" @click="showDesmameModal = false"></div>
-            <div class="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl max-w-lg w-full overflow-hidden border border-gray-100 dark:border-gray-800">
+            <div class="relative bg-white dark:bg-gray-900 rounded-xl shadow-xl max-w-3xl w-full overflow-hidden border border-gray-100 dark:border-gray-800">
                 <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 flex justify-between items-center text-gray-800 dark:text-gray-200">
                     <h3 class="text-lg font-bold">Registrar Desmame</h3>
                     <button @click="showDesmameModal = false"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <form action="{{ route('maternidade.desmames.store') }}" method="POST" class="p-6 space-y-4">
+                <form action="{{ route('maternidade.desmames.store') }}" method="POST" class="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
                     @csrf
-                    <input type="hidden" name="parto_id" :value="selectedPartoId">
+                    <input type="hidden" name="parto_id" x-model="desmameForm.parto_id">
+
+                    <div class="p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+                        <div class="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-3">Dados da matriz</div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">ID fêmea *</label>
+                                <input type="text"
+                                       x-model="desmameFemeaSearch"
+                                       list="femeas-desmame-list"
+                                       @keydown.enter.prevent="selecionarMatrizDesmamePorIdPrimaria(false)"
+                                       @change="selecionarMatrizDesmamePorIdPrimaria(true)"
+                                       class="w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500"
+                                       placeholder="Digite o ID primária e pressione Enter"
+                                       autocomplete="off">
+                                <datalist id="femeas-desmame-list">
+                                    <template x-for="f in femeasLactantes.slice(0, 100)" :key="`md-${f.id}`">
+                                        <option :value="f.id_primaria" x-text="f.id_secundaria ? `${f.id_primaria} / ${f.id_secundaria}` : f.id_primaria"></option>
+                                    </template>
+                                </datalist>
+                                <div class="mt-2 text-xs text-gray-600 dark:text-gray-300" x-show="getDesmameSelectedLactante()">
+                                    <span class="font-semibold" x-text="getDesmameSelectedLactante()?.identificacao"></span>
+                                    <span class="ml-2" x-show="getDesmameSelectedLactante()?.parto_lote">Lote: <span class="font-semibold" x-text="getDesmameSelectedLactante()?.parto_lote"></span></span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data de desmame *</label>
+                                <div class="mt-1 relative">
+                                    <input type="text"
+                                           name="data_input"
+                                           required
+                                           x-model="desmameForm.data"
+                                           x-ref="desmameDateInput"
+                                           @click="openDesmameDatePicker()"
+                                           class="w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500 pr-10"
+                                           :placeholder="calendarType === '1000_dias' ? 'Dia PIG' : 'DD/MM/AAAA'"
+                                           inputmode="numeric"
+                                           autocomplete="off"
+                                           readonly>
+                                    <button type="button" @click="openDesmameDatePicker()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                        <i class="fa-solid fa-calendar"></i>
+                                    </button>
+
+                                    <div x-show="activePicker === 'desmame'"
+                                         x-cloak
+                                         :style="`top:${desmamePickerTop}px; left:${desmamePickerLeft}px;`"
+                                         :class="desmamePickerDirection === 'up' ? '-translate-y-full -mt-2' : 'mt-2'"
+                                         class="fixed z-[200] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-[calc(100vw-2rem)] max-w-xs sm:w-72 -translate-x-1/2 max-h-[calc(100vh-12rem)] overflow-y-auto"
+                                         @click.away="activePicker = null">
+                                        <div class="flex items-center justify-between mb-3">
+                                            <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                <i class="fa-solid fa-chevron-left"></i>
+                                            </button>
+                                            <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                            <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                <i class="fa-solid fa-chevron-right"></i>
+                                            </button>
+                                        </div>
+
+                                        <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                                            <template x-for="day in ['D','S','T','Q','Q','S','S']">
+                                                <div class="font-medium text-gray-500 dark:text-gray-400 py-1" x-text="day"></div>
+                                            </template>
+                                        </div>
+
+                                        <div class="grid grid-cols-7 gap-1">
+                                            <template x-for="day in getCalendarDays()" :key="day.date">
+                                                <div class="text-center">
+                                                    <button type="button"
+                                                            @click.stop="selectCalendarDate(day.date)"
+                                                            :class="day.isSelected ? 'bg-primary-600 text-white' : (day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400')"
+                                                            :disabled="!day.isCurrentMonth"
+                                                            class="p-2 text-sm rounded-lg transition-colors w-full">
+                                                        <span x-text="day.day"></span>
+                                                    </button>
+                                                    <div class="text-[8px] text-gray-500 dark:text-gray-400 mt-1" x-show="day.isCurrentMonth && day.pigDay" x-text="day.pigDay"></div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                            <div class="rounded-lg border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-3 py-2">
+                                <div class="text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">Mortes</div>
+                                <div class="text-gray-900 dark:text-gray-100 font-bold mt-1" x-text="getDesmameSelectedLactante()?.mortes ?? 0"></div>
+                            </div>
+                            <div class="rounded-lg border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-3 py-2">
+                                <div class="text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">Movimentações</div>
+                                <div class="text-gray-900 dark:text-gray-100 font-bold mt-1">
+                                    <span class="text-emerald-600">Recebidos:</span> <span x-text="getDesmameSelectedLactante()?.recebidos ?? 0"></span>
+                                    <span class="ml-3 text-red-600">Doados:</span> <span x-text="getDesmameSelectedLactante()?.doados ?? 0"></span>
+                                </div>
+                            </div>
+                            <div class="rounded-lg border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-3 py-2">
+                                <div class="text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">Leitões disponíveis</div>
+                                <div class="text-gray-900 dark:text-gray-100 font-bold mt-1" x-text="getDesmameSelectedLactante()?.disponiveis ?? 0"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Dados do desmame</div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Desmamados *</label>
+                                <input type="number" name="quantidade" required min="1" :max="getDesmameSelectedLactante()?.disponiveis ?? null" x-model="desmameForm.quantidade" class="w-full rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Peso médio (kg)</label>
+                                <input type="number" step="0.01" name="peso_medio" x-model="desmameForm.peso_medio" class="w-full rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100">
+                                <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    Peso total (kg): <span class="font-semibold text-gray-900 dark:text-gray-100" x-text="desmamePesoTotal().toFixed(2)"></span>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lote destino</label>
+                                <select name="lote_destino_id" required x-model="desmameForm.lote_destino_id" class="w-full rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100">
+                                    <option value="">Selecione</option>
+                                    <template x-for="l in lotesCreche" :key="`lc-${l.id}`">
+                                        <option :value="l.id" x-text="l.nome"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Localização de destino</label>
+                                <input type="text" name="localizacao_destino" x-model="desmameForm.localizacao_destino" class="w-full rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Usuário</label>
+                                <select name="funcionario" x-model="desmameForm.funcionario" class="w-full rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100">
+                                    <option value="">Selecione</option>
+                                    <template x-for="u in usuarios" :key="`u-${u.id}`">
+                                        <option :value="u.name" x-text="u.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Dados complementares</div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Para onde vai a matriz</label>
+                                <input type="text" name="destino_matriz" x-model="desmameForm.destino_matriz" class="w-full rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Baia</label>
+                                <input type="text" name="baia_matriz" x-model="desmameForm.baia_matriz" class="w-full rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Peso da matriz (kg)</label>
+                                <input type="number" step="0.01" name="peso_matriz" x-model="desmameForm.peso_matriz" class="w-full rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Características do desmame</label>
+                                <input type="text" name="caracteristicas_desmame" x-model="desmameForm.caracteristicas_desmame" class="w-full rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Escore corporal</label>
+                                <select name="escore_corporal" x-model="desmameForm.escore_corporal" class="w-full rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100">
+                                    <option value="">Selecione</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-3">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Observações</label>
+                                <textarea name="observacao" rows="2" x-model="desmameForm.observacao" class="w-full rounded-xl border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100"></textarea>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="mt-6 flex justify-end gap-3">
                         <button type="button" @click="showDesmameModal = false" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Cancelar</button>

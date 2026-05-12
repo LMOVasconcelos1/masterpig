@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PigCycleService;
 use App\Models\MaternidadeParto;
 use App\Models\MaternidadeDesmame;
 use App\Models\MaternidadeAdocao;
@@ -10,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 
 class MaternidadeController extends Controller
 {
@@ -182,9 +184,68 @@ class MaternidadeController extends Controller
                 ->get();
         }
 
+        $lotesCreche = [];
+        if (Schema::hasTable('creche_lotes')) {
+            $lotesCreche = DB::table('creche_lotes')
+                ->where('situacao', 'aberto')
+                ->orderBy('nome')
+                ->get(['id', 'nome'])
+                ->map(fn ($r) => ['id' => (int) $r->id, 'nome' => (string) $r->nome])
+                ->all();
+        }
+
+        $usuarios = [];
+        if (Schema::hasTable('usuario')) {
+            $usuarios = DB::table('usuario')
+                ->orderBy('nome')
+                ->get(['id', 'nome'])
+                ->map(fn ($r) => ['id' => (int) $r->id, 'name' => (string) $r->nome])
+                ->all();
+        }
+
+        $desmamesRegistrados = [];
+        if (Schema::hasTable('maternidade_desmame')) {
+            $desmamesRegistrados = DB::table('maternidade_desmame as md')
+                ->join('maternidade_parto as mp', 'mp.id', '=', 'md.parto_id')
+                ->join('femea as f', 'f.id', '=', 'mp.femea_id')
+                ->select([
+                    'md.*',
+                    'mp.data as data_parto',
+                    'mp.lote as lote_parto',
+                    'mp.total_vivos',
+                    'f.id_primaria',
+                    'f.id_secundaria',
+                ])
+                ->orderByDesc('md.data')
+                ->orderByDesc('md.id')
+                ->limit(100)
+                ->get();
+        }
+
         // Fêmeas com leitões disponíveis (Lactantes)
         $femeasLactantesFull = [];
         if (Schema::hasTable('maternidade_parto')) {
+            $mortesByParto = collect();
+            if (Schema::hasTable('maternidade_morte_leitao')) {
+                $mortesByParto = DB::table('maternidade_morte_leitao')
+                    ->selectRaw('parto_id, COALESCE(SUM(quantidade), 0) as total')
+                    ->groupBy('parto_id')
+                    ->pluck('total', 'parto_id');
+            }
+
+            $recebidosByParto = collect();
+            $doadosByParto = collect();
+            if (Schema::hasTable('maternidade_adocao')) {
+                $recebidosByParto = DB::table('maternidade_adocao')
+                    ->selectRaw('parto_destino_id as parto_id, COALESCE(SUM(quantidade), 0) as total')
+                    ->groupBy('parto_destino_id')
+                    ->pluck('total', 'parto_id');
+                $doadosByParto = DB::table('maternidade_adocao')
+                    ->selectRaw('parto_origem_id as parto_id, COALESCE(SUM(quantidade), 0) as total')
+                    ->groupBy('parto_origem_id')
+                    ->pluck('total', 'parto_id');
+            }
+
             $femeasLactantesFull = DB::table('maternidade_parto as mp')
                 ->join('femea as f', 'f.id', '=', 'mp.femea_id')
                 ->leftJoin('maternidade_desmame as md', 'mp.id', '=', 'md.parto_id')
@@ -194,19 +255,20 @@ class MaternidadeController extends Controller
                     'f.id_primaria',
                     'f.id_secundaria',
                     'mp.id as parto_id',
-                    'mp.total_vivos'
+                    'mp.data as parto_data',
+                    'mp.lote as parto_lote',
+                    'mp.total_vivos',
                 ])
                 ->get()
-                ->map(function ($row) {
-                    // Subtrair mortes registradas
-                    $mortes = 0;
-                    if (Schema::hasTable('maternidade_morte_leitao')) {
-                        $mortes = DB::table('maternidade_morte_leitao')
-                            ->where('parto_id', $row->parto_id)
-                            ->sum('quantidade');
-                    }
-                    
-                    $row->disponiveis = max(0, $row->total_vivos - $mortes);
+                ->map(function ($row) use ($mortesByParto, $recebidosByParto, $doadosByParto) {
+                    $mortes = (int) ($mortesByParto[$row->parto_id] ?? 0);
+                    $recebidos = (int) ($recebidosByParto[$row->parto_id] ?? 0);
+                    $doados = (int) ($doadosByParto[$row->parto_id] ?? 0);
+
+                    $row->mortes = $mortes;
+                    $row->recebidos = $recebidos;
+                    $row->doados = $doados;
+                    $row->disponiveis = max(0, (int) $row->total_vivos + $recebidos - $doados - $mortes);
                     $row->identificacao = (string) $row->id_primaria . ($row->id_secundaria ? " ({$row->id_secundaria})" : "");
                     return $row;
                 });
@@ -220,7 +282,10 @@ class MaternidadeController extends Controller
             'partosRegistrados',
             'morteCausas',
             'mortesLeitaoRegistradas',
-            'femeasLactantesFull'
+            'femeasLactantesFull',
+            'desmamesRegistrados',
+            'lotesCreche',
+            'usuarios'
         ));
     }
 
@@ -324,15 +389,120 @@ class MaternidadeController extends Controller
 
     public function storeDesmame(Request $request)
     {
-        $validated = $request->validate([
-            'parto_id' => 'required|exists:maternidade_parto,id',
-            'data' => 'required|date',
+        $rules = [
+            'parto_id' => [
+                'required',
+                'exists:maternidade_parto,id',
+                Rule::unique('maternidade_desmame', 'parto_id'),
+            ],
+            'data_input' => 'required|string|max:20',
             'quantidade' => 'required|integer|min:1',
             'peso_medio' => 'nullable|numeric|min:0',
-            'observacao' => 'nullable|string',
+            'localizacao_destino' => 'nullable|string|max:80',
+            'destino_matriz' => 'nullable|string|max:80',
+            'baia_matriz' => 'nullable|string|max:80',
+            'peso_matriz' => 'nullable|numeric|min:0',
+            'escore_corporal' => 'nullable|string|max:30',
+            'caracteristicas_desmame' => 'nullable|string|max:500',
+            'funcionario' => 'nullable|string|max:255',
+            'observacao' => 'nullable|string|max:500',
+        ];
+
+        if (Schema::hasTable('creche_lotes')) {
+            $rules['lote_destino_id'] = ['required', 'integer', 'exists:creche_lotes,id'];
+        } else {
+            $rules['lote_destino'] = 'nullable|string|max:60';
+        }
+
+        $validated = $request->validate($rules, [
+            'parto_id.unique' => 'Já existe um desmame registrado para este parto.',
         ]);
 
-        MaternidadeDesmame::create($validated);
+        $partoId = (int) $validated['parto_id'];
+        $loteDestinoId = isset($validated['lote_destino_id']) ? (int) $validated['lote_destino_id'] : null;
+
+        $parsedData = PigCycleService::parseFilterDate($validated['data_input']);
+        if (!$parsedData) {
+            return redirect()->back()->withErrors(['data_input' => 'Data de desmame inválida.']);
+        }
+
+        $partoRow = DB::table('maternidade_parto as mp')
+            ->join('femea as f', 'f.id', '=', 'mp.femea_id')
+            ->where('mp.id', $partoId)
+            ->select(['mp.id', 'mp.data as data_parto', 'mp.femea_id', 'f.id_primaria', 'f.id_secundaria'])
+            ->first();
+
+        if (!$partoRow) {
+            return redirect()->back()->withErrors(['parto_id' => 'Parto inválido.']);
+        }
+
+        DB::transaction(function () use ($validated, $loteDestinoId, $partoRow, $partoId, $parsedData) {
+            $payload = [
+                'parto_id' => $partoId,
+                'data' => $parsedData->toDateString(),
+                'quantidade' => (int) $validated['quantidade'],
+                'peso_medio' => $validated['peso_medio'] ?? null,
+                'observacao' => $validated['observacao'] ?? null,
+            ];
+
+            if ($loteDestinoId && Schema::hasTable('creche_lotes')) {
+                $nomeLote = DB::table('creche_lotes')->where('id', $loteDestinoId)->value('nome');
+                if (Schema::hasColumn('maternidade_desmame', 'lote_destino')) {
+                    $payload['lote_destino'] = $nomeLote ? (string) $nomeLote : null;
+                }
+                if (Schema::hasColumn('maternidade_desmame', 'lote_destino_id')) {
+                    $payload['lote_destino_id'] = $loteDestinoId;
+                }
+            } else if (Schema::hasColumn('maternidade_desmame', 'lote_destino')) {
+                $payload['lote_destino'] = $validated['lote_destino'] ?? null;
+            }
+
+            $extra = [
+                'localizacao_destino' => $validated['localizacao_destino'] ?? null,
+                'destino_matriz' => $validated['destino_matriz'] ?? null,
+                'baia_matriz' => $validated['baia_matriz'] ?? null,
+                'peso_matriz' => $validated['peso_matriz'] ?? null,
+                'escore_corporal' => $validated['escore_corporal'] ?? null,
+                'caracteristicas_desmame' => $validated['caracteristicas_desmame'] ?? null,
+                'funcionario' => $validated['funcionario'] ?? null,
+            ];
+
+            foreach ($extra as $col => $value) {
+                if (Schema::hasColumn('maternidade_desmame', $col)) {
+                    $payload[$col] = $value;
+                }
+            }
+
+            MaternidadeDesmame::create($payload);
+
+            if (!Schema::hasTable('creche_compras') || !Schema::hasTable('creche_lotes') || !$loteDestinoId) {
+                return;
+            }
+
+            $dataDesmame = $parsedData->copy()->startOfDay()->format('Y-m-d');
+            $dataNascimento = Carbon::parse($partoRow->data_parto)->startOfDay()->format('Y-m-d');
+
+            $qtd = (int) $validated['quantidade'];
+            $pesoMedio = $validated['peso_medio'] !== null ? (float) $validated['peso_medio'] : null;
+            $pesoTotal = $pesoMedio !== null ? round($pesoMedio * $qtd, 2) : 0.0;
+
+            $ident = (string) $partoRow->id_primaria . ($partoRow->id_secundaria ? " ({$partoRow->id_secundaria})" : '');
+            $nota = "DESMAME MATERNIDADE - Parto {$partoId} - {$ident}";
+
+            DB::table('creche_compras')->insert([
+                'data_compra' => $dataDesmame,
+                'lote_id' => $loteDestinoId,
+                'localizacao' => $validated['localizacao_destino'] ?? null,
+                'quantidade' => $qtd,
+                'peso_total' => $pesoTotal,
+                'data_nascimento' => $dataNascimento,
+                'valor_compra' => null,
+                'fornecedor_id' => null,
+                'nota_fiscal' => mb_substr($nota, 0, 120),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        });
 
         return redirect()->back()->with('success', 'Desmame registrado com sucesso!');
     }

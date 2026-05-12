@@ -93,6 +93,7 @@ Route::get('/gestacao/formulario-cobertura/pdf', function() {
 })->middleware(['auth'])->name('gestacao.formulario.pdf');
 Route::get('/maternidade', [MaternidadeController::class, 'index'])->middleware(['auth'])->name('maternidade');
 Route::get('/creche', [CrecheController::class, 'index'])->middleware(['auth'])->name('creche');
+Route::get('/creche/lotes/{id}', [CrecheController::class, 'showLote'])->middleware(['auth'])->whereNumber('id')->name('creche.lotes.show');
 Route::get('/terminacao', function() {
     return view('terminacao');
 })->middleware(['auth'])->name('terminacao');

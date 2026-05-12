@@ -19,12 +19,21 @@ class MaternidadeDesmame extends Model
         'data',
         'quantidade',
         'peso_medio',
+        'lote_destino',
+        'localizacao_destino',
+        'destino_matriz',
+        'baia_matriz',
+        'peso_matriz',
+        'escore_corporal',
+        'caracteristicas_desmame',
+        'funcionario',
         'observacao',
     ];
 
     protected $casts = [
         'data' => 'date',
         'peso_medio' => 'decimal:2',
+        'peso_matriz' => 'decimal:2',
     ];
 
     public function parto()

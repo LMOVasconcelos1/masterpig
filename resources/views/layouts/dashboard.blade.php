@@ -544,7 +544,7 @@
             <span>
                 Este sistema está em desenvolvimento ativo.
                 <span class="font-semibold tracking-wide ml-1 px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-700 text-[11px] uppercase">
-                    Versão Alpha 0.01
+                    Versão 0.05
                 </span>
             </span>
         </div>
