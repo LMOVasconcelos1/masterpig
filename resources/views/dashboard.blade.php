@@ -160,6 +160,9 @@
         calendarMonth: new Date().getMonth(),
         calendarYear: new Date().getFullYear(),
         calendarMonths: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
+        mortePickerTop: 0,
+        mortePickerLeft: 0,
+        mortePickerDirection: 'down',
         prevCalendarMonth() {
             if (this.calendarMonth === 0) {
                 this.calendarMonth = 11;
@@ -222,11 +225,51 @@
                 else if (this.activePicker === 'semen_nascimento') {
                     if (this.semenForm) this.semenForm.data_nascimento = pigDay;
                 }
+                else if (this.activePicker === 'semen_validade') {
+                    if (this.semenForm) this.semenForm.validade = pigDay;
+                }
                 else if (this.activePicker === 'editCio') {
                     if (this.editCioData) this.editCioData.data = pigDay;
                 }
             }
             this.activePicker = null;
+        },
+        openMorteDatePicker() {
+            const el =
+                (this.$refs && (this.$refs.morteDateInputMacho || this.$refs.morteDateInputFemea || this.$refs.morteDateInput))
+                    ? (this.$refs.morteDateInputMacho || this.$refs.morteDateInputFemea || this.$refs.morteDateInput)
+                    : null;
+            const raw = String(el && el.value ? el.value : '').trim();
+            let base = new Date();
+            if (/^\d+$/.test(raw) && typeof pigDayToDate === 'function') {
+                const iso = pigDayToDate(raw);
+                if (iso && /^\d{4}-\d{2}-\d{2}$/.test(String(iso))) {
+                    base = new Date(String(iso) + 'T12:00:00');
+                }
+            }
+            this.calendarMonth = base.getMonth();
+            this.calendarYear = base.getFullYear();
+            this.activePicker = 'morte';
+            this.$nextTick(() => {
+                if (!el || typeof el.getBoundingClientRect !== 'function') return;
+                const rect = el.getBoundingClientRect();
+                const popW = window.innerWidth >= 640 ? 288 : Math.min(320, Math.max(260, window.innerWidth - 32));
+                const half = popW / 2;
+                const minLeft = half + 8;
+                const maxLeft = Math.max(minLeft, window.innerWidth - half - 8);
+                const centerLeft = rect.left + rect.width / 2;
+                const left = Math.min(maxLeft, Math.max(minLeft, centerLeft));
+
+                const desiredH = 360;
+                const spaceBelow = window.innerHeight - rect.bottom;
+                const spaceAbove = rect.top;
+                const direction = (spaceBelow < desiredH && spaceAbove > spaceBelow) ? 'up' : 'down';
+                const top = direction === 'up' ? rect.top : rect.bottom;
+
+                this.mortePickerLeft = left;
+                this.mortePickerTop = top;
+                this.mortePickerDirection = direction;
+            });
         },
         getSelectedPigDay() {
             let raw = '';
@@ -244,6 +287,7 @@
                 else if (this.activePicker === 'venda') raw = this.dataVenda;
                 else if (this.activePicker === 'semen_compra') raw = (this.semenForm ? this.semenForm.data_compra : '');
                 else if (this.activePicker === 'semen_nascimento') raw = (this.semenForm ? this.semenForm.data_nascimento : '');
+                else if (this.activePicker === 'semen_validade') raw = (this.semenForm ? this.semenForm.validade : '');
                 else if (this.activePicker === 'editCio') raw = (this.editCioData ? this.editCioData.data : '');
             }
             const iso = this.parseBrDate(raw);
@@ -558,6 +602,7 @@
             raca_id: '',
             data_nascimento: '',
             data_compra: '',
+            validade: '',
             valor_compra: '',
             fornecedor_id: '',
         },
@@ -648,6 +693,7 @@
                 raca_id: '',
                 data_nascimento: '',
                 data_compra: '',
+                validade: '',
                 valor_compra: '',
                 fornecedor_id: '',
             };
@@ -2572,7 +2618,7 @@
                                                 </select>
                                             </div>
                                             <div>
-                                                <label class="block text-sm font-medium text-gray-700">Data Nascimento</label>
+                                                <label class="block text-sm font-medium text-gray-700">Data produção</label>
                                                 <div class="mt-1 relative">
                                                     <input type="text"
                                                            x-model="semenForm.data_nascimento"
@@ -2678,6 +2724,62 @@
                                                         <div class="mt-3 pt-3 border-t border-gray-200">
                                                             <div class="text-xs text-gray-500">
                                                                 <span x-text="calendarType === '1000_dias' ? 'Dia PIG: ' + getSelectedPigDay() : 'Data: ' + semenForm.data_compra"></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700">Validade</label>
+                                                <div class="mt-1 relative">
+                                                    <input type="text"
+                                                           x-model="semenForm.validade"
+                                                           @input="semenForm.validade = $event.target.value.replace(/\D/g, '')"
+                                                           @click="activePicker = 'semen_validade'"
+                                                           class="mt-1 w-full shadow-sm text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 pr-10 bg-white text-gray-900"
+                                                           placeholder="Dia PIG"
+                                                           inputmode="numeric"
+                                                           autocomplete="off">
+                                                    <button type="button" @click="activePicker = 'semen_validade'" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                                        <i class="fa-solid fa-calendar"></i>
+                                                    </button>
+
+                                                    <div x-show="activePicker === 'semen_validade'" x-cloak class="absolute z-50 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg p-4 w-[calc(100vw-2rem)] max-w-xs sm:w-72 left-0 right-0 mx-auto sm:left-auto sm:right-0"
+                                                         @click.away="activePicker = null">
+                                                        <div class="flex items-center justify-between mb-3">
+                                                            <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 rounded">
+                                                                <i class="fa-solid fa-chevron-left"></i>
+                                                            </button>
+                                                            <span class="font-medium text-gray-900" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                            <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 rounded">
+                                                                <i class="fa-solid fa-chevron-right"></i>
+                                                            </button>
+                                                        </div>
+
+                                                        <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                                                            <template x-for="day in ['D','S','T','Q','Q','S','S']">
+                                                                <div class="font-medium text-gray-500 py-1" x-text="day"></div>
+                                                            </template>
+                                                        </div>
+
+                                                        <div class="grid grid-cols-7 gap-1">
+                                                            <template x-for="day in getCalendarDays()" :key="day.date">
+                                                                <div class="text-center">
+                                                                    <button type="button"
+                                                                            @click.stop="selectCalendarDate(day.date)"
+                                                                            :class="day.isCurrentMonth ? 'text-gray-900 hover:bg-primary-50' : 'text-gray-400'"
+                                                                            :disabled="!day.isCurrentMonth"
+                                                                            class="p-2 text-sm rounded-lg transition-colors w-full"
+                                                                            x-text="day.day">
+                                                                    </button>
+                                                                    <div class="text-[8px] text-gray-500 mt-1" x-show="day.isCurrentMonth && day.pigDay" x-text="day.pigDay"></div>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+
+                                                        <div class="mt-3 pt-3 border-t border-gray-200">
+                                                            <div class="text-xs text-gray-500">
+                                                                <span x-text="calendarType === '1000_dias' ? 'Dia PIG: ' + getSelectedPigDay() : 'Data: ' + semenForm.validade"></span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -3299,7 +3401,7 @@
         <div x-show="openNovo" class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true" x-cloak>
             <div class="flex items-center justify-center min-h-screen p-4">
                 <div x-show="openNovo" @click="openNovo = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
-                <div x-show="openNovo" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 translate-y-4 scale-95" class="relative bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all max-w-5xl w-full border border-gray-100 max-h-[calc(100vh-2rem)] z-10 flex flex-col">
+                <div x-show="openNovo" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 scale-95" x-transition:enter-end="opacity-100 translate-y-0 scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 scale-100" x-transition:leave-end="opacity-0 translate-y-4 scale-95" class="relative bg-white rounded-2xl text-left overflow-hidden shadow-2xl transition-all max-w-5xl w-full border border-gray-100 max-h-[calc(100vh-2rem)] z-10 flex flex-col">
                     <div class="bg-gradient-to-r from-primary-700 to-primary-600 px-6 py-5 shrink-0">
                         <div class="flex items-start justify-between">
                             <div class="text-left">
@@ -3327,58 +3429,63 @@
                                     <label class="block text-sm font-medium text-gray-700">Data da morte</label>
                                     <div class="mt-1 relative">
                                         <input type="text" 
+                                               x-ref="morteDateInputFemea"
                                                x-model="dataMorte" 
                                                @input="dataMorte = $event.target.value.replace(/\D/g, '')"
-                                               @click="activePicker = 'morte'"
+                                               @click="openMorteDatePicker()"
                                                class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 pr-10" 
                                                placeholder="Dia PIG" 
                                                inputmode="numeric" 
                                                autocomplete="off">
-                                        <button type="button" @click="activePicker = 'morte'" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                        <button type="button" @click="openMorteDatePicker()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
                                             <i class="fa-solid fa-calendar"></i>
                                         </button>
                                         
-                                        <!-- Calendário PIG -->
-                                        <div x-show="activePicker === 'morte'" x-cloak class="absolute z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72" 
-                                             :class="{'right-0': window.innerWidth > 640, 'left-0 right-0 mx-auto': window.innerWidth <= 640}" 
-                                             @click.away="activePicker = null">
-                                            <div class="flex items-center justify-between mb-3">
-                                                <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-                                                    <i class="fa-solid fa-chevron-left"></i>
-                                                </button>
-                                                <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
-                                                <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-                                                    <i class="fa-solid fa-chevron-right"></i>
-                                                </button>
-                                            </div>
-                                            
-                                            <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
-                                                <template x-for="day in ['D','S','T','Q','Q','S','S']">
-                                                    <div class="font-medium text-gray-500 dark:text-gray-400 py-1" x-text="day"></div>
-                                                </template>
-                                            </div>
-                                            
-                                            <div class="grid grid-cols-7 gap-1">
-                                                <template x-for="day in getCalendarDays()" :key="day.date">
-                                                    <div class="text-center">
-                                                        <button type="button" 
-                                                                @click.stop="selectCalendarDate(day.date)"
-                                                                :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
-                                                                :disabled="!day.isCurrentMonth"
-                                                                class="p-2 text-sm rounded-lg transition-colors w-full"
-                                                                x-text="day.day">
-                                                        </button>
-                                                        <div class="text-[8px] text-gray-500 dark:text-gray-400 mt-1" x-show="day.isCurrentMonth && day.pigDay" x-text="day.pigDay"></div>
+                                        <template x-teleport="body">
+                                            <div x-show="openNovo && activePicker === 'morte'"
+                                                 x-cloak
+                                                 :style="`top:${mortePickerTop}px; left:${mortePickerLeft}px;`"
+                                                 :class="mortePickerDirection === 'up' ? '-translate-y-full -mt-2' : 'mt-2'"
+                                                 class="fixed z-[9999] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-[calc(100vw-2rem)] max-w-xs sm:w-72 -translate-x-1/2 max-h-[calc(100vh-12rem)] overflow-y-auto"
+                                                 @click.away="activePicker = null">
+                                                <div class="flex items-center justify-between mb-3">
+                                                    <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                        <i class="fa-solid fa-chevron-left"></i>
+                                                    </button>
+                                                    <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                    <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                        <i class="fa-solid fa-chevron-right"></i>
+                                                    </button>
+                                                </div>
+
+                                                <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                                                    <template x-for="day in ['D','S','T','Q','Q','S','S']">
+                                                        <div class="font-medium text-gray-500 dark:text-gray-400 py-1" x-text="day"></div>
+                                                    </template>
+                                                </div>
+
+                                                <div class="grid grid-cols-7 gap-1">
+                                                    <template x-for="day in getCalendarDays()" :key="day.date">
+                                                        <div class="text-center">
+                                                            <button type="button"
+                                                                    @click.stop="selectCalendarDate(day.date)"
+                                                                    :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                                    :disabled="!day.isCurrentMonth"
+                                                                    class="p-2 text-sm rounded-lg transition-colors w-full"
+                                                                    x-text="day.day">
+                                                            </button>
+                                                            <div class="text-[8px] text-gray-500 dark:text-gray-400 mt-1" x-show="day.isCurrentMonth && day.pigDay" x-text="day.pigDay"></div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+
+                                                <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                        <span x-text="calendarType === '1000_dias' ? 'Dia PIG: ' + getSelectedPigDay() : 'Data: ' + dataMorte"></span>
                                                     </div>
-                                                </template>
-                                            </div>
-                                            
-                                            <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                                                <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                    <span x-text="calendarType === '1000_dias' ? 'Dia PIG: ' + getSelectedPigDay() : 'Data: ' + dataMorte"></span>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </template>
                                     </div>
                                 </div>
                                 <div>
@@ -3407,58 +3514,63 @@
                                     <label class="block text-sm font-medium text-gray-700">Data da morte</label>
                                     <div class="mt-1 relative">
                                         <input type="text" 
+                                               x-ref="morteDateInputMacho"
                                                x-model="dataMorte" 
                                                @input="dataMorte = $event.target.value.replace(/\D/g, '')"
-                                               @click="activePicker = 'morte'"
+                                               @click="openMorteDatePicker()"
                                                class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 pr-10" 
                                                placeholder="Dia PIG" 
                                                inputmode="numeric" 
                                                autocomplete="off">
-                                        <button type="button" @click="activePicker = 'morte'" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                                        <button type="button" @click="openMorteDatePicker()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
                                             <i class="fa-solid fa-calendar"></i>
                                         </button>
                                         
-                                        <!-- Calendário PIG -->
-                                        <div x-show="activePicker === 'morte'" x-cloak class="absolute z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72" 
-                                             :class="{'right-0': window.innerWidth > 640, 'left-0 right-0 mx-auto': window.innerWidth <= 640}" 
-                                             @click.away="activePicker = null">
-                                            <div class="flex items-center justify-between mb-3">
-                                                <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-                                                    <i class="fa-solid fa-chevron-left"></i>
-                                                </button>
-                                                <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
-                                                <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
-                                                    <i class="fa-solid fa-chevron-right"></i>
-                                                </button>
-                                            </div>
-                                            
-                                            <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
-                                                <template x-for="day in ['D','S','T','Q','Q','S','S']">
-                                                    <div class="font-medium text-gray-500 dark:text-gray-400 py-1" x-text="day"></div>
-                                                </template>
-                                            </div>
-                                            
-                                            <div class="grid grid-cols-7 gap-1">
-                                                <template x-for="day in getCalendarDays()" :key="day.date">
-                                                    <div class="text-center">
-                                                        <button type="button" 
-                                                                @click.stop="selectCalendarDate(day.date)"
-                                                                :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
-                                                                :disabled="!day.isCurrentMonth"
-                                                                class="p-2 text-sm rounded-lg transition-colors w-full"
-                                                                x-text="day.day">
-                                                        </button>
-                                                        <div class="text-[8px] text-gray-500 dark:text-gray-400 mt-1" x-show="day.isCurrentMonth && day.pigDay" x-text="day.pigDay"></div>
+                                        <template x-teleport="body">
+                                            <div x-show="openNovo && activePicker === 'morte'"
+                                                 x-cloak
+                                                 :style="`top:${mortePickerTop}px; left:${mortePickerLeft}px;`"
+                                                 :class="mortePickerDirection === 'up' ? '-translate-y-full -mt-2' : 'mt-2'"
+                                                 class="fixed z-[9999] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-[calc(100vw-2rem)] max-w-xs sm:w-72 -translate-x-1/2 max-h-[calc(100vh-12rem)] overflow-y-auto"
+                                                 @click.away="activePicker = null">
+                                                <div class="flex items-center justify-between mb-3">
+                                                    <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                        <i class="fa-solid fa-chevron-left"></i>
+                                                    </button>
+                                                    <span class="font-medium text-gray-900 " x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                                    <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                                        <i class="fa-solid fa-chevron-right"></i>
+                                                    </button>
+                                                </div>
+
+                                                <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                                                    <template x-for="day in ['D','S','T','Q','Q','S','S']">
+                                                        <div class="font-medium text-gray-500 dark:text-gray-400 py-1" x-text="day"></div>
+                                                    </template>
+                                                </div>
+
+                                                <div class="grid grid-cols-7 gap-1">
+                                                    <template x-for="day in getCalendarDays()" :key="day.date">
+                                                        <div class="text-center">
+                                                            <button type="button"
+                                                                    @click.stop="selectCalendarDate(day.date)"
+                                                                    :class="day.isCurrentMonth ? 'text-gray-900  hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400'"
+                                                                    :disabled="!day.isCurrentMonth"
+                                                                    class="p-2 text-sm rounded-lg transition-colors w-full"
+                                                                    x-text="day.day">
+                                                            </button>
+                                                            <div class="text-[8px] text-gray-500 dark:text-gray-400 mt-1" x-show="day.isCurrentMonth && day.pigDay" x-text="day.pigDay"></div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+
+                                                <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                                                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                        <span x-text="calendarType === '1000_dias' ? 'Dia PIG: ' + getSelectedPigDay() : 'Data: ' + dataMorte"></span>
                                                     </div>
-                                                </template>
-                                            </div>
-                                            
-                                            <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                                                <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                    <span x-text="calendarType === '1000_dias' ? 'Dia PIG: ' + getSelectedPigDay() : 'Data: ' + dataMorte"></span>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </template>
                                     </div>
                                 </div>
                                 <div>

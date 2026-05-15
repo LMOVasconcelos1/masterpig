@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Femea;
 use App\Services\PigCycleService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -289,59 +290,68 @@ class FemeaCompraController extends Controller
             }
         }
 
-        $result = DB::transaction(function () use ($validated) {
-            // Se informou peso_compra, define peso_atual igual ao peso_compra
-            if (isset($validated['peso_compra']) && $validated['peso_compra'] !== null) {
-                $validated['peso_atual'] = $validated['peso_compra'];
-            }
-
-            $femea = Femea::create($validated);
-            //Salva a compra da femea na tabela femea_movimento
-            DB::table('femea_movimento')->insert([
-                'femea_id' => $femea->id,
-                'femea_id_primaria' => $femea->id_primaria,
-                'acao' => 'compra',
-                'data' => $femea->data_compra,
-                'valor' => $femea->valor_compra,
-                'peso' => $femea->peso_compra,
-                'fornecedor_id' => $femea->fornecedor_id,
-                'criado_em' => now(),
-                'atualizado_em' => now(),
-            ]);
-
-            // Se informou que houve cio, registra na tabela gestacao_cio e femea_movimento
-            if (($validated['houve_cio'] ?? 'nao') === 'sim' && ! empty($validated['data_ultimo_cio'])) {
-                if (Schema::hasTable('gestacao_cio')) {
-                    $payload = [
-                        'femea_id' => $femea->id,
-                        'data' => $validated['data_ultimo_cio'],
-                    ];
-                    if (Schema::hasColumn('gestacao_cio', 'observacao')) {
-                        $payload['observacao'] = 'Registrado no ato da compra';
-                    }
-                    if (Schema::hasColumn('gestacao_cio', 'criado_em')) {
-                        $payload['criado_em'] = now();
-                    }
-                    if (Schema::hasColumn('gestacao_cio', 'atualizado_em')) {
-                        $payload['atualizado_em'] = now();
-                    }
-
-                    DB::table('gestacao_cio')->insert($payload);
+        try {
+            $result = DB::transaction(function () use ($validated) {
+                // Se informou peso_compra, define peso_atual igual ao peso_compra
+                if (isset($validated['peso_compra']) && $validated['peso_compra'] !== null) {
+                    $validated['peso_atual'] = $validated['peso_compra'];
                 }
 
-                // Registra o cio na tabela femea_movimento
+                $femea = Femea::create($validated);
+                //Salva a compra da femea na tabela femea_movimento
                 DB::table('femea_movimento')->insert([
                     'femea_id' => $femea->id,
                     'femea_id_primaria' => $femea->id_primaria,
-                    'acao' => 'cio',
-                    'data' => $validated['data_ultimo_cio'],
+                    'acao' => 'compra',
+                    'data' => $femea->data_compra,
+                    'valor' => $femea->valor_compra,
+                    'peso' => $femea->peso_compra,
+                    'fornecedor_id' => $femea->fornecedor_id,
                     'criado_em' => now(),
                     'atualizado_em' => now(),
                 ]);
-            }
 
-            return $femea;
-        });
+                // Se informou que houve cio, registra na tabela gestacao_cio e femea_movimento
+                if (($validated['houve_cio'] ?? 'nao') === 'sim' && ! empty($validated['data_ultimo_cio'])) {
+                    if (Schema::hasTable('gestacao_cio')) {
+                        $payload = [
+                            'femea_id' => $femea->id,
+                            'data' => $validated['data_ultimo_cio'],
+                        ];
+                        if (Schema::hasColumn('gestacao_cio', 'observacao')) {
+                            $payload['observacao'] = 'Registrado no ato da compra';
+                        }
+                        if (Schema::hasColumn('gestacao_cio', 'criado_em')) {
+                            $payload['criado_em'] = now();
+                        }
+                        if (Schema::hasColumn('gestacao_cio', 'atualizado_em')) {
+                            $payload['atualizado_em'] = now();
+                        }
+
+                        DB::table('gestacao_cio')->insert($payload);
+                    }
+
+                    // Registra o cio na tabela femea_movimento
+                    DB::table('femea_movimento')->insert([
+                        'femea_id' => $femea->id,
+                        'femea_id_primaria' => $femea->id_primaria,
+                        'acao' => 'cio',
+                        'data' => $validated['data_ultimo_cio'],
+                        'criado_em' => now(),
+                        'atualizado_em' => now(),
+                    ]);
+                }
+
+                return $femea;
+            });
+        } catch (QueryException $e) {
+            if ((string) $e->getCode() === '23000') {
+                return response()->json([
+                    'message' => 'Já existe uma fêmea cadastrada com essa identificação.',
+                ], 422);
+            }
+            throw $e;
+        }
 
         return response()->json([
             'message' => 'Compra registrada com sucesso!',

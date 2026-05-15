@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -120,7 +121,16 @@ class SemenController extends Controller
         $validated['criado_em'] = now();
         $validated['atualizado_em'] = now();
 
-        $semen = DB::table('semen')->insertGetId($validated);
+        try {
+            $semen = DB::table('semen')->insertGetId($validated);
+        } catch (QueryException $e) {
+            if ((string) $e->getCode() === '23000') {
+                return response()->json([
+                    'message' => 'Já existe um registro de sêmen com essa identificação.',
+                ], 422);
+            }
+            throw $e;
+        }
 
         return response()->json([
             'id' => $semen,

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\PigCycleService;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -185,8 +186,13 @@ class CrecheController extends Controller
 
     public function storeLote(Request $request)
     {
+        $request->merge([
+            'nome' => trim((string) $request->input('nome', '')),
+            'caracteristicas' => $request->input('caracteristicas') === null ? null : trim((string) $request->input('caracteristicas')),
+        ]);
+
         $validated = $request->validate([
-            'nome' => ['required', 'string', 'max:120'],
+            'nome' => ['required', 'string', 'max:120', 'unique:creche_lotes,nome'],
             'caracteristicas' => ['nullable', 'string', 'max:1000'],
         ]);
 
@@ -196,13 +202,22 @@ class CrecheController extends Controller
                 ->withErrors(['nome' => "Tabela 'creche_lotes' não existe."]);
         }
 
-        DB::table('creche_lotes')->insert([
-            'nome' => $validated['nome'],
-            'caracteristicas' => $validated['caracteristicas'] ?? null,
-            'situacao' => 'aberto',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        try {
+            DB::table('creche_lotes')->insert([
+                'nome' => $validated['nome'],
+                'caracteristicas' => $validated['caracteristicas'] ?? null,
+                'situacao' => 'aberto',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } catch (QueryException $e) {
+            if ((string) $e->getCode() === '23000') {
+                return back()
+                    ->withInput()
+                    ->withErrors(['nome' => 'Já existe um lote cadastrado com esse nome.']);
+            }
+            throw $e;
+        }
 
         return redirect()->route('creche')->with('success', 'Lote cadastrado com sucesso!');
     }

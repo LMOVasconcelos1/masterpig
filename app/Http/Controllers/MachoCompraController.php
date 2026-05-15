@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Macho;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -106,22 +107,31 @@ class MachoCompraController extends Controller
             ], 422);
         }
 
-        $result = DB::transaction(function () use ($validated) {
-            $macho = Macho::create($validated);
+        try {
+            $result = DB::transaction(function () use ($validated) {
+                $macho = Macho::create($validated);
 
-            DB::table('macho_movimento')->insert([
-                'macho_id' => $macho->id,
-                'acao' => 'compra',
-                'data' => $macho->data_compra,
-                'valor' => $macho->valor_compra,
-                'peso' => $macho->peso_compra,
-                'fornecedor_id' => $macho->fornecedor_id,
-                'criado_em' => now(),
-                'atualizado_em' => now(),
-            ]);
+                DB::table('macho_movimento')->insert([
+                    'macho_id' => $macho->id,
+                    'acao' => 'compra',
+                    'data' => $macho->data_compra,
+                    'valor' => $macho->valor_compra,
+                    'peso' => $macho->peso_compra,
+                    'fornecedor_id' => $macho->fornecedor_id,
+                    'criado_em' => now(),
+                    'atualizado_em' => now(),
+                ]);
 
-            return $macho;
-        });
+                return $macho;
+            });
+        } catch (QueryException $e) {
+            if ((string) $e->getCode() === '23000') {
+                return response()->json([
+                    'message' => 'Já existe um macho cadastrado com essa identificação.',
+                ], 422);
+            }
+            throw $e;
+        }
 
         return response()->json([
             'message' => 'Compra de macho registrada com sucesso!',
