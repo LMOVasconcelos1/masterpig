@@ -22,6 +22,7 @@
         coberturas: [],
         perdas: [],
         saltasCio: [],
+        editingCoberturaId: null,
 
         criteriosLoaded: false,
         calendarType: 'gregoriano',
@@ -527,6 +528,7 @@
             this.error = '';
             this.coberturaTab = 'principal';
             this.cobertura.presencaCio = 'sim';
+            this.editingCoberturaId = null;
             this.matrizSearch = '';
             this.cobertura.usuarioId = '';
             this.cobertura.montas = [
@@ -536,6 +538,69 @@
             ];
             this.openCobertura = true;
             this.loadSemens();
+        },
+        openCoberturaEdit(id) {
+            this.error = '';
+            this.coberturaTab = 'principal';
+            this.cobertura.presencaCio = 'sim';
+            this.editingCoberturaId = Number(id);
+            this.openCobertura = true;
+            this.loadSemens();
+
+            fetch(`/api/gestacao/coberturas/${id}`, { headers: { 'Accept': 'application/json' } })
+                .then(async (r) => {
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok) throw new Error(data?.message || 'Erro ao carregar cobertura');
+                    return data;
+                })
+                .then((data) => {
+                    const item = data?.item || null;
+                    if (!item) throw new Error('Cobertura inválida');
+
+                    this.cobertura.femeaId = String(item.femea_id || '');
+                    this.matrizSearch = String(item.matriz || '');
+                    this.cobertura.usuarioId = String(item.usuario_id || '');
+                    this.cobertura.presencaCio = String(item.presenca_cio || 'sim');
+                    this.cobertura.localizacao = item.localizacao || '';
+                    this.cobertura.baia = item.baia || '';
+                    this.cobertura.pesoMatriz = (item.peso_matriz === null || item.peso_matriz === undefined) ? '' : String(item.peso_matriz);
+                    this.cobertura.caracteristicas = item.caracteristicas || '';
+                    this.cobertura.observacoes = item.observacoes || '';
+
+                    const montas = Array.isArray(item.montas) ? item.montas : [];
+                    const formatIsoForInput = (iso) => {
+                        const v = String(iso || '').trim();
+                        if (!v) return '';
+                        if (this.calendarType === '1000_dias' && typeof toPigDay === 'function') {
+                            return String(toPigDay(v + 'T00:00:00'));
+                        }
+                        return this.isoToBr(v);
+                    };
+
+                    this.cobertura.montas = montas.map((m) => ({
+                        tipo: '',
+                        macho_id: '',
+                        semen: '',
+                        data: formatIsoForInput(m.data),
+                        hora: String(m.hora || ''),
+                        usuario_id: m.usuario_id ? String(m.usuario_id) : '',
+                        ref: String(m.ref || ''),
+                    }));
+
+                    if (this.cobertura.montas.length === 0) {
+                        this.cobertura.montas = [
+                            { tipo: '', macho_id: '', semen: '', data: formatIsoForInput(item.data), hora: String(item.hora || ''), usuario_id: String(item.usuario_id || ''), ref: '' },
+                            { tipo: '', macho_id: '', semen: '', data: formatIsoForInput(item.data), hora: String(item.hora || ''), usuario_id: String(item.usuario_id || ''), ref: '' },
+                            { tipo: '', macho_id: '', semen: '', data: formatIsoForInput(item.data), hora: String(item.hora || ''), usuario_id: String(item.usuario_id || ''), ref: '' },
+                        ];
+                    }
+
+                    this.cobertura.data = formatIsoForInput(item.data);
+                    this.cobertura.hora = String(item.hora || '');
+                })
+                .catch((e) => {
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao carregar cobertura', type: 'error' } }));
+                });
         },
         openPerdaModal() {
             this.error = '';
@@ -656,8 +721,12 @@
         doSaveCobertura(payload) {
             this.saving = true;
 
-            fetch('/api/gestacao/coberturas', {
-                method: 'POST',
+            const isEdit = this.editingCoberturaId !== null && this.editingCoberturaId !== undefined;
+            const url = isEdit ? `/api/gestacao/coberturas/${this.editingCoberturaId}` : '/api/gestacao/coberturas';
+            const method = isEdit ? 'PATCH' : 'POST';
+
+            fetch(url, {
+                method,
                 credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
@@ -678,8 +747,9 @@
                 })
                 .then((data) => {
                     const warnings = Array.isArray(data?.warnings) ? data.warnings : [];
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Cobertura registrada com sucesso!', type: 'success' } }));
+                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: isEdit ? 'Cobertura alterada com sucesso!' : 'Cobertura registrada com sucesso!', type: 'success' } }));
                     this.openCobertura = false;
+                    this.editingCoberturaId = null;
                     this.loadCoberturas();
                     if (warnings.length > 0) {
                         this.criteriosAfterSaveWarnings = warnings;
@@ -945,7 +1015,7 @@
                                     <th class="py-2 pr-4">Ações</th>
                                     <th class="py-2 pr-4">Matriz</th>
                                     <th class="py-2 pr-4">Macho/Sêmen</th>
-                                    <th class="py-2 pr-4">Data</th>
+                                    <th class="py-2 pr-4">Dia PIG</th>
                                     <th class="py-2 pr-4">Hora</th>
                                 </tr>
                             </thead>
@@ -953,13 +1023,18 @@
                                 <template x-for="c in coberturas" :key="c.id">
                                     <tr class="text-sm text-gray-700 dark:text-gray-300">
                                         <td class="py-2 pr-4">
-                                            <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20" title="Excluir" @click.prevent="deleteCobertura(c.id)">
-                                                <i class="fa-solid fa-trash"></i>
-                                            </button>
+                                            <div class="flex items-center gap-2">
+                                                <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700" title="Alterar" @click.prevent="openCoberturaEdit(c.id)">
+                                                    <i class="fa-solid fa-pen"></i>
+                                                </button>
+                                                <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20" title="Excluir" @click.prevent="deleteCobertura(c.id)">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
                                         </td>
                                         <td class="py-2 pr-4" x-text="c.matriz"></td>
                                         <td class="py-2 pr-4" x-text="c.montas_summary || c.macho || c.semen || '-'"></td>
-                                        <td class="py-2 pr-4" x-text="c.data"></td>
+                                        <td class="py-2 pr-4" x-text="c.data" :title="c.data_br || ''"></td>
                                         <td class="py-2 pr-4" x-text="c.hora || '-'"></td>
                                     </tr>
                                 </template>
@@ -1056,13 +1131,13 @@
 
     <div x-show="openCobertura" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div x-show="openCobertura" @click="openCobertura = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900/50 dark:bg-black/60 transition-opacity" aria-hidden="true"></div>
+            <div x-show="openCobertura" @click="openCobertura = false; editingCoberturaId = null" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900/50 dark:bg-black/60 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div x-show="openCobertura" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-2xl text-left overflow-visible shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-100 dark:border-gray-800">
                 <div class="bg-white dark:bg-gray-900 px-6 pt-6 pb-4">
                     <div class="flex items-start justify-between">
-                        <h3 class="text-lg leading-6 font-semibold text-gray-900 dark:text-gray-100">Registrar cobertura</h3>
-                        <button type="button" @click="openCobertura = false" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700" title="Fechar">
+                        <h3 class="text-lg leading-6 font-semibold text-gray-900 dark:text-gray-100" x-text="editingCoberturaId ? 'Alterar cobertura' : 'Registrar cobertura'"></h3>
+                        <button type="button" @click="openCobertura = false; editingCoberturaId = null" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700" title="Fechar">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
@@ -1229,7 +1304,7 @@
                         <template x-if="!saving"><span>Salvar</span></template>
                         <template x-if="saving"><span>Gravando...</span></template>
                     </button>
-                    <button type="button" @click="openCobertura = false" :disabled="saving" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-5 py-2.5 bg-white dark:bg-gray-800 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 sm:mt-0 sm:w-auto disabled:opacity-50">
+                    <button type="button" @click="openCobertura = false; editingCoberturaId = null" :disabled="saving" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-5 py-2.5 bg-white dark:bg-gray-800 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 sm:mt-0 sm:w-auto disabled:opacity-50">
                         Cancelar
                     </button>
                 </div>

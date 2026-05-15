@@ -114,6 +114,10 @@ Route::middleware('auth')->group(function () {
 
 // Rotas de Administração
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', function () {
+        return view('admin.index');
+    })->name('index');
+
     Route::get('/usuarios', [UsuarioController::class, 'index'])->name('usuarios.index');
     Route::post('/usuarios', [UsuarioController::class, 'store'])->name('usuarios.store');
     Route::patch('/usuarios/{user}', [UsuarioController::class, 'update'])->name('usuarios.update');
@@ -211,6 +215,8 @@ Route::middleware('auth')->get('/api/criterios', [CriteriosController::class, 'i
 Route::middleware(['auth', 'admin'])->get('/api/criterios/logs', [CriteriosLogsController::class, 'index']);
 Route::middleware('auth')->get('/api/gestacao/coberturas', [GestacaoCoberturaController::class, 'index']);
 Route::middleware('auth')->post('/api/gestacao/coberturas', [GestacaoCoberturaController::class, 'store']);
+Route::middleware('auth')->get('/api/gestacao/coberturas/{id}', [GestacaoCoberturaController::class, 'show'])->whereNumber('id');
+Route::middleware('auth')->patch('/api/gestacao/coberturas/{id}', [GestacaoCoberturaController::class, 'update'])->whereNumber('id');
 Route::middleware('auth')->delete('/api/gestacao/coberturas/{id}', [GestacaoCoberturaController::class, 'destroy'])->whereNumber('id');
 Route::middleware('auth')->get('/api/gestacao/cio', [GestacaoCioController::class, 'index']);
 Route::middleware('auth')->post('/api/gestacao/cio', [GestacaoCioController::class, 'store']);

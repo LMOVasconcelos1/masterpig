@@ -35,6 +35,14 @@ class PigCycleService
         return $absoluteDay % 1000;
     }
 
+    public static function toPigAbsoluteDay(?\DateTimeInterface $date): ?int
+    {
+        if (!$date) return null;
+        $date = Carbon::instance($date);
+        $base = Carbon::parse(self::PIG_BASE_DATE)->startOfDay();
+        return (int) $base->diffInDays($date->startOfDay(), false);
+    }
+
     /**
      * Converte um número de Dia PIG de volta para um objeto Carbon.
      * Lógica simples: encontrar o dia absoluto mais recente com esses últimos 3 dígitos.
