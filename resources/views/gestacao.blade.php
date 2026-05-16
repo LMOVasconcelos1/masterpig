@@ -557,6 +557,12 @@
                     const item = data?.item || null;
                     if (!item) throw new Error('Cobertura inválida');
 
+                    const normalizeHora = (h) => {
+                        const v = String(h || '').trim();
+                        if (/^\d{2}:\d{2}:\d{2}$/.test(v)) return v.slice(0, 5);
+                        return v;
+                    };
+
                     this.cobertura.femeaId = String(item.femea_id || '');
                     this.matrizSearch = String(item.matriz || '');
                     this.cobertura.usuarioId = String(item.usuario_id || '');
@@ -582,7 +588,7 @@
                         macho_id: '',
                         semen: '',
                         data: formatIsoForInput(m.data),
-                        hora: String(m.hora || ''),
+                        hora: normalizeHora(m.hora),
                         usuario_id: m.usuario_id ? String(m.usuario_id) : '',
                         ref: String(m.ref || ''),
                     }));
@@ -596,7 +602,7 @@
                     }
 
                     this.cobertura.data = formatIsoForInput(item.data);
-                    this.cobertura.hora = String(item.hora || '');
+                    this.cobertura.hora = normalizeHora(item.hora);
                 })
                 .catch((e) => {
                     window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao carregar cobertura', type: 'error' } }));
@@ -641,12 +647,14 @@
 
             const montasPayload = montasFilledIdx.map(({ r, i }) => {
                 const dataIso = this.montaDataToIso(r.data);
+                const horaRaw = String(r.hora || '').trim();
+                const hora = /^\d{2}:\d{2}:\d{2}$/.test(horaRaw) ? horaRaw.slice(0, 5) : horaRaw;
                 return {
                     tipo: String(r.tipo || ''),
                     macho_id: r.tipo === 'macho' ? Number(r.macho_id) : null,
                     semen: r.tipo === 'semen' ? String(r.semen || '').trim() : null,
                     data: dataIso,
-                    hora: String(r.hora || '').trim(),
+                    hora,
                     usuario_id: Number(r.usuario_id),
                     _idx: i,
                 };

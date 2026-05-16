@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -73,12 +74,53 @@ class GestacaoSaltaCioController extends Controller
             ]);
         }
 
-        DB::table('gestacao_salta_cio')->insert([
-            'femea_id' => $femeaId,
-            'data' => $data,
-            'criado_em' => now(),
-            'atualizado_em' => now(),
-        ]);
+        $sqlEnum = "ALTER TABLE `femea_movimento` MODIFY COLUMN `acao` ENUM('compra', 'morte', 'descarte', 'venda', 'cio', 'salta_cio', 'cobertura', 'parto', 'desmame', 'morte_leitao') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
+
+        try {
+            DB::transaction(function () use ($femeaId, $data, $sqlEnum) {
+                DB::table('gestacao_salta_cio')->insert([
+                    'femea_id' => $femeaId,
+                    'data' => $data,
+                    'criado_em' => now(),
+                    'atualizado_em' => now(),
+                ]);
+
+                if (! Schema::hasTable('femea_movimento')) {
+                    return;
+                }
+
+                $idPrimaria = DB::table('femea')->where('id', $femeaId)->value('id_primaria');
+                $payload = [
+                    'femea_id' => $femeaId,
+                    'acao' => 'salta_cio',
+                    'data' => $data,
+                    'valor' => null,
+                    'peso' => null,
+                    'fornecedor_id' => null,
+                    'observacoes' => null,
+                ];
+                if (Schema::hasColumn('femea_movimento', 'femea_id_primaria')) {
+                    $payload['femea_id_primaria'] = $idPrimaria;
+                }
+                if (Schema::hasColumn('femea_movimento', 'criado_em')) {
+                    $payload['criado_em'] = now();
+                }
+                if (Schema::hasColumn('femea_movimento', 'atualizado_em')) {
+                    $payload['atualizado_em'] = now();
+                }
+
+                DB::table('femea_movimento')->insert($payload);
+            });
+        } catch (QueryException $e) {
+            $msg = $e->getMessage();
+            if (str_contains($msg, 'Data truncated') && str_contains($msg, 'acao')) {
+                return response()->json([
+                    'message' => "Para registrar o histórico no plantel, é necessário atualizar o ENUM de `femea_movimento.acao`.",
+                    'sql' => $sqlEnum,
+                ], 422);
+            }
+            throw $e;
+        }
 
         return response()->json([
             'message' => 'Salta cio registrado com sucesso!',

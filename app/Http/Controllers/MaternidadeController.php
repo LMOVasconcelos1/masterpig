@@ -7,6 +7,7 @@ use App\Models\MaternidadeParto;
 use App\Models\MaternidadeDesmame;
 use App\Models\MaternidadeAdocao;
 use App\Models\Femea;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -303,24 +304,76 @@ class MaternidadeController extends Controller
             'observacao' => 'nullable|string',
         ]);
 
-        // Tentar encontrar a última cobertura para vincular
-        $cobertura = DB::table('gestacao_cobertura')
-            ->where('femea_id', $validated['femea_id'])
-            ->orderByDesc('data')
-            ->first();
+        $sqlEnum = "ALTER TABLE `femea_movimento` MODIFY COLUMN `acao` ENUM('compra', 'morte', 'descarte', 'venda', 'cio', 'salta_cio', 'cobertura', 'parto', 'desmame', 'morte_leitao') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
 
-        $parto = MaternidadeParto::create([
-            'femea_id' => $validated['femea_id'],
-            'cobertura_id' => $cobertura?->id,
-            'lote' => $validated['lote'] ?? null,
-            'data' => $validated['data'],
-            'hora_inicio' => $validated['hora_inicio'] ?? null,
-            'hora_termino' => $validated['hora_termino'] ?? null,
-            'total_vivos' => $validated['total_vivos'],
-            'total_mortos' => $validated['total_mortos'],
-            'total_mumificados' => $validated['total_mumificados'],
-            'observacao' => $validated['observacao'],
-        ]);
+        try {
+            DB::transaction(function () use ($validated) {
+                // Tentar encontrar a última cobertura para vincular
+                $cobertura = DB::table('gestacao_cobertura')
+                    ->where('femea_id', $validated['femea_id'])
+                    ->orderByDesc('data')
+                    ->first();
+
+                $parto = MaternidadeParto::create([
+                    'femea_id' => $validated['femea_id'],
+                    'cobertura_id' => $cobertura?->id,
+                    'lote' => $validated['lote'] ?? null,
+                    'data' => $validated['data'],
+                    'hora_inicio' => $validated['hora_inicio'] ?? null,
+                    'hora_termino' => $validated['hora_termino'] ?? null,
+                    'total_vivos' => $validated['total_vivos'],
+                    'total_mortos' => $validated['total_mortos'],
+                    'total_mumificados' => $validated['total_mumificados'],
+                    'observacao' => $validated['observacao'],
+                ]);
+
+                if (! Schema::hasTable('femea_movimento')) {
+                    return;
+                }
+
+                $femea = DB::table('femea')
+                    ->where('id', (int) $validated['femea_id'])
+                    ->select(['id', 'id_primaria'])
+                    ->first();
+
+                if (! $femea) {
+                    return;
+                }
+
+                $data = Carbon::parse($validated['data'])->startOfDay()->toDateString();
+                $now = now();
+                $mov = [
+                    'femea_id' => (int) $validated['femea_id'],
+                    'acao' => 'parto',
+                    'data' => $data,
+                    'valor' => null,
+                    'peso' => null,
+                    'fornecedor_id' => null,
+                    'observacoes' => 'Parto maternidade #'.(int) $parto->id,
+                ];
+
+                if (Schema::hasColumn('femea_movimento', 'femea_id_primaria')) {
+                    $mov['femea_id_primaria'] = (string) $femea->id_primaria;
+                }
+                if (Schema::hasColumn('femea_movimento', 'criado_em')) {
+                    $mov['criado_em'] = $now;
+                }
+                if (Schema::hasColumn('femea_movimento', 'atualizado_em')) {
+                    $mov['atualizado_em'] = $now;
+                }
+
+                DB::table('femea_movimento')->insert($mov);
+            });
+        } catch (QueryException $e) {
+            $msg = $e->getMessage();
+            if (str_contains($msg, 'Data truncated') && str_contains($msg, 'acao')) {
+                return redirect()->back()->withErrors([
+                    'movimento' => 'Para registrar o histórico no plantel, é necessário atualizar o ENUM de `femea_movimento.acao`.',
+                    'sql' => $sqlEnum,
+                ]);
+            }
+            throw $e;
+        }
 
         return redirect()->back()->with('success', 'Parto registrado com sucesso!');
     }
@@ -338,18 +391,71 @@ class MaternidadeController extends Controller
             'observacao' => 'nullable|string',
         ]);
 
-        DB::table('maternidade_morte_leitao')->insert([
-            'femea_id' => $validated['femea_id'],
-            'parto_id' => $validated['parto_id'],
-            'data' => $validated['data'],
-            'hora' => $validated['hora'] ?? null,
-            'quantidade' => $validated['quantidade'],
-            'causa_id' => $validated['causa_id'],
-            'funcionario' => $validated['funcionario'],
-            'observacao' => $validated['observacao'],
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $sqlEnum = "ALTER TABLE `femea_movimento` MODIFY COLUMN `acao` ENUM('compra', 'morte', 'descarte', 'venda', 'cio', 'salta_cio', 'cobertura', 'parto', 'desmame', 'morte_leitao') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
+
+        try {
+            DB::transaction(function () use ($validated) {
+                $morteId = DB::table('maternidade_morte_leitao')->insertGetId([
+                    'femea_id' => $validated['femea_id'],
+                    'parto_id' => $validated['parto_id'],
+                    'data' => $validated['data'],
+                    'hora' => $validated['hora'] ?? null,
+                    'quantidade' => $validated['quantidade'],
+                    'causa_id' => $validated['causa_id'],
+                    'funcionario' => $validated['funcionario'],
+                    'observacao' => $validated['observacao'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                if (! Schema::hasTable('femea_movimento')) {
+                    return;
+                }
+
+                $femea = DB::table('femea')
+                    ->where('id', (int) $validated['femea_id'])
+                    ->select(['id', 'id_primaria'])
+                    ->first();
+
+                if (! $femea) {
+                    return;
+                }
+
+                $data = Carbon::parse($validated['data'])->startOfDay()->toDateString();
+                $now = now();
+                $obs = 'Morte de leitão maternidade #'.(int) $morteId.' - Parto '.(int) $validated['parto_id'].' - Qtd '.(int) $validated['quantidade'];
+                $mov = [
+                    'femea_id' => (int) $validated['femea_id'],
+                    'acao' => 'morte_leitao',
+                    'data' => $data,
+                    'valor' => null,
+                    'peso' => null,
+                    'fornecedor_id' => null,
+                    'observacoes' => $obs,
+                ];
+
+                if (Schema::hasColumn('femea_movimento', 'femea_id_primaria')) {
+                    $mov['femea_id_primaria'] = (string) $femea->id_primaria;
+                }
+                if (Schema::hasColumn('femea_movimento', 'criado_em')) {
+                    $mov['criado_em'] = $now;
+                }
+                if (Schema::hasColumn('femea_movimento', 'atualizado_em')) {
+                    $mov['atualizado_em'] = $now;
+                }
+
+                DB::table('femea_movimento')->insert($mov);
+            });
+        } catch (QueryException $e) {
+            $msg = $e->getMessage();
+            if (str_contains($msg, 'Data truncated') && str_contains($msg, 'acao')) {
+                return redirect()->back()->withErrors([
+                    'movimento' => 'Para registrar o histórico no plantel, é necessário atualizar o ENUM de `femea_movimento.acao`.',
+                    'sql' => $sqlEnum,
+                ]);
+            }
+            throw $e;
+        }
 
         return redirect()->back()->with('success', 'Morte de leitão registrada com sucesso!');
     }
@@ -436,73 +542,113 @@ class MaternidadeController extends Controller
             return redirect()->back()->withErrors(['parto_id' => 'Parto inválido.']);
         }
 
-        DB::transaction(function () use ($validated, $loteDestinoId, $partoRow, $partoId, $parsedData) {
-            $payload = [
+        $sqlEnum = "ALTER TABLE `femea_movimento` MODIFY COLUMN `acao` ENUM('compra', 'morte', 'descarte', 'venda', 'cio', 'salta_cio', 'cobertura', 'parto', 'desmame', 'morte_leitao') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
+
+        try {
+            DB::transaction(function () use ($validated, $loteDestinoId, $partoRow, $partoId, $parsedData) {
+                $payload = [
                 'parto_id' => $partoId,
                 'data' => $parsedData->toDateString(),
                 'quantidade' => (int) $validated['quantidade'],
                 'peso_medio' => $validated['peso_medio'] ?? null,
                 'observacao' => $validated['observacao'] ?? null,
-            ];
+                ];
 
-            if ($loteDestinoId && Schema::hasTable('creche_lotes')) {
-                $nomeLote = DB::table('creche_lotes')->where('id', $loteDestinoId)->value('nome');
-                if (Schema::hasColumn('maternidade_desmame', 'lote_destino')) {
-                    $payload['lote_destino'] = $nomeLote ? (string) $nomeLote : null;
+                if ($loteDestinoId && Schema::hasTable('creche_lotes')) {
+                    $nomeLote = DB::table('creche_lotes')->where('id', $loteDestinoId)->value('nome');
+                    if (Schema::hasColumn('maternidade_desmame', 'lote_destino')) {
+                        $payload['lote_destino'] = $nomeLote ? (string) $nomeLote : null;
+                    }
+                    if (Schema::hasColumn('maternidade_desmame', 'lote_destino_id')) {
+                        $payload['lote_destino_id'] = $loteDestinoId;
+                    }
+                } else if (Schema::hasColumn('maternidade_desmame', 'lote_destino')) {
+                    $payload['lote_destino'] = $validated['lote_destino'] ?? null;
                 }
-                if (Schema::hasColumn('maternidade_desmame', 'lote_destino_id')) {
-                    $payload['lote_destino_id'] = $loteDestinoId;
+
+                $extra = [
+                    'localizacao_destino' => $validated['localizacao_destino'] ?? null,
+                    'destino_matriz' => $validated['destino_matriz'] ?? null,
+                    'baia_matriz' => $validated['baia_matriz'] ?? null,
+                    'peso_matriz' => $validated['peso_matriz'] ?? null,
+                    'escore_corporal' => $validated['escore_corporal'] ?? null,
+                    'caracteristicas_desmame' => $validated['caracteristicas_desmame'] ?? null,
+                    'funcionario' => $validated['funcionario'] ?? null,
+                ];
+
+                foreach ($extra as $col => $value) {
+                    if (Schema::hasColumn('maternidade_desmame', $col)) {
+                        $payload[$col] = $value;
+                    }
                 }
-            } else if (Schema::hasColumn('maternidade_desmame', 'lote_destino')) {
-                $payload['lote_destino'] = $validated['lote_destino'] ?? null;
-            }
 
-            $extra = [
-                'localizacao_destino' => $validated['localizacao_destino'] ?? null,
-                'destino_matriz' => $validated['destino_matriz'] ?? null,
-                'baia_matriz' => $validated['baia_matriz'] ?? null,
-                'peso_matriz' => $validated['peso_matriz'] ?? null,
-                'escore_corporal' => $validated['escore_corporal'] ?? null,
-                'caracteristicas_desmame' => $validated['caracteristicas_desmame'] ?? null,
-                'funcionario' => $validated['funcionario'] ?? null,
-            ];
+                $desmame = MaternidadeDesmame::create($payload);
 
-            foreach ($extra as $col => $value) {
-                if (Schema::hasColumn('maternidade_desmame', $col)) {
-                    $payload[$col] = $value;
+                if (Schema::hasTable('femea_movimento')) {
+                    $data = $parsedData->copy()->startOfDay()->toDateString();
+                    $now = now();
+                    $obs = 'Desmame maternidade #'.(int) ($desmame->id ?? 0).' - Parto '.(int) $partoId.' - Qtd '.(int) $validated['quantidade'];
+                    $mov = [
+                        'femea_id' => (int) $partoRow->femea_id,
+                        'acao' => 'desmame',
+                        'data' => $data,
+                        'valor' => null,
+                        'peso' => $validated['peso_matriz'] ?? null,
+                        'fornecedor_id' => null,
+                        'observacoes' => $obs,
+                    ];
+
+                    if (Schema::hasColumn('femea_movimento', 'femea_id_primaria')) {
+                        $mov['femea_id_primaria'] = (string) $partoRow->id_primaria;
+                    }
+                    if (Schema::hasColumn('femea_movimento', 'criado_em')) {
+                        $mov['criado_em'] = $now;
+                    }
+                    if (Schema::hasColumn('femea_movimento', 'atualizado_em')) {
+                        $mov['atualizado_em'] = $now;
+                    }
+
+                    DB::table('femea_movimento')->insert($mov);
                 }
+
+                if (!Schema::hasTable('creche_compras') || !Schema::hasTable('creche_lotes') || !$loteDestinoId) {
+                    return;
+                }
+
+                $dataDesmame = $parsedData->copy()->startOfDay()->format('Y-m-d');
+                $dataNascimento = Carbon::parse($partoRow->data_parto)->startOfDay()->format('Y-m-d');
+
+                $qtd = (int) $validated['quantidade'];
+                $pesoMedio = $validated['peso_medio'] !== null ? (float) $validated['peso_medio'] : null;
+                $pesoTotal = $pesoMedio !== null ? round($pesoMedio * $qtd, 2) : 0.0;
+
+                $ident = (string) $partoRow->id_primaria . ($partoRow->id_secundaria ? " ({$partoRow->id_secundaria})" : '');
+                $nota = "DESMAME MATERNIDADE - Parto {$partoId} - {$ident}";
+
+                DB::table('creche_compras')->insert([
+                    'data_compra' => $dataDesmame,
+                    'lote_id' => $loteDestinoId,
+                    'localizacao' => $validated['localizacao_destino'] ?? null,
+                    'quantidade' => $qtd,
+                    'peso_total' => $pesoTotal,
+                    'data_nascimento' => $dataNascimento,
+                    'valor_compra' => null,
+                    'fornecedor_id' => null,
+                    'nota_fiscal' => mb_substr($nota, 0, 120),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            });
+        } catch (QueryException $e) {
+            $msg = $e->getMessage();
+            if (str_contains($msg, 'Data truncated') && str_contains($msg, 'acao')) {
+                return redirect()->back()->withErrors([
+                    'movimento' => 'Para registrar o histórico no plantel, é necessário atualizar o ENUM de `femea_movimento.acao`.',
+                    'sql' => $sqlEnum,
+                ]);
             }
-
-            MaternidadeDesmame::create($payload);
-
-            if (!Schema::hasTable('creche_compras') || !Schema::hasTable('creche_lotes') || !$loteDestinoId) {
-                return;
-            }
-
-            $dataDesmame = $parsedData->copy()->startOfDay()->format('Y-m-d');
-            $dataNascimento = Carbon::parse($partoRow->data_parto)->startOfDay()->format('Y-m-d');
-
-            $qtd = (int) $validated['quantidade'];
-            $pesoMedio = $validated['peso_medio'] !== null ? (float) $validated['peso_medio'] : null;
-            $pesoTotal = $pesoMedio !== null ? round($pesoMedio * $qtd, 2) : 0.0;
-
-            $ident = (string) $partoRow->id_primaria . ($partoRow->id_secundaria ? " ({$partoRow->id_secundaria})" : '');
-            $nota = "DESMAME MATERNIDADE - Parto {$partoId} - {$ident}";
-
-            DB::table('creche_compras')->insert([
-                'data_compra' => $dataDesmame,
-                'lote_id' => $loteDestinoId,
-                'localizacao' => $validated['localizacao_destino'] ?? null,
-                'quantidade' => $qtd,
-                'peso_total' => $pesoTotal,
-                'data_nascimento' => $dataNascimento,
-                'valor_compra' => null,
-                'fornecedor_id' => null,
-                'nota_fiscal' => mb_substr($nota, 0, 120),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        });
+            throw $e;
+        }
 
         return redirect()->back()->with('success', 'Desmame registrado com sucesso!');
     }

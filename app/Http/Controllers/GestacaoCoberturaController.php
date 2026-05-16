@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use App\Services\PigCycleService;
@@ -144,6 +145,10 @@ class GestacaoCoberturaController extends Controller
             $coberturaId = (int) $row->id;
             $dt = Carbon::parse($row->data)->startOfDay();
             $diaPigAbs = PigCycleService::toPigAbsoluteDay($dt);
+            $horaCob = $row->hora === null ? null : (string) $row->hora;
+            if ($horaCob !== null && preg_match('/^\d{2}:\d{2}:\d{2}$/', $horaCob)) {
+                $horaCob = substr($horaCob, 0, 5);
+            }
             $semens = $semenByCoberturaId[$coberturaId] ?? [];
             $semenDisplay = null;
             if (! empty($semens)) {
@@ -160,12 +165,17 @@ class GestacaoCoberturaController extends Controller
                     $machoPrimaria = $machoId !== null ? ($machoIdPrimariaById[$machoId] ?? null) : null;
                     $usuarioId = $m->usuario_id === null ? null : (int) $m->usuario_id;
 
+                    $horaM = $m->hora === null ? null : (string) $m->hora;
+                    if ($horaM !== null && preg_match('/^\d{2}:\d{2}:\d{2}$/', $horaM)) {
+                        $horaM = substr($horaM, 0, 5);
+                    }
+
                     return [
                         'tipo' => $tipo,
                         'macho' => $tipo === 'macho' ? ($machoPrimaria === null ? null : (string) $machoPrimaria) : null,
                         'semen' => $tipo === 'semen' ? (empty($m->semen) ? null : (string) $m->semen) : null,
                         'data' => Carbon::parse($m->data)->format('d/m/Y'),
-                        'hora' => $m->hora === null ? null : (string) $m->hora,
+                        'hora' => $horaM,
                         'usuario' => $usuarioId !== null ? ($usuarioNomeById[$usuarioId] ?? null) : null,
                     ];
                 }, $montasByCoberturaId[$coberturaId]);
@@ -196,7 +206,7 @@ class GestacaoCoberturaController extends Controller
                 'data' => $diaPigAbs === null ? '-' : (string) $diaPigAbs,
                 'data_br' => $dt->format('d/m/Y'),
                 'data_iso' => $dt->toDateString(),
-                'hora' => $row->hora === null ? null : (string) $row->hora,
+                'hora' => $horaCob,
                 'usuario' => $row->usuario_nome === null ? null : (string) $row->usuario_nome,
                 'localizacao' => $row->localizacao === null ? null : (string) $row->localizacao,
                 'baia' => $row->baia === null ? null : (string) $row->baia,
@@ -543,9 +553,12 @@ class GestacaoCoberturaController extends Controller
         $warnings = array_values(array_merge($warnings, $this->criteriosWarnings($payload)));
 
         $coberturaId = null;
+        $sqlEnum = "ALTER TABLE `femea_movimento` MODIFY COLUMN `acao` ENUM('compra', 'morte', 'descarte', 'venda', 'cio', 'salta_cio', 'cobertura', 'parto', 'desmame', 'morte_leitao') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
+        $sqlEnumMacho = "ALTER TABLE `macho_movimento` MODIFY COLUMN `acao` ENUM('compra', 'morte', 'descarte', 'venda', 'cobertura') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
 
-        DB::transaction(function () use ($payload, $warnings, $semens, $montas, &$coberturaId) {
-            $coberturaId = (int) DB::table('gestacao_cobertura')->insertGetId($payload);
+        try {
+            DB::transaction(function () use ($payload, $warnings, $semens, $montas, &$coberturaId, $femeaRow) {
+                $coberturaId = (int) DB::table('gestacao_cobertura')->insertGetId($payload);
 
             if (count($semens) > 1 && Schema::hasTable('gestacao_cobertura_semen')) {
                 $now = now();
@@ -599,6 +612,69 @@ class GestacaoCoberturaController extends Controller
                 DB::table('femea')->where('id', $payload['femea_id'])->update($updateFemea);
             }
 
+            if (Schema::hasTable('femea_movimento')) {
+                $now = now();
+                $mov = [
+                    'femea_id' => (int) $payload['femea_id'],
+                    'acao' => 'cobertura',
+                    'data' => (string) $payload['data'],
+                    'valor' => null,
+                    'peso' => $payload['peso_matriz'] ?? null,
+                    'fornecedor_id' => null,
+                    'observacoes' => 'Cobertura #'.$coberturaId,
+                ];
+
+                if (Schema::hasColumn('femea_movimento', 'femea_id_primaria')) {
+                    $mov['femea_id_primaria'] = (string) ($femeaRow->id_primaria ?? '');
+                }
+                if (Schema::hasColumn('femea_movimento', 'criado_em')) {
+                    $mov['criado_em'] = $now;
+                }
+                if (Schema::hasColumn('femea_movimento', 'atualizado_em')) {
+                    $mov['atualizado_em'] = $now;
+                }
+
+                DB::table('femea_movimento')->insert($mov);
+            }
+
+            if (Schema::hasTable('macho_movimento')) {
+                $machoIds = [];
+                if (! empty($payload['macho_id'])) {
+                    $machoIds[] = (int) $payload['macho_id'];
+                }
+                foreach ($montas as $m) {
+                    if (($m['tipo'] ?? null) === 'macho' && ! empty($m['macho_id'])) {
+                        $machoIds[] = (int) $m['macho_id'];
+                    }
+                }
+
+                $machoIds = array_values(array_unique(array_filter($machoIds)));
+                if (! empty($machoIds)) {
+                    $now = now();
+                    $obs = 'Cobertura #'.$coberturaId.' - Matriz '.(string) ($femeaRow->id_primaria ?? '');
+                    foreach ($machoIds as $mid) {
+                        $movM = [
+                            'macho_id' => (int) $mid,
+                            'acao' => 'cobertura',
+                            'data' => (string) ($payload['data'] ?? ''),
+                            'valor' => null,
+                            'peso' => null,
+                            'fornecedor_id' => null,
+                            'causa_id' => null,
+                            'comprador' => null,
+                            'observacoes' => $obs,
+                        ];
+                        if (Schema::hasColumn('macho_movimento', 'criado_em')) {
+                            $movM['criado_em'] = $now;
+                        }
+                        if (Schema::hasColumn('macho_movimento', 'atualizado_em')) {
+                            $movM['atualizado_em'] = $now;
+                        }
+                        DB::table('macho_movimento')->insert($movM);
+                    }
+                }
+            }
+
             if (! empty($warnings) && Schema::hasTable('criterio_log')) {
                 $now = now();
                 $usuarioId = $payload['usuario_id'] ?? null;
@@ -621,7 +697,17 @@ class GestacaoCoberturaController extends Controller
                     'atualizado_em' => $now,
                 ]);
             }
-        });
+            });
+        } catch (QueryException $e) {
+            $msg = $e->getMessage();
+            if (str_contains($msg, 'Data truncated') && str_contains($msg, 'acao')) {
+                return response()->json([
+                    'message' => "Para registrar o histórico no plantel, é necessário atualizar os ENUMs de movimentos para incluir as novas ações.",
+                    'sql' => [$sqlEnum, $sqlEnumMacho],
+                ], 422);
+            }
+            throw $e;
+        }
 
         return response()->json([
             'message' => 'Cobertura registrada com sucesso!',
@@ -647,6 +733,21 @@ class GestacaoCoberturaController extends Controller
         $femeaId = (int) $row->femea_id;
 
         DB::transaction(function () use ($id, $femeaId) {
+            if (Schema::hasTable('femea_movimento')) {
+                DB::table('femea_movimento')
+                    ->where('femea_id', $femeaId)
+                    ->where('acao', 'cobertura')
+                    ->where('observacoes', 'Cobertura #'.$id)
+                    ->delete();
+            }
+
+            if (Schema::hasTable('macho_movimento')) {
+                DB::table('macho_movimento')
+                    ->where('acao', 'cobertura')
+                    ->where('observacoes', 'like', 'Cobertura #'.$id.'%')
+                    ->delete();
+            }
+
             if (Schema::hasTable('gestacao_cobertura_monta')) {
                 DB::table('gestacao_cobertura_monta')->where('cobertura_id', $id)->delete();
             }
@@ -826,6 +927,10 @@ class GestacaoCoberturaController extends Controller
         }
 
         $dataIso = Carbon::parse($row->data)->toDateString();
+        $horaCob = $row->hora === null ? null : (string) $row->hora;
+        if ($horaCob !== null && preg_match('/^\d{2}:\d{2}:\d{2}$/', $horaCob)) {
+            $horaCob = substr($horaCob, 0, 5);
+        }
 
         return response()->json([
             'item' => [
@@ -837,7 +942,7 @@ class GestacaoCoberturaController extends Controller
                 'macho_id' => $row->macho_id === null ? null : (int) $row->macho_id,
                 'semens' => $semens,
                 'data' => $dataIso,
-                'hora' => $row->hora === null ? null : (string) $row->hora,
+                'hora' => $horaCob,
                 'localizacao' => $row->localizacao === null ? null : (string) $row->localizacao,
                 'baia' => $row->baia === null ? null : (string) $row->baia,
                 'peso_matriz' => $row->peso_matriz === null ? null : (float) $row->peso_matriz,
@@ -960,128 +1065,219 @@ class GestacaoCoberturaController extends Controller
         $warnings = array_values($this->criteriosWarnings($payload));
         $oldFemeaId = (int) $existing->femea_id;
         $newFemeaId = (int) $payload['femea_id'];
+        $sqlEnum = "ALTER TABLE `femea_movimento` MODIFY COLUMN `acao` ENUM('compra', 'morte', 'descarte', 'venda', 'cio', 'salta_cio', 'cobertura', 'parto', 'desmame', 'morte_leitao') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
+        $sqlEnumMacho = "ALTER TABLE `macho_movimento` MODIFY COLUMN `acao` ENUM('compra', 'morte', 'descarte', 'venda', 'cobertura') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
 
-        DB::transaction(function () use ($id, $payload, $warnings, $semens, $montas, $oldFemeaId, $newFemeaId) {
-            DB::table('gestacao_cobertura')->where('id', $id)->update($payload);
+        try {
+            DB::transaction(function () use ($id, $payload, $warnings, $semens, $montas, $oldFemeaId, $newFemeaId) {
+                DB::table('gestacao_cobertura')->where('id', $id)->update($payload);
 
-            if (Schema::hasTable('gestacao_cobertura_monta')) {
-                DB::table('gestacao_cobertura_monta')->where('cobertura_id', $id)->delete();
-                if (! empty($montas)) {
-                    $now = now();
-                    DB::table('gestacao_cobertura_monta')->insert(
-                        array_map(function ($m) use ($id, $now) {
-                            return [
-                                'cobertura_id' => (int) $id,
-                                'ordem' => (int) ($m['ordem'] ?? 1),
-                                'tipo' => (string) ($m['tipo'] ?? ''),
-                                'macho_id' => empty($m['macho_id']) ? null : (int) $m['macho_id'],
-                                'semen' => empty($m['semen']) ? null : (string) $m['semen'],
-                                'data' => (string) ($m['data'] ?? ''),
-                                'hora' => (string) ($m['hora'] ?? ''),
-                                'usuario_id' => empty($m['usuario_id']) ? null : (int) $m['usuario_id'],
-                                'criado_em' => $now,
-                                'atualizado_em' => $now,
-                            ];
-                        }, $montas)
-                    );
-                }
-            }
-
-            if (Schema::hasTable('gestacao_cobertura_semen')) {
-                DB::table('gestacao_cobertura_semen')->where('cobertura_id', $id)->delete();
-                if (count($semens) > 1) {
-                    $now = now();
-                    DB::table('gestacao_cobertura_semen')->insert(
-                        array_map(function ($semen) use ($id, $now) {
-                            return [
-                                'cobertura_id' => (int) $id,
-                                'semen' => (string) $semen,
-                                'criado_em' => $now,
-                                'atualizado_em' => $now,
-                            ];
-                        }, $semens)
-                    );
-                }
-            }
-
-            if (Schema::hasTable('criterio_log')) {
-                DB::table('criterio_log')
-                    ->where('evento', 'cobertura')
-                    ->where('referencia_id', $id)
-                    ->delete();
-
-                if (! empty($warnings)) {
-                    $now = now();
-                    $usuarioId = $payload['usuario_id'] ?? null;
-                    DB::table('criterio_log')->insert([
-                        'modulo' => 'gestacao',
-                        'evento' => 'cobertura',
-                        'referencia_id' => (int) $id,
-                        'usuario_id' => $usuarioId === null ? null : (int) $usuarioId,
-                        'femea_id' => (int) $payload['femea_id'],
-                        'warnings' => json_encode(array_values($warnings), JSON_UNESCAPED_UNICODE),
-                        'dados' => json_encode([
-                            'data' => $payload['data'] ?? null,
-                            'hora' => $payload['hora'] ?? null,
-                            'peso_matriz' => $payload['peso_matriz'] ?? null,
-                            'presenca_cio' => $payload['presenca_cio'] ?? null,
-                        ], JSON_UNESCAPED_UNICODE),
-                        'ocorrido_em' => $now,
-                        'criado_em' => $now,
-                        'atualizado_em' => $now,
-                    ]);
-                }
-            }
-
-            if (Schema::hasTable('femea')) {
-                $refresh = function (int $femeaId) {
-                    $last = DB::table('gestacao_cobertura')->where('femea_id', $femeaId)->max('data');
-                    $update = [];
-                    if (Schema::hasColumn('femea', 'data_cobertura')) {
-                        $update['data_cobertura'] = $last ? Carbon::parse($last)->toDateString() : null;
+                if (Schema::hasTable('gestacao_cobertura_monta')) {
+                    DB::table('gestacao_cobertura_monta')->where('cobertura_id', $id)->delete();
+                    if (! empty($montas)) {
+                        $now = now();
+                        DB::table('gestacao_cobertura_monta')->insert(
+                            array_map(function ($m) use ($id, $now) {
+                                return [
+                                    'cobertura_id' => (int) $id,
+                                    'ordem' => (int) ($m['ordem'] ?? 1),
+                                    'tipo' => (string) ($m['tipo'] ?? ''),
+                                    'macho_id' => empty($m['macho_id']) ? null : (int) $m['macho_id'],
+                                    'semen' => empty($m['semen']) ? null : (string) $m['semen'],
+                                    'data' => (string) ($m['data'] ?? ''),
+                                    'hora' => (string) ($m['hora'] ?? ''),
+                                    'usuario_id' => empty($m['usuario_id']) ? null : (int) $m['usuario_id'],
+                                    'criado_em' => $now,
+                                    'atualizado_em' => $now,
+                                ];
+                            }, $montas)
+                        );
                     }
-                    if (Schema::hasColumn('femea', 'tipo_compra')) {
-                        if ($last) {
-                            $update['tipo_compra'] = 'matriz_gestante';
-                        } else {
-                            $current = DB::table('femea')->where('id', $femeaId)->value('tipo_compra');
-                            if ((string) $current === 'matriz_gestante') {
-                                $update['tipo_compra'] = 'matriz_vazia';
+                }
+
+                if (Schema::hasTable('gestacao_cobertura_semen')) {
+                    DB::table('gestacao_cobertura_semen')->where('cobertura_id', $id)->delete();
+                    if (count($semens) > 1) {
+                        $now = now();
+                        DB::table('gestacao_cobertura_semen')->insert(
+                            array_map(function ($semen) use ($id, $now) {
+                                return [
+                                    'cobertura_id' => (int) $id,
+                                    'semen' => (string) $semen,
+                                    'criado_em' => $now,
+                                    'atualizado_em' => $now,
+                                ];
+                            }, $semens)
+                        );
+                    }
+                }
+
+                if (Schema::hasTable('criterio_log')) {
+                    DB::table('criterio_log')
+                        ->where('evento', 'cobertura')
+                        ->where('referencia_id', $id)
+                        ->delete();
+
+                    if (! empty($warnings)) {
+                        $now = now();
+                        $usuarioId = $payload['usuario_id'] ?? null;
+                        DB::table('criterio_log')->insert([
+                            'modulo' => 'gestacao',
+                            'evento' => 'cobertura',
+                            'referencia_id' => (int) $id,
+                            'usuario_id' => $usuarioId === null ? null : (int) $usuarioId,
+                            'femea_id' => (int) $payload['femea_id'],
+                            'warnings' => json_encode(array_values($warnings), JSON_UNESCAPED_UNICODE),
+                            'dados' => json_encode([
+                                'data' => $payload['data'] ?? null,
+                                'hora' => $payload['hora'] ?? null,
+                                'peso_matriz' => $payload['peso_matriz'] ?? null,
+                                'presenca_cio' => $payload['presenca_cio'] ?? null,
+                            ], JSON_UNESCAPED_UNICODE),
+                            'ocorrido_em' => $now,
+                            'criado_em' => $now,
+                            'atualizado_em' => $now,
+                        ]);
+                    }
+                }
+
+                if (Schema::hasTable('femea')) {
+                    $refresh = function (int $femeaId) {
+                        $last = DB::table('gestacao_cobertura')->where('femea_id', $femeaId)->max('data');
+                        $update = [];
+                        if (Schema::hasColumn('femea', 'data_cobertura')) {
+                            $update['data_cobertura'] = $last ? Carbon::parse($last)->toDateString() : null;
+                        }
+                        if (Schema::hasColumn('femea', 'tipo_compra')) {
+                            if ($last) {
+                                $update['tipo_compra'] = 'matriz_gestante';
+                            } else {
+                                $current = DB::table('femea')->where('id', $femeaId)->value('tipo_compra');
+                                if ((string) $current === 'matriz_gestante') {
+                                    $update['tipo_compra'] = 'matriz_vazia';
+                                }
                             }
                         }
-                    }
-                    if (! empty($update)) {
-                        $update['atualizado_em'] = now();
-                        DB::table('femea')->where('id', $femeaId)->update($update);
-                    }
-                };
+                        if (! empty($update)) {
+                            $update['atualizado_em'] = now();
+                            DB::table('femea')->where('id', $femeaId)->update($update);
+                        }
+                    };
 
-                $refresh($newFemeaId);
-                if ($oldFemeaId !== $newFemeaId) {
-                    $refresh($oldFemeaId);
+                    $refresh($newFemeaId);
+                    if ($oldFemeaId !== $newFemeaId) {
+                        $refresh($oldFemeaId);
+                    }
+
+                    $latestId = DB::table('gestacao_cobertura')
+                        ->where('femea_id', $newFemeaId)
+                        ->orderByDesc('data')
+                        ->orderByDesc('hora')
+                        ->value('id');
+
+                    if ($latestId !== null && (int) $latestId === (int) $id) {
+                        $updateFemea = [];
+                        if (Schema::hasColumn('femea', 'localizacao') && $payload['localizacao'] !== null) {
+                            $updateFemea['localizacao'] = $payload['localizacao'];
+                        }
+                        if (Schema::hasColumn('femea', 'baia') && $payload['baia'] !== null) {
+                            $updateFemea['baia'] = $payload['baia'];
+                        }
+                        if (! empty($updateFemea)) {
+                            $updateFemea['atualizado_em'] = now();
+                            DB::table('femea')->where('id', $newFemeaId)->update($updateFemea);
+                        }
+                    }
                 }
 
-                $latestId = DB::table('gestacao_cobertura')
-                    ->where('femea_id', $newFemeaId)
-                    ->orderByDesc('data')
-                    ->orderByDesc('hora')
-                    ->value('id');
+                if (Schema::hasTable('femea_movimento')) {
+                    $now = now();
+                    $idPrimaria = DB::table('femea')->where('id', $newFemeaId)->value('id_primaria');
 
-                if ($latestId !== null && (int) $latestId === (int) $id) {
-                    $updateFemea = [];
-                    if (Schema::hasColumn('femea', 'localizacao') && $payload['localizacao'] !== null) {
-                        $updateFemea['localizacao'] = $payload['localizacao'];
+                    DB::table('femea_movimento')
+                        ->where('acao', 'cobertura')
+                        ->where('observacoes', 'Cobertura #'.$id)
+                        ->delete();
+
+                    $mov = [
+                        'femea_id' => (int) $newFemeaId,
+                        'acao' => 'cobertura',
+                        'data' => (string) ($payload['data'] ?? ''),
+                        'valor' => null,
+                        'peso' => $payload['peso_matriz'] ?? null,
+                        'fornecedor_id' => null,
+                        'observacoes' => 'Cobertura #'.$id,
+                    ];
+
+                    if (Schema::hasColumn('femea_movimento', 'femea_id_primaria')) {
+                        $mov['femea_id_primaria'] = $idPrimaria;
                     }
-                    if (Schema::hasColumn('femea', 'baia') && $payload['baia'] !== null) {
-                        $updateFemea['baia'] = $payload['baia'];
+                    if (Schema::hasColumn('femea_movimento', 'criado_em')) {
+                        $mov['criado_em'] = $now;
                     }
-                    if (! empty($updateFemea)) {
-                        $updateFemea['atualizado_em'] = now();
-                        DB::table('femea')->where('id', $newFemeaId)->update($updateFemea);
+                    if (Schema::hasColumn('femea_movimento', 'atualizado_em')) {
+                        $mov['atualizado_em'] = $now;
+                    }
+
+                    DB::table('femea_movimento')->insert($mov);
+                }
+
+                if (Schema::hasTable('macho_movimento')) {
+                    DB::table('macho_movimento')
+                        ->where('acao', 'cobertura')
+                        ->where('observacoes', 'like', 'Cobertura #'.$id.'%')
+                        ->delete();
+
+                    $machoIds = [];
+                    if (! empty($payload['macho_id'])) {
+                        $machoIds[] = (int) $payload['macho_id'];
+                    }
+                    foreach ($montas as $m) {
+                        if (($m['tipo'] ?? null) === 'macho' && ! empty($m['macho_id'])) {
+                            $machoIds[] = (int) $m['macho_id'];
+                        }
+                    }
+
+                    $machoIds = array_values(array_unique(array_filter($machoIds)));
+                    if (! empty($machoIds)) {
+                        $now = now();
+                        $idPrimaria = DB::table('femea')->where('id', $newFemeaId)->value('id_primaria');
+                        $obs = 'Cobertura #'.$id.' - Matriz '.(string) $idPrimaria;
+                        foreach ($machoIds as $mid) {
+                            $movM = [
+                                'macho_id' => (int) $mid,
+                                'acao' => 'cobertura',
+                                'data' => (string) ($payload['data'] ?? ''),
+                                'valor' => null,
+                                'peso' => null,
+                                'fornecedor_id' => null,
+                                'causa_id' => null,
+                                'comprador' => null,
+                                'observacoes' => $obs,
+                            ];
+
+                            if (Schema::hasColumn('macho_movimento', 'criado_em')) {
+                                $movM['criado_em'] = $now;
+                            }
+                            if (Schema::hasColumn('macho_movimento', 'atualizado_em')) {
+                                $movM['atualizado_em'] = $now;
+                            }
+
+                            DB::table('macho_movimento')->insert($movM);
+                        }
                     }
                 }
+            });
+        } catch (QueryException $e) {
+            $msg = $e->getMessage();
+            if (str_contains($msg, 'Data truncated') && str_contains($msg, 'acao')) {
+                return response()->json([
+                    'message' => "Para registrar o histórico no plantel, é necessário atualizar os ENUMs de movimentos para incluir as novas ações.",
+                    'sql' => [$sqlEnum, $sqlEnumMacho],
+                ], 422);
             }
-        });
+            throw $e;
+        }
 
         return response()->json([
             'message' => 'Cobertura alterada com sucesso!',
