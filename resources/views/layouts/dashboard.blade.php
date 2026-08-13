@@ -2,9 +2,42 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Sui Control - @yield('title', 'Dashboard')</title>
+
+    <meta name="description" content="Sistema de gerenciamento de granja suína Sui Control - MasterPig">
+    <meta name="theme-color" content="#f97316" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#78350f" media="(prefers-color-scheme: dark)">
+
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link rel="apple-touch-icon" href="/logoSemPalavra.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/logoSemPalavra.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/logoSemPalavra.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/logoSemFundo.png">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Sui Control">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-TileColor" content="#f97316">
+    <meta name="msapplication-tap-highlight" content="no">
+
+    <!-- Safe-area inset CSS variables and 100dvh helper (inline before style to avoid FOUC) -->
+    <style>
+        :root {
+            --sat: env(safe-area-inset-top);
+            --sar: env(safe-area-inset-right);
+            --sab: env(safe-area-inset-bottom);
+            --sal: env(safe-area-inset-left);
+        }
+        html, body { height: 100%; }
+        body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; -webkit-overflow-scrolling: touch; }
+        .h-screen { min-height: 100vh; min-height: 100dvh; }
+        .min-h-screen { min-height: 100vh; min-height: 100dvh; }
+    </style>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,7 +69,8 @@
     @stack('styles')
 </head>
 <body class="bg-amber-900 font-sans text-gray-900 antialiased transition-colors duration-200">
-    <div class="flex flex-col h-screen overflow-hidden" 
+    <div class="flex flex-col overflow-hidden" 
+         style="height: 100vh; height: 100dvh; padding-top: var(--sat); padding-right: var(--sar); padding-bottom: var(--sab); padding-left: var(--sal);"
          x-data="{ 
             mobileMenuOpen: false
          }"
@@ -538,7 +572,7 @@
     @endif
 
     <!-- Banner: Em Desenvolvimento -->
-    <div class="fixed bottom-0 left-0 right-0 z-50 bg-amber-50 dark:bg-amber-950/40 border-t border-amber-200 dark:border-amber-800/60 px-4 py-2">
+    <div class="fixed bottom-0 left-0 right-0 z-50 bg-amber-50 dark:bg-amber-950/40 border-t border-amber-200 dark:border-amber-800/60 px-4 py-2" style="padding-bottom: calc(0.5rem + var(--sab)); padding-left: calc(1rem + var(--sal)); padding-right: calc(1rem + var(--sar));">
         <div class="max-w-7xl mx-auto flex items-center justify-center gap-2 text-amber-700 dark:text-amber-400 text-xs sm:text-sm font-medium">
             <i class="fa-solid fa-triangle-exclamation text-amber-500 dark:text-amber-400 animate-pulse"></i>
             <span>
@@ -579,6 +613,20 @@
                 detail: { message: message, type: type }
             }));
         };
+    </script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then(function (reg) {
+                        console.info('[PWA] Service Worker registrado: escopo', reg.scope);
+                    })
+                    .catch(function (err) {
+                        console.warn('[PWA] Falha ao registrar Service Worker:', err);
+                    });
+            });
+        }
     </script>
 
     @stack('scripts')

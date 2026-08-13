@@ -44,7 +44,7 @@
     crecheDataNascimentoIso: {{ json_encode($hojeIso ?? now()->format('Y-m-d'), JSON_UNESCAPED_UNICODE) }},
     crecheDataNascimento: '',
 
-    // Mapa picker_id (qual campo o usuário clicou) ? (setIsoFn, setDisplayFromIso, normalizeBlurFn, ref)
+    // Mapa picker_id (qual campo o usuário clicou) → (setIsoFn, setDisplayFromIso, normalizeBlurFn, ref)
     pickerConfig: {
         'lote_data_entrada':      { isoKey: 'loteDataEntradaIso',      displayKey: 'loteDataEntrada',      refKey: 'refLoteDataEntrada' },
         'entrada_data_entrada':   { isoKey: 'entradaDataEntradaIso',   displayKey: 'entradaDataEntrada',   refKey: 'refEntradaDataEntrada' },
@@ -90,7 +90,7 @@
         }
     },
 
-    // Converte display digitado (PIG ou BR) ? ISO, e reescreve display formatado
+    // Converte display digitado (PIG ou BR) → ISO, e reescreve display formatado
     normalizeDisplay(isoKey, displayKey) {
         const isPig = this.calendarType === '1000_dias';
         const raw = String(this[displayKey] || '').trim();
@@ -290,7 +290,7 @@
                         <i class="fa-solid fa-bullseye mr-2"></i>
                         <span class="font-medium">Meta</span>
                     </div>
-                    <span class="font-semibold {{ (float)($stats['mortalidade_taxa'] ?? 0) > (float)($metaMortalidade ?? 3) ? 'text-rose-600' : 'text-gray-800' }}">? {{ number_format((float)($metaMortalidade ?? 3), 1, ',', '.') }}%</span>
+                    <span class="font-semibold {{ (float)($stats['mortalidade_taxa'] ?? 0) > (float)($metaMortalidade ?? 3) ? 'text-rose-600' : 'text-gray-800' }}">≤ {{ number_format((float)($metaMortalidade ?? 3), 1, ',', '.') }}%</span>
                 </div>
             </div>
             <div class="bg-white border-l-4 border-primary-500 rounded-xl shadow-sm hover:shadow-md transition-all p-4 group">
@@ -632,7 +632,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $m['localizacao'] ?: '-' }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500 italic">Nenhuma morte registrada (?).</td></tr>
+                                <tr><td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500 italic">Nenhuma morte registrada (🎉).</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -643,7 +643,7 @@
                         <thead>
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Origem ? Destino</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Origem → Destino</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Qtd</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Motivo</th>
                             </tr>

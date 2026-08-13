@@ -2,6 +2,70 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================
+   PWA - Dynamic Viewport Height (100dvh) + Safe-Area Insets
+   ========================================================= */
+@layer base {
+    :root {
+        --sat: env(safe-area-inset-top, 0px);
+        --sar: env(safe-area-inset-right, 0px);
+        --sab: env(safe-area-inset-bottom, 0px);
+        --sal: env(safe-area-inset-left, 0px);
+        --app-height: 100vh;
+    }
+
+    /* Resolves iOS Safari 100vh (100dvh fallback) — inclui toolbar/bars */
+    html, body {
+        height: 100%;
+        height: 100dvh;
+        min-height: -webkit-fill-available;
+        overscroll-behavior: none;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Substitui tailwind utilities h-screen / min-h-screen por valores dinâmicos */
+    .h-screen, .h-full, body, html { height: 100vh; height: 100dvh; }
+    .min-h-screen { min-height: 100vh; min-height: 100dvh; min-height: -webkit-fill-available; }
+    .max-h-screen { max-height: 100vh; max-height: 100dvh; }
+
+    /* Impede o zoom em campos de form no iOS (já temos 1.0625rem no layout; manter >= 16px) */
+    @supports (-webkit-touch-callout: none) {
+        input, select, textarea { font-size: 16px !important; }
+    }
+}
+
+@layer utilities {
+    /* Safe-area padding utilities */
+    .pt-safe { padding-top: var(--sat); }
+    .pr-safe { padding-right: var(--sar); }
+    .pb-safe { padding-bottom: var(--sab); }
+    .pl-safe { padding-left: var(--sal); }
+    .px-safe { padding-left: var(--sal); padding-right: var(--sar); }
+    .py-safe { padding-top: var(--sat); padding-bottom: var(--sab); }
+    .p-safe  { padding: var(--sat) var(--sar) var(--sab) var(--sal); }
+
+    .mt-safe { margin-top: var(--sat); }
+    .mb-safe { margin-bottom: var(--sab); }
+    .ml-safe { margin-left: var(--sal); }
+    .mr-safe { margin-right: var(--sar); }
+
+    .top-safe { top: var(--sat); }
+    .bottom-safe { bottom: var(--sab); }
+    .left-safe { left: var(--sal); }
+    .right-safe { right: var(--sar); }
+
+    /* Aplica inseto + valor padrão em conjunto (padrão px-4 py-2 etc) */
+    .inset-safe {
+        top: var(--sat);
+        right: var(--sar);
+        bottom: var(--sab);
+        left: var(--sal);
+    }
+}
+
 /* MoonRow-inspired theme tokens */
 :root {
     /* Color palette */

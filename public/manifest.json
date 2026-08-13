@@ -1,0 +1,84 @@
+{
+    "name": "Sui Control - MasterPig",
+    "short_name": "Sui Control",
+    "description": "Sistema de gerenciamento de granja suína - Manejo reprodutivo, gestação, maternidade, creche e terminação.",
+    "start_url": "/dashboard",
+    "scope": "/",
+    "display": "standalone",
+    "display_override": ["standalone", "fullscreen", "minimal-ui"],
+    "orientation": "portrait",
+    "background_color": "#78350f",
+    "theme_color": "#f97316",
+    "lang": "pt-BR",
+    "dir": "ltr",
+    "categories": ["business", "productivity", "lifestyle"],
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "/logo.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/logoSemFundo.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/logoSemPalavra.png",
+            "sizes": "180x180",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/logo.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/logoSemFundo.png",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/favicon.ico",
+            "sizes": "48x48 32x32 16x16",
+            "type": "image/x-icon",
+            "purpose": "any"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Plantel Reprodutivo",
+            "short_name": "Plantel",
+            "description": "Visão geral do plantel reprodutivo",
+            "url": "/dashboard?tab=visao",
+            "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "Gestação",
+            "short_name": "Gestação",
+            "description": "Manejo de gestação e coberturas",
+            "url": "/gestacao",
+            "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "Maternidade",
+            "short_name": "Maternidade",
+            "description": "Partos, leitões e desmame",
+            "url": "/maternidade",
+            "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "Terminação",
+            "short_name": "Terminação",
+            "description": "Lotes e engorda de terminação",
+            "url": "/terminacao",
+            "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
+        }
+    ]
+}

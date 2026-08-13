@@ -136,7 +136,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MasterPig ? Documentação</title>
+  <title>MasterPig — Documentação</title>
   <style>
     @page { margin: 26mm 18mm 22mm 18mm; }
     body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 11.5px; line-height: 1.45; color: #111827; }
@@ -222,16 +222,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     <li><b>Admin/Cadastros</b>: usuários, fornecedores, rações, causas, metas/critérios, logs e utilitários.</li>
   </ul>
 
-  <h2>Características técnicas ? pontos fortes e aspectos notáveis</h2>
+  <h2>Características técnicas — pontos fortes e aspectos notáveis</h2>
   <ul>
     <li><b>Isolamento por tenant</b> no nível de banco e usuário de banco (aplicação dinâmica da conexão do Laravel).</li>
     <li><b>Resiliência a schema</b>: verificações de tabelas/colunas antes de consultar (evita quebra em bases desatualizadas).</li>
-    <li><b>Calendário ?1000 dias? (Dia PIG)</b> opcional, com conversões e parsing de filtros.</li>
+    <li><b>Calendário “1000 dias” (Dia PIG)</b> opcional, com conversões e parsing de filtros.</li>
     <li><b>PDF</b>: geração via DomPDF para ficha e formulários operacionais.</li>
-    <li><b>Permissões</b>: middleware de admin pode ser ?enforçado? por configuração.</li>
+    <li><b>Permissões</b>: middleware de admin pode ser “enforçado” por configuração.</li>
   </ul>
 
-  <h2>Organização do código ? Controllers, Models, Views, Rotas</h2>
+  <h2>Organização do código — Controllers, Models, Views, Rotas</h2>
   <ul>
     <li><b>Controllers</b>: <span class="mono">app/Http/Controllers</span>.</li>
     <li><b>Models</b>: <span class="mono">app/Models</span> (Eloquent), mas com uso frequente de <span class="mono">DB::table</span>.</li>
@@ -243,7 +243,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
   <h2>Fluxo produtivo</h2>
   <ul>
     <li><b>Entrada</b>: login com CNPJ seleciona o tenant; autenticação consulta a tabela <span class="mono">usuario</span> do tenant.</li>
-    <li><b>Operação</b>: registro e acompanhamento em Plantel ? Gestação ? Maternidade ? Creche.</li>
+    <li><b>Operação</b>: registro e acompanhamento em Plantel → Gestação → Maternidade → Creche.</li>
     <li><b>Gestão</b>: parametrização por <span class="mono">meta</span> (metas/critérios) e logs em <span class="mono">criterio_log</span>.</li>
   </ul>
 
