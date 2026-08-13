@@ -4,6 +4,18 @@
 
 @section('content')
 <div class="space-y-6">
+    <div>
+        <div class="rounded-xl shadow-sm p-6" style="border-color: #78350f;">
+            <div class="text-center">
+                <div class="flex items-center justify-center gap-2 mb-1">
+                    <i class="fa-solid fa-screwdriver-wrench text-amber-200"></i>
+                    <h2 class="text-2xl font-bold text-white mb-2">Administração</h2>
+                </div>
+                <p class="text-sm text-white">Gerenciar usuários, cadastros e configurações do sistema</p>
+            </div>
+        </div>
+    </div>
+
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
             <div class="font-semibold text-gray-900">Administração</div>

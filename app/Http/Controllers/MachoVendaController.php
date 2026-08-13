@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Causa;
 use App\Models\Macho;
+use App\Services\PigCycleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +22,7 @@ class MachoVendaController extends Controller
 
         $validated = $request->validate([
             'macho_id' => ['required', 'exists:macho,id'],
-            'data_venda' => ['required', 'date'],
+            'data_venda' => ['required', 'string', 'max:30'],
             'causa_id' => ['required', 'exists:causa,id'],
             'valor_venda' => ['nullable', 'numeric', 'min:0'],
             'peso_venda' => ['nullable', 'numeric', 'min:0'],
@@ -53,7 +54,7 @@ class MachoVendaController extends Controller
         $payload = [
             'macho_id' => $macho->id,
             'acao' => 'venda',
-            'data' => Carbon::parse($validated['data_venda'])->format('Y-m-d'),
+            'data' => $this->parseInputDate($validated['data_venda']),
             'valor' => $validated['valor_venda'] ?? null,
             'peso' => $validated['peso_venda'] ?? null,
             'fornecedor_id' => null,
@@ -75,5 +76,12 @@ class MachoVendaController extends Controller
         return response()->json([
             'message' => 'Venda registrada com sucesso!',
         ], 201);
+    }
+
+    private function parseInputDate(?string $input): ?string
+    {
+        if ($input === null || trim($input) === '') return null;
+        $carbon = PigCycleService::parseFilterDate($input);
+        return $carbon ? $carbon->format('Y-m-d') : null;
     }
 }

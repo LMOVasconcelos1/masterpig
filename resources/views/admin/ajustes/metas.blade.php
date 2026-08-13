@@ -400,13 +400,13 @@
                 <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @php
                         $intervals = [
-                            ['label' => 'Repetição Cio → Cobertura', 'key' => 'repeticao_cobertura'],
-                            ['label' => 'Aborto → Cobertura', 'key' => 'aborto_cobertura'],
-                            ['label' => 'Falsa Prenhez → Cobertura', 'key' => 'falsa_prenhez_cobertura'],
-                            ['label' => 'Cobertura → Cobertura', 'key' => 'cobertura_cobertura'],
-                            ['label' => 'Parto → Cobertura', 'key' => 'parto_cobertura'],
-                            ['label' => 'Lactação → Salto Cio', 'key' => 'lactacao_salto_cio'],
-                            ['label' => 'Vazio → Salto → Cobertura', 'key' => 'vazio_salto_cobertura'],
+                            ['label' => 'Repetição Cio ? Cobertura', 'key' => 'repeticao_cobertura'],
+                            ['label' => 'Aborto ? Cobertura', 'key' => 'aborto_cobertura'],
+                            ['label' => 'Falsa Prenhez ? Cobertura', 'key' => 'falsa_prenhez_cobertura'],
+                            ['label' => 'Cobertura ? Cobertura', 'key' => 'cobertura_cobertura'],
+                            ['label' => 'Parto ? Cobertura', 'key' => 'parto_cobertura'],
+                            ['label' => 'Lactação ? Salto Cio', 'key' => 'lactacao_salto_cio'],
+                            ['label' => 'Vazio ? Salto ? Cobertura', 'key' => 'vazio_salto_cobertura'],
                         ];
                     @endphp
                     @foreach($intervals as $item)

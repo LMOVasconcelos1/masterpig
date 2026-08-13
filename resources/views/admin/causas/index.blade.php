@@ -194,7 +194,7 @@
 
     <div class="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
         <!-- Filtros -->
-        <form action="{{ route('admin.causas.index', [], false) }}" method="GET" class="flex flex-1 flex-wrap lg:flex-nowrap items-center gap-3 bg-white dark:bg-gray-900 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+        <form accept-charset="UTF-8" action="{{ route('admin.causas.index', [], false) }}" method="GET" class="flex flex-1 flex-wrap lg:flex-nowrap items-center gap-3 bg-white dark:bg-gray-900 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
             <div class="w-full lg:min-w-[220px] flex-1">
                 <select name="grupo_id" class="w-full pl-3 pr-10 py-2 text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
                     <option value="">Todos os Grupos</option>
@@ -361,7 +361,7 @@
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
             <div x-show="openModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <form action="{{ route('admin.causas.store', [], false) }}" method="POST" @submit="createSubmitting = true">
+                <form accept-charset="UTF-8" action="{{ route('admin.causas.store', [], false) }}" method="POST" @submit="createSubmitting = true">
                     @csrf
                     <input type="hidden" name="_form" value="create">
                     <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
@@ -425,7 +425,7 @@
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
             <div x-show="openEditModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <form :action="`/admin/causas/${edit.id}`" method="POST" @submit="editSubmitting = true">
+                <form accept-charset="UTF-8" :action="`/admin/causas/${edit.id}`" method="POST" @submit="editSubmitting = true">
                     @csrf
                     @method('PATCH')
                     <input type="hidden" name="_form" value="edit">
@@ -492,7 +492,7 @@
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
             <div x-show="openDeleteModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
-                <form :action="`/admin/causas/${deleting.id}`" method="POST" @submit="deleteSubmitting = true">
+                <form accept-charset="UTF-8" :action="`/admin/causas/${deleting.id}`" method="POST" @submit="deleteSubmitting = true">
                     @csrf
                     @method('DELETE')
                     <div class="bg-white dark:bg-gray-900 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">

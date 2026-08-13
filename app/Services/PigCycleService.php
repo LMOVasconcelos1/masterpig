@@ -218,12 +218,12 @@ class PigCycleService
         // Alerta pré-parto (5 dias antes)
         $diffParto = $now->diffInDays($cycle['expectedBirthDate'], false);
         if ($diffParto >= 0 && $diffParto <= 5) {
-            $alerts[] = "[{$animalId}]: parto previsto em {$diffParto} dias — preparar maternidade";
+            $alerts[] = "[{$animalId}]: parto previsto em {$diffParto} dias ? preparar maternidade";
         }
 
         // Alerta desmame (No dia)
         if ($now->isSameDay($cycle['weaningDate'])) {
-            $alerts[] = "[{$animalId}]: desmame hoje — retornar ao galpão de gestação";
+            $alerts[] = "[{$animalId}]: desmame hoje ? retornar ao galpão de gestação";
         }
 
         // Alerta cobertura (No dia)

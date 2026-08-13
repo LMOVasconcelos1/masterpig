@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Macho;
+use App\Services\PigCycleService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -52,7 +53,7 @@ class MachoCompraController extends Controller
             return [
                 'id' => $row->id,
                 'acao' => 'compra',
-                'data' => Carbon::parse($row->data)->format('d/m/Y'),
+                'data' => PigCycleService::formatDisplayDate(Carbon::parse($row->data)),
                 'id_primaria' => $row->id_primaria,
                 'id_secundaria' => $row->id_secundaria,
                 'raca' => $row->raca_nome,
@@ -87,8 +88,8 @@ class MachoCompraController extends Controller
         $validated = $request->validate([
             'id_primaria' => ['required', 'string', 'max:50', 'unique:macho,id_primaria'],
             'id_secundaria' => ['nullable', 'string', 'max:50', 'unique:macho,id_secundaria'],
-            'data_compra' => ['required', 'date'],
-            'data_nascimento' => ['nullable', 'date'],
+            'data_compra' => ['required', 'string', 'max:30'],
+            'data_nascimento' => ['nullable', 'string', 'max:30'],
             'raca_id' => ['required', 'exists:raca,id'],
             'valor_compra' => ['nullable', 'numeric', 'min:0'],
             'peso_compra' => ['nullable', 'numeric', 'min:0'],
@@ -97,6 +98,9 @@ class MachoCompraController extends Controller
             'localizacao' => ['nullable', 'string', 'max:120'],
             'baia' => ['nullable', 'string', 'max:60'],
         ]);
+
+        $validated['data_compra'] = $this->parseInputDate($validated['data_compra']);
+        $validated['data_nascimento'] = $this->parseInputDate($validated['data_nascimento'] ?? null);
 
         $dataCompra = Carbon::parse($validated['data_compra'])->startOfDay();
         $dataNasc = empty($validated['data_nascimento']) ? null : Carbon::parse($validated['data_nascimento'])->startOfDay();
@@ -137,5 +141,12 @@ class MachoCompraController extends Controller
             'message' => 'Compra de macho registrada com sucesso!',
             'id' => $result->id,
         ], 201);
+    }
+
+    private function parseInputDate(?string $input): ?string
+    {
+        if ($input === null || trim($input) === '') return null;
+        $carbon = PigCycleService::parseFilterDate($input);
+        return $carbon ? $carbon->format('Y-m-d') : null;
     }
 }

@@ -80,8 +80,8 @@ class MaternidadeController extends Controller
                         'lote' => $parto->lote ?? '-',
                         'localizacao' => (string) $parto->localizacao . ($parto->baia ? " - Baia: {$parto->baia}" : ""),
                         'idade_leitoes' => $idadeLeitoes,
-                        'data_parto' => $dataParto->format('d/m/Y'),
-                        'previsao_desmame' => $previsaoDesmame->format('d/m/Y'),
+                        'data_parto' => PigCycleService::formatDisplayDate($dataParto),
+                        'previsao_desmame' => PigCycleService::formatDisplayDate($previsaoDesmame),
                         'problema' => "Leitões com idade superior a 101 dias ({$idadeLeitoes} dias). Já deveriam ter sido desmamados."
                     ];
                 }
@@ -295,7 +295,7 @@ class MaternidadeController extends Controller
         $validated = $request->validate([
             'femea_id' => 'required|exists:femea,id',
             'lote' => 'nullable|string|max:50',
-            'data' => 'required|date',
+            'data' => ['required', 'string', 'max:30'],
             'hora_inicio' => 'nullable',
             'hora_termino' => 'nullable',
             'total_vivos' => 'required|integer|min:0',
@@ -303,6 +303,8 @@ class MaternidadeController extends Controller
             'total_mumificados' => 'required|integer|min:0',
             'observacao' => 'nullable|string',
         ]);
+
+        $validated['data'] = $this->parseInputDate($validated['data']);
 
         $sqlEnum = "ALTER TABLE `femea_movimento` MODIFY COLUMN `acao` ENUM('compra', 'morte', 'descarte', 'venda', 'cio', 'salta_cio', 'cobertura', 'parto', 'desmame', 'morte_leitao') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
 
@@ -383,13 +385,15 @@ class MaternidadeController extends Controller
         $validated = $request->validate([
             'femea_id' => 'required|exists:femea,id',
             'parto_id' => 'required',
-            'data' => 'required|date',
+            'data' => ['required', 'string', 'max:30'],
             'hora' => 'nullable',
             'quantidade' => 'required|integer|min:1',
             'causa_id' => 'nullable|exists:causa,id',
             'funcionario' => 'nullable|string|max:255',
             'observacao' => 'nullable|string',
         ]);
+
+        $validated['data'] = $this->parseInputDate($validated['data']);
 
         $sqlEnum = "ALTER TABLE `femea_movimento` MODIFY COLUMN `acao` ENUM('compra', 'morte', 'descarte', 'venda', 'cio', 'salta_cio', 'cobertura', 'parto', 'desmame', 'morte_leitao') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
 
@@ -651,5 +655,12 @@ class MaternidadeController extends Controller
         }
 
         return redirect()->back()->with('success', 'Desmame registrado com sucesso!');
+    }
+
+    private function parseInputDate(?string $input): ?string
+    {
+        if ($input === null || trim($input) === '') return null;
+        $carbon = PigCycleService::parseFilterDate($input);
+        return $carbon ? $carbon->format('Y-m-d') : null;
     }
 }

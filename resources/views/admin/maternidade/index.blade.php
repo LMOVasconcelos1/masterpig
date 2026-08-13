@@ -10,12 +10,12 @@
     showDesmameModal: false,
     showMorteModal: false,
     selectedPartoId: null,
-    matrizesAptas: {{ json_encode($matrizesAptas) }},
+    matrizesAptas: {{ json_encode($matrizesAptas, JSON_UNESCAPED_UNICODE) }},
     matrizPartoSearch: '',
-    femeasLactantes: {{ json_encode($femeasLactantesFull) }},
-    lotesCreche: {{ json_encode($lotesCreche ?? []) }},
-    usuarios: {{ json_encode($usuarios ?? []) }},
-    morteCausas: {{ json_encode($morteCausas) }},
+    femeasLactantes: {{ json_encode($femeasLactantesFull, JSON_UNESCAPED_UNICODE) }},
+    lotesCreche: {{ json_encode($lotesCreche ?? [], JSON_UNESCAPED_UNICODE) }},
+    usuarios: {{ json_encode($usuarios ?? [], JSON_UNESCAPED_UNICODE) }},
+    morteCausas: {{ json_encode($morteCausas, JSON_UNESCAPED_UNICODE) }},
     criteriosLoaded: false,
     calendarType: 'gregoriano',
     activePicker: null,
@@ -28,6 +28,9 @@
     desmamePickerTop: 0,
     desmamePickerLeft: 0,
     desmamePickerDirection: 'down',
+    mortePickerTop: 0,
+    mortePickerLeft: 0,
+    mortePickerDirection: 'down',
     partoForm: {
         femea_id: '',
         cobertura_id: '',
@@ -39,7 +42,8 @@
         parto_id: '',
         quantidade: 1,
         disponiveis: 0,
-        data: '{{ date('Y-m-d') }}',
+        dataIso: '{{ date('Y-m-d') }}',
+        data: '',
         nova_causa_nome: ''
     },
     desmameForm: {
@@ -149,6 +153,7 @@
     getPickerSelectedIso() {
         if (this.activePicker === 'parto') return String(this.partoForm.dataIso || '');
         if (this.activePicker === 'desmame') return String(this.desmameForm.dataIso || '');
+        if (this.activePicker === 'morte') return String(this.morteForm.dataIso || '');
         return '';
     },
     prevCalendarMonth() {
@@ -222,6 +227,7 @@
         if (!m) return;
         if (this.activePicker === 'parto') this.setPartoDateIso(iso);
         if (this.activePicker === 'desmame') this.setDesmameDateIso(iso);
+        if (this.activePicker === 'morte') this.setMorteDataIso(iso);
         this.activePicker = null;
     },
     openDesmameDatePicker() {
@@ -252,6 +258,34 @@
             this.desmamePickerDirection = direction;
         });
     },
+    openMorteDatePicker() {
+        const iso = String(this.morteForm.dataIso || '').trim();
+        const base = iso && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(iso + 'T12:00:00') : new Date();
+        this.calendarMonth = base.getMonth();
+        this.calendarYear = base.getFullYear();
+        this.activePicker = 'morte';
+        this.$nextTick(() => {
+            const el = this.$refs && this.$refs.morteDateInput ? this.$refs.morteDateInput : null;
+            if (!el || typeof el.getBoundingClientRect !== 'function') return;
+            const rect = el.getBoundingClientRect();
+            const popW = window.innerWidth >= 640 ? 288 : Math.min(320, Math.max(260, window.innerWidth - 32));
+            const half = popW / 2;
+            const minLeft = half + 8;
+            const maxLeft = Math.max(minLeft, window.innerWidth - half - 8);
+            const centerLeft = rect.left + rect.width / 2;
+            const left = Math.min(maxLeft, Math.max(minLeft, centerLeft));
+
+            const desiredH = 360;
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const spaceAbove = rect.top;
+            const direction = (spaceBelow < desiredH && spaceAbove > spaceBelow) ? 'up' : 'down';
+            const top = direction === 'up' ? rect.top : rect.bottom;
+
+            this.mortePickerLeft = left;
+            this.mortePickerTop = top;
+            this.mortePickerDirection = direction;
+        });
+    },
     handlePartoSubmit(e) {
         this.selecionarMatrizPartoPorIdPrimaria(true);
         if (!this.partoForm.femea_id) {
@@ -267,6 +301,7 @@
     },
     init() {
         this.setPartoDateIso(this.partoForm.dataIso);
+        this.setMorteDataIso(this.morteForm.dataIso);
         this.$watch('showDesmameModal', (open) => {
             if (!open) return;
             this.hydrateDesmameFromPartoId(this.selectedPartoId);
@@ -278,6 +313,7 @@
                 this.calendarType = (items.criterio_calendario_tipo === null || items.criterio_calendario_tipo === undefined || String(items.criterio_calendario_tipo).trim() === '') ? 'gregoriano' : String(items.criterio_calendario_tipo);
                 this.setPartoDateIso(this.partoForm.dataIso);
                 this.setDesmameDateIso('{{ date('Y-m-d') }}');
+                this.setMorteDataIso(this.morteForm.dataIso);
                 this.criteriosLoaded = true;
             })
             .catch(() => { this.criteriosLoaded = true; });
@@ -328,6 +364,29 @@
         } else {
             this.desmameForm.data = this.isoToBr(v);
         }
+    },
+    setMorteDataIso(iso) {
+        const v = String(iso || '').trim();
+        if (!v) {
+            this.morteForm.dataIso = '';
+            this.morteForm.data = '';
+            return;
+        }
+        this.morteForm.dataIso = v;
+        if (this.calendarType === '1000_dias' && typeof toPigDay === 'function') {
+            this.morteForm.data = String(toPigDay(v + 'T00:00:00'));
+        } else {
+            this.morteForm.data = this.isoToBr(v);
+        }
+    },
+    normalizeMorteDisplay() {
+        const isPig = this.calendarType === '1000_dias';
+        const raw = String(this.morteForm.data || '').trim();
+        if (!raw) { this.setMorteDataIso(''); return; }
+        let iso = null;
+        if (isPig && /^\d{1,4}$/.test(raw) && typeof pigDayToDate === 'function') iso = pigDayToDate(raw);
+        if (!iso) iso = this.brToIso(raw);
+        if (iso) this.setMorteDataIso(iso);
     },
     openDesmameModal(partoId = null) {
         this.resetDesmameForm();
@@ -607,7 +666,7 @@
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                             @forelse($partosRegistrados as $parto)
                             <tr class="hover:bg-gray-50/50 transition-colors">
-                                <td class="px-6 py-4 text-sm text-navy-900">{{ \Carbon\Carbon::parse($parto->data)->format('d/m/Y') }}</td>
+                                <td class="px-6 py-4 text-sm text-navy-900">{{ \App\Services\PigCycleService::formatDisplayDate(\Carbon\Carbon::parse($parto->data)) }}</td>
                                 <td class="px-6 py-4 text-sm font-semibold text-navy-900">
                                     {{ (string) $parto->id_primaria . ($parto->id_secundaria ? " ({$parto->id_secundaria})" : "") }}
                                 </td>
@@ -661,7 +720,7 @@
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                             @forelse($desmamesRegistrados as $d)
                             <tr class="hover:bg-gray-50/50 transition-colors">
-                                <td class="px-6 py-4 text-sm text-navy-900">{{ \Carbon\Carbon::parse($d->data)->format('d/m/Y') }}</td>
+                                <td class="px-6 py-4 text-sm text-navy-900">{{ \App\Services\PigCycleService::formatDisplayDate(\Carbon\Carbon::parse($d->data)) }}</td>
                                 <td class="px-6 py-4 text-sm font-semibold text-navy-900">
                                     {{ (string) $d->id_primaria . ($d->id_secundaria ? " ({$d->id_secundaria})" : "") }}
                                 </td>
@@ -717,7 +776,7 @@
                             @forelse($mortesLeitaoRegistradas as $morte)
                             <tr class="hover:bg-gray-50/50 transition-colors">
                                 <td class="px-6 py-4 text-sm text-navy-900">
-                                    {{ \Carbon\Carbon::parse($morte->data)->format('d/m/Y') }} {{ $morte->hora ? \Carbon\Carbon::parse($morte->hora)->format('H:i') : '' }}
+                                    {{ \App\Services\PigCycleService::formatDisplayDate(\Carbon\Carbon::parse($morte->data)) }} {{ $morte->hora ? \Carbon\Carbon::parse($morte->hora)->format('H:i') : '' }}
                                 </td>
                                 <td class="px-6 py-4 text-sm font-semibold text-navy-900">
                                     {{ (string) $morte->id_primaria . ($morte->id_secundaria ? " ({$morte->id_secundaria})" : "") }}
@@ -749,7 +808,7 @@
                     <h3 class="text-lg font-bold">Registrar Morte de Leitão</h3>
                     <button @click="showMorteModal = false"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <form action="{{ route('maternidade.mortes.store') }}" method="POST" class="p-6 space-y-4">
+                <form accept-charset="UTF-8" action="{{ route('maternidade.mortes.store') }}" method="POST" class="p-6 space-y-4">
                     @csrf
                     <input type="hidden" name="parto_id" x-model="morteForm.parto_id">
                     
@@ -769,7 +828,60 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data Morte</label>
-                            <input type="date" name="data" required x-model="morteForm.data" class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm">
+                            <input type="hidden" name="data" :value="morteForm.dataIso">
+                            <div class="relative">
+                                <input type="text"
+                                       x-model="morteForm.data"
+                                       x-ref="morteDateInput"
+                                       @click="openMorteDatePicker()"
+                                       @blur="normalizeMorteDisplay()"
+                                       class="w-full rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm pr-10"
+                                       :placeholder="calendarType === '1000_dias' ? 'Dia PIG' : 'DD/MM/AAAA'"
+                                       inputmode="numeric"
+                                       autocomplete="off"
+                                       required>
+                                <button type="button" @click="openMorteDatePicker()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                    <i class="fa-solid fa-calendar"></i>
+                                </button>
+
+                                <div x-show="activePicker === 'morte'"
+                                     x-cloak
+                                     :style="`top:${mortePickerTop}px; left:${mortePickerLeft}px;`"
+                                     :class="mortePickerDirection === 'up' ? '-translate-y-full -mt-2' : 'mt-2'"
+                                     class="fixed z-[200] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-[calc(100vw-2rem)] max-w-xs sm:w-72 -translate-x-1/2 max-h-[calc(100vh-12rem)] overflow-y-auto"
+                                     @click.away="activePicker = null">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                            <i class="fa-solid fa-chevron-left"></i>
+                                        </button>
+                                        <span class="font-medium text-gray-900 dark:text-gray-100" x-text="calendarMonths[calendarMonth] + ' ' + calendarYear"></span>
+                                        <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
+                                            <i class="fa-solid fa-chevron-right"></i>
+                                        </button>
+                                    </div>
+
+                                    <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2">
+                                        <template x-for="day in ['D','S','T','Q','Q','S','S']">
+                                            <div class="font-medium text-gray-500 dark:text-gray-400 py-1" x-text="day"></div>
+                                        </template>
+                                    </div>
+
+                                    <div class="grid grid-cols-7 gap-1">
+                                        <template x-for="day in getCalendarDays()" :key="day.date">
+                                            <div class="text-center">
+                                                <button type="button"
+                                                        @click.stop="selectCalendarDate(day.date)"
+                                                        :class="day.isSelected ? 'bg-primary-600 text-white' : (day.isCurrentMonth ? 'text-gray-900 dark:text-gray-100 hover:bg-primary-50 dark:hover:bg-primary-900/30' : 'text-gray-400')"
+                                                        :disabled="!day.isCurrentMonth"
+                                                        class="p-2 text-sm rounded-lg transition-colors w-full">
+                                                    <span x-text="day.day"></span>
+                                                </button>
+                                                <div class="text-[8px] text-gray-500 dark:text-gray-400 mt-1" x-show="day.isCurrentMonth && day.pigDay" x-text="day.pigDay"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hora Morte</label>
@@ -825,7 +937,7 @@
                     <h3 class="text-lg font-bold">Registrar Parto</h3>
                     <button @click="showPartoModal = false"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <form action="{{ route('maternidade.partos.store') }}" method="POST" class="p-6 space-y-4 text-gray-800 dark:text-gray-200" @submit="handlePartoSubmit($event)">
+                <form accept-charset="UTF-8" action="{{ route('maternidade.partos.store') }}" method="POST" class="p-6 space-y-4 text-gray-800 dark:text-gray-200" @submit="handlePartoSubmit($event)">
                     @csrf
                     <input type="hidden" name="cobertura_id" x-model="partoForm.cobertura_id">
                     <div>
@@ -947,7 +1059,7 @@
                     <h3 class="text-lg font-bold">Registrar Desmame</h3>
                     <button @click="showDesmameModal = false"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <form action="{{ route('maternidade.desmames.store') }}" method="POST" class="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+                <form accept-charset="UTF-8" action="{{ route('maternidade.desmames.store') }}" method="POST" class="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
                     @csrf
                     <input type="hidden" name="parto_id" x-model="desmameForm.parto_id">
 

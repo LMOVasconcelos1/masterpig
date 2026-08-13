@@ -59,14 +59,14 @@
             <div x-show="loading" class="text-sm text-gray-500 dark:text-gray-400">Consultando...</div>
         </div>
         <div class="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50">
-            <form @submit.prevent="send()" class="flex items-end gap-3">
+            <form accept-charset="UTF-8" @submit.prevent="send()" class="flex items-end gap-3">
                 <div class="flex-1">
                     <label class="sr-only">Mensagem</label>
                     <textarea
                         x-model="input"
                         rows="2"
                         class="w-full rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm focus:ring-primary-500 focus:border-primary-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                        placeholder="Digite sua pergunta…"
+                        placeholder="Digite sua pergunta?"
                         @keydown.enter.prevent="if(!$event.shiftKey) send(); else input += '\n';"
                     ></textarea>
                     <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">Enter envia, Shift+Enter quebra linha.</div>

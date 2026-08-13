@@ -41,7 +41,7 @@ class FemeaController extends Controller
             ->first();
 
         $acao = $row?->acao === null ? null : (string) $row->acao;
-        $data = empty($row?->data) ? null : Carbon::parse($row->data)->format('d/m/Y');
+        $data = empty($row?->data) ? null : PigCycleService::formatDisplayDate(Carbon::parse($row->data));
         $inativo = $acao !== null && in_array($acao, ['morte', 'descarte', 'venda'], true);
 
         return [

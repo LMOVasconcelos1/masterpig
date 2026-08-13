@@ -166,7 +166,7 @@ class CrecheController extends Controller
                 return [
                     'id' => (int) $r->id,
                     'identificacao' => (string) $r->nome,
-                    'data_abertura' => $dataAbertura ? $dataAbertura->format('d/m/Y') : '-',
+                    'data_abertura' => PigCycleService::formatDisplayDate($dataAbertura),
                     'quantidade' => (int) $r->quantidade,
                     'dias_alojamento' => (int) $dias,
                 ];
@@ -225,16 +225,19 @@ class CrecheController extends Controller
     public function storeCompra(Request $request)
     {
         $validated = $request->validate([
-            'data_compra' => ['required', 'date'],
+            'data_compra' => ['required', 'string', 'max:30'],
             'lote_id' => ['required', 'integer'],
             'localizacao' => ['nullable', 'string', 'max:120'],
             'quantidade' => ['required', 'integer', 'min:1'],
             'peso_total' => ['required', 'numeric', 'min:0'],
-            'data_nascimento' => ['required', 'date'],
+            'data_nascimento' => ['required', 'string', 'max:30'],
             'valor_compra' => ['nullable', 'numeric', 'min:0'],
             'fornecedor_id' => ['nullable', 'integer'],
             'nota_fiscal' => ['nullable', 'string', 'max:120'],
         ]);
+
+        $validated['data_compra'] = $this->parseInputDate($validated['data_compra']);
+        $validated['data_nascimento'] = $this->parseInputDate($validated['data_nascimento']);
 
         if (!Schema::hasTable('creche_compras')) {
             return back()
@@ -252,12 +255,12 @@ class CrecheController extends Controller
         }
 
         DB::table('creche_compras')->insert([
-            'data_compra' => Carbon::parse($validated['data_compra'])->startOfDay()->format('Y-m-d'),
+            'data_compra' => $validated['data_compra'],
             'lote_id' => (int) $validated['lote_id'],
             'localizacao' => $validated['localizacao'] ?? null,
             'quantidade' => (int) $validated['quantidade'],
             'peso_total' => (float) $validated['peso_total'],
-            'data_nascimento' => Carbon::parse($validated['data_nascimento'])->startOfDay()->format('Y-m-d'),
+            'data_nascimento' => $validated['data_nascimento'],
             'valor_compra' => isset($validated['valor_compra']) ? (float) $validated['valor_compra'] : null,
             'fornecedor_id' => isset($validated['fornecedor_id']) ? (int) $validated['fornecedor_id'] : null,
             'nota_fiscal' => $validated['nota_fiscal'] ?? null,
@@ -273,11 +276,13 @@ class CrecheController extends Controller
         $validated = $request->validate([
             'lote_id' => ['required', 'integer'],
             'localizacao' => ['nullable', 'string', 'max:120'],
-            'data_morte' => ['required', 'date'],
+            'data_morte' => ['required', 'string', 'max:30'],
             'quantidade' => ['required', 'integer', 'min:1'],
             'causa' => ['required', 'string', 'max:255'],
             'origem_identificacao' => ['nullable', 'string', 'max:255'],
         ]);
+
+        $validated['data_morte'] = $this->parseInputDate($validated['data_morte']);
 
         if (!Schema::hasTable('creche_mortes')) {
             return back()
@@ -297,7 +302,7 @@ class CrecheController extends Controller
         DB::table('creche_mortes')->insert([
             'lote_id' => (int) $validated['lote_id'],
             'localizacao' => $validated['localizacao'] ?? null,
-            'data_morte' => Carbon::parse($validated['data_morte'])->startOfDay()->format('Y-m-d'),
+            'data_morte' => $validated['data_morte'],
             'quantidade' => (int) $validated['quantidade'],
             'causa' => $validated['causa'],
             'origem_identificacao' => $validated['origem_identificacao'] ?? null,
@@ -511,5 +516,12 @@ class CrecheController extends Controller
             ],
             'movimentacoes' => $movimentacoes,
         ]);
+    }
+
+    private function parseInputDate(?string $input): ?string
+    {
+        if ($input === null || trim($input) === '') return null;
+        $carbon = PigCycleService::parseFilterDate($input);
+        return $carbon ? $carbon->format('Y-m-d') : null;
     }
 }

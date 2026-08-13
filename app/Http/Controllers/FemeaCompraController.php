@@ -125,7 +125,7 @@ class FemeaCompraController extends Controller
             return [
                 'id' => $row->id,
                 'acao' => 'compra',
-                'data' => Carbon::parse($row->data)->format('d/m/Y'),
+                'data' => PigCycleService::formatDisplayDate(Carbon::parse($row->data)),
                 'tipo' => $row->tipo_compra,
                 'id_primaria' => $row->id_primaria,
                 'id_secundaria' => $row->id_secundaria,

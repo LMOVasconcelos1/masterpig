@@ -315,8 +315,8 @@
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('performanceChart').getContext('2d');
         
-        const labels = {!! json_encode($performance->map(fn($p) => \Carbon\Carbon::parse($p->data_parto)->format('d/m'))) !!};
-        const dataVivos = {!! json_encode($performance->pluck('total_vivos')) !!};
+        const labels = {!! json_encode($performance->map(fn($p) => \App\Services\PigCycleService::formatDisplayDate($p->data_parto)), JSON_UNESCAPED_UNICODE) !!};
+        const dataVivos = {!! json_encode($performance->pluck('total_vivos'), JSON_UNESCAPED_UNICODE) !!};
         const metaVivos = Array(labels.length).fill({{ $metas['total_vivos'] }});
         const mediaPlantel = Array(labels.length).fill({{ $mediaPlantel['total_vivos'] }});
 

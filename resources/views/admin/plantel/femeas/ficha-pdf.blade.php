@@ -267,11 +267,11 @@
             <div class="info-grid">
                 <div class="info-row">
                     <span class="info-label">Nascimento:</span>
-                    <span class="info-value">{{ $femea->data_nascimento ? \Carbon\Carbon::parse($femea->data_nascimento)->format('d/m/Y') : '-' }}</span>
+                    <span class="info-value">{{ $femea->data_nascimento ? \App\Services\PigCycleService::formatDisplayDate(\Carbon\Carbon::parse($femea->data_nascimento)) : '-' }}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Compra:</span>
-                    <span class="info-value">{{ $femea->data_compra ? \Carbon\Carbon::parse($femea->data_compra)->format('d/m/Y') : '-' }}</span>
+                    <span class="info-value">{{ $femea->data_compra ? \App\Services\PigCycleService::formatDisplayDate(\Carbon\Carbon::parse($femea->data_compra)) : '-' }}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Localização:</span>

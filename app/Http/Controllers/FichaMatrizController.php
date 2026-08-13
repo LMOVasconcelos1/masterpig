@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PigCycleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -98,9 +99,9 @@ class FichaMatrizController extends Controller
 
                 $ciclos[] = [
                     'parto_id' => $parto->parto_id,
-                    'data_parto' => $parto->data_parto ? \Carbon\Carbon::parse($parto->data_parto)->format('d/m/Y') : '-',
-                    'data_cobertura' => $parto->data_cobertura ? \Carbon\Carbon::parse($parto->data_cobertura)->format('d/m/Y') : '-',
-                    'data_desmame' => $parto->data_desmame ? \Carbon\Carbon::parse($parto->data_desmame)->format('d/m/Y') : '-',
+                    'data_parto' => PigCycleService::formatDisplayDate($parto->data_parto ? \Carbon\Carbon::parse($parto->data_parto) : null),
+                    'data_cobertura' => PigCycleService::formatDisplayDate($parto->data_cobertura ? \Carbon\Carbon::parse($parto->data_cobertura) : null),
+                    'data_desmame' => PigCycleService::formatDisplayDate($parto->data_desmame ? \Carbon\Carbon::parse($parto->data_desmame) : null),
                     'dias_gestacao' => $diasGestacao,
                     'dias_lactacao' => $diasLactacao,
                     'nascidos_totais' => $nascidosTotais,
@@ -237,9 +238,9 @@ class FichaMatrizController extends Controller
 
                 $ciclos[] = [
                     'parto_id' => $parto->parto_id,
-                    'data_parto' => $parto->data_parto ? \Carbon\Carbon::parse($parto->data_parto)->format('d/m/Y') : '-',
-                    'data_cobertura' => $parto->data_cobertura ? \Carbon\Carbon::parse($parto->data_cobertura)->format('d/m/Y') : '-',
-                    'data_desmame' => $parto->data_desmame ? \Carbon\Carbon::parse($parto->data_desmame)->format('d/m/Y') : '-',
+                    'data_parto' => PigCycleService::formatDisplayDate($parto->data_parto ? \Carbon\Carbon::parse($parto->data_parto) : null),
+                    'data_cobertura' => PigCycleService::formatDisplayDate($parto->data_cobertura ? \Carbon\Carbon::parse($parto->data_cobertura) : null),
+                    'data_desmame' => PigCycleService::formatDisplayDate($parto->data_desmame ? \Carbon\Carbon::parse($parto->data_desmame) : null),
                     'dias_gestacao' => $diasGestacao,
                     'dias_lactacao' => $diasLactacao,
                     'nascidos_totais' => $nascidosTotais,

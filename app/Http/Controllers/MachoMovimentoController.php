@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PigCycleService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -91,7 +92,7 @@ class MachoMovimentoController extends Controller
             return [
                 'id' => $row->id,
                 'acao' => $acao,
-                'data' => Carbon::parse($row->data)->format('d/m/Y'),
+                'data' => PigCycleService::formatDisplayDate(Carbon::parse($row->data)),
                 'macho_id' => $row->macho_id,
                 'id_primaria' => $row->id_primaria,
                 'causa' => $causa,

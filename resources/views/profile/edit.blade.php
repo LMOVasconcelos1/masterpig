@@ -36,7 +36,7 @@
                         <i class="fa-solid fa-key w-5" :class="tab === 'password' ? 'text-white' : 'text-primary-600 dark:text-primary-400'"></i>
                         <span class="font-semibold">Alterar Senha</span>
                     </button>
-                    <form method="POST" action="{{ route('logout', [], false) }}">
+                    <form accept-charset="UTF-8" method="POST" action="{{ route('logout', [], false) }}">
                         @csrf
                         <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-100 dark:hover:border-red-800 transition-colors text-left">
                             <i class="fa-solid fa-right-from-bracket w-5"></i>
@@ -55,7 +55,7 @@
                 <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Atualize suas informações de perfil e e-mail.</div>
             </div>
             <div class="p-6">
-                <form method="POST" action="{{ route('profile.update', [], false) }}" class="space-y-5" enctype="multipart/form-data">
+                <form accept-charset="UTF-8" method="POST" action="{{ route('profile.update', [], false) }}" class="space-y-5" enctype="multipart/form-data">
                     @csrf
                     @method('patch')
 
@@ -103,7 +103,7 @@
                 <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">Defina uma senha forte para manter sua conta segura.</div>
             </div>
             <div class="p-6">
-                <form method="POST" action="{{ route('password.update', [], false) }}" class="space-y-5">
+                <form accept-charset="UTF-8" method="POST" action="{{ route('password.update', [], false) }}" class="space-y-5">
                     @csrf
                     @method('put')
 
@@ -143,7 +143,7 @@
                 <div class="text-sm text-red-700/80 dark:text-red-400/80 mt-1">Ações irreversíveis.</div>
             </div>
             <div class="p-6">
-                <form method="POST" action="{{ route('profile.destroy', [], false) }}" class="space-y-4">
+                <form accept-charset="UTF-8" method="POST" action="{{ route('profile.destroy', [], false) }}" class="space-y-4">
                     @csrf
                     @method('delete')
 

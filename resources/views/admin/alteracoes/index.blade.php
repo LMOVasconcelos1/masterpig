@@ -21,7 +21,7 @@
                                 <div class="min-w-0">
                                     <div class="text-sm font-bold text-gray-900 dark:text-gray-100">{{ $entry['title'] }}</div>
                                     <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                        {{ $entry['date'] ? \Illuminate\Support\Carbon::parse($entry['date'])->format('d/m/Y') : '-' }}
+                                        {{ $entry['date'] ? \App\Services\PigCycleService::formatDisplayDate(\Illuminate\Support\Carbon::parse($entry['date'])) : '-' }}
                                     </div>
                                 </div>
                             </div>

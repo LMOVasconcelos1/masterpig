@@ -270,7 +270,7 @@
                                 
                                 <hr class="my-2 border-gray-100">
                                 
-                                <form method="POST" action="{{ route('logout', [], false) }}">
+                                <form accept-charset="UTF-8" method="POST" action="{{ route('logout', [], false) }}">
                                     @csrf
                                     <button type="submit" class="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors text-left">
                                         <i class="fa-solid fa-right-from-bracket mr-3"></i>
@@ -503,12 +503,12 @@
                 <div x-show="loading" class="text-sm text-gray-500">Consultando...</div>
             </div>
             <div class="px-4 py-3 border-t border-gray-100 bg-gray-50/50 sticky bottom-0">
-                <form @submit.prevent="send()" class="flex items-end gap-2">
+                <form accept-charset="UTF-8" @submit.prevent="send()" class="flex items-end gap-2">
                     <textarea
                         x-model="input"
                         rows="2"
                         class="w-full rounded-xl border border-gray-200 shadow-sm focus:ring-primary-500 focus:border-primary-500"
-                        placeholder="Digite sua pergunta…"
+                        placeholder="Digite sua pergunta?"
                         @keydown.enter.prevent="if(!$event.shiftKey) send(); else input += '\\n';"
                     ></textarea>
                     <button type="submit" :disabled="loading" class="shrink-0 inline-flex items-center justify-center rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed">
@@ -573,6 +573,14 @@
     </script>
     @endif
     
+    <script>
+        window.toast = function (message, type = 'success') {
+            window.dispatchEvent(new CustomEvent('toast', {
+                detail: { message: message, type: type }
+            }));
+        };
+    </script>
+
     @stack('scripts')
 </body>
 </html>

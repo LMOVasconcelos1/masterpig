@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Causa;
 use App\Models\Femea;
+use App\Services\PigCycleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,7 @@ class FemeaMorteController extends Controller
         // Valida os dados de entrada
         $validated = $request->validate([
             'femea_id' => ['required', 'exists:femea,id'],
-            'data_morte' => ['required', 'date'],
+            'data_morte' => ['required', 'string', 'max:30'],
             'causa_id' => ['required', 'exists:causa,id'],
         ]);
 
@@ -70,7 +71,7 @@ class FemeaMorteController extends Controller
             'femea_id' => $femea->id,
             'femea_id_primaria' => $femea->id_primaria,
             'acao' => 'morte',
-            'data' => Carbon::parse($validated['data_morte'])->format('Y-m-d'),
+            'data' => $this->parseInputDate($validated['data_morte']),
             'valor' => null,
             'peso' => null,
             'fornecedor_id' => null,
@@ -88,5 +89,12 @@ class FemeaMorteController extends Controller
         return response()->json([
             'message' => 'Morte registrada com sucesso!',
         ], 201);
+    }
+
+    private function parseInputDate(?string $input): ?string
+    {
+        if ($input === null || trim($input) === '') return null;
+        $carbon = PigCycleService::parseFilterDate($input);
+        return $carbon ? $carbon->format('Y-m-d') : null;
     }
 }

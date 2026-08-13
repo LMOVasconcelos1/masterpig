@@ -15,7 +15,7 @@
         <div class="bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 dark:border-gray-700/30 p-8 transition-all duration-300 hover:shadow-3xl">
             <x-auth-session-status class="mb-4" :status="session('status')" />
 
-            <form id="login-form" method="POST" action="{{ route('login', [], false) }}" class="space-y-5">
+            <form accept-charset="UTF-8" id="login-form" method="POST" action="{{ route('login', [], false) }}" class="space-y-5">
                 @csrf
 
                 <div>

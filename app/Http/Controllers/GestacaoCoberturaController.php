@@ -174,7 +174,7 @@ class GestacaoCoberturaController extends Controller
                         'tipo' => $tipo,
                         'macho' => $tipo === 'macho' ? ($machoPrimaria === null ? null : (string) $machoPrimaria) : null,
                         'semen' => $tipo === 'semen' ? (empty($m->semen) ? null : (string) $m->semen) : null,
-                        'data' => Carbon::parse($m->data)->format('d/m/Y'),
+                        'data' => PigCycleService::formatDisplayDate(Carbon::parse($m->data)),
                         'hora' => $horaM,
                         'usuario' => $usuarioId !== null ? ($usuarioNomeById[$usuarioId] ?? null) : null,
                     ];
@@ -204,7 +204,7 @@ class GestacaoCoberturaController extends Controller
                 'montas' => $montas,
                 'montas_summary' => $montasSummary,
                 'data' => $diaPigAbs === null ? '-' : (string) $diaPigAbs,
-                'data_br' => $dt->format('d/m/Y'),
+                'data_br' => PigCycleService::formatDisplayDate($dt),
                 'data_iso' => $dt->toDateString(),
                 'hora' => $horaCob,
                 'usuario' => $row->usuario_nome === null ? null : (string) $row->usuario_nome,
@@ -237,7 +237,7 @@ class GestacaoCoberturaController extends Controller
             'semen' => ['nullable', 'string', 'max:120'],
             'semens' => ['nullable', 'array', 'min:1', 'max:10'],
             'semens.*' => ['required', 'string', 'max:120'],
-            'data' => ['required', 'date'],
+            'data' => ['required', 'string', 'max:30'],
             'hora' => ['required', 'date_format:H:i'],
             'presenca_cio' => ['required', 'in:sim'],
             'localizacao' => ['nullable', 'string', 'max:120'],
@@ -249,10 +249,12 @@ class GestacaoCoberturaController extends Controller
             'montas.*.tipo' => ['required', 'in:macho,semen'],
             'montas.*.macho_id' => ['nullable'],
             'montas.*.semen' => ['nullable', 'string', 'max:120'],
-            'montas.*.data' => ['required', 'date'],
+            'montas.*.data' => ['required', 'string', 'max:30'],
             'montas.*.hora' => ['required', 'date_format:H:i'],
             'montas.*.usuario_id' => ['required', 'exists:usuario,id'],
         ]);
+
+        $validated['data'] = $this->parseInputDate($validated['data']);
 
         $warnings = [];
 
@@ -459,7 +461,7 @@ class GestacaoCoberturaController extends Controller
                     'tipo' => $tipo,
                     'macho_id' => $machoId,
                     'semen' => $semen === '' ? null : $semen,
-                    'data' => Carbon::parse($m['data'])->toDateString(),
+                    'data' => $this->parseInputDate($m['data']),
                     'hora' => (string) $m['hora'],
                     'usuario_id' => (int) $m['usuario_id'],
                 ];
@@ -976,7 +978,7 @@ class GestacaoCoberturaController extends Controller
             'semen' => ['nullable', 'string', 'max:120'],
             'semens' => ['nullable', 'array', 'min:1', 'max:10'],
             'semens.*' => ['required', 'string', 'max:120'],
-            'data' => ['required', 'date'],
+            'data' => ['required', 'string', 'max:30'],
             'hora' => ['required', 'date_format:H:i'],
             'presenca_cio' => ['required', 'in:sim'],
             'localizacao' => ['nullable', 'string', 'max:120'],
@@ -988,11 +990,12 @@ class GestacaoCoberturaController extends Controller
             'montas.*.tipo' => ['required', 'in:macho,semen'],
             'montas.*.macho_id' => ['nullable'],
             'montas.*.semen' => ['nullable', 'string', 'max:120'],
-            'montas.*.data' => ['required', 'date'],
+            'montas.*.data' => ['required', 'string', 'max:30'],
             'montas.*.hora' => ['required', 'date_format:H:i'],
             'montas.*.usuario_id' => ['required', 'exists:usuario,id'],
         ]);
 
+        $validated['data'] = $this->parseInputDate($validated['data']);
         $dataIso = Carbon::parse($validated['data'])->startOfDay()->toDateString();
 
         $dupQuery = DB::table('gestacao_cobertura')
@@ -1017,7 +1020,7 @@ class GestacaoCoberturaController extends Controller
                 'tipo' => (string) ($m['tipo'] ?? ''),
                 'macho_id' => empty($m['macho_id']) ? null : (int) $m['macho_id'],
                 'semen' => empty($m['semen']) ? null : (string) $m['semen'],
-                'data' => Carbon::parse((string) ($m['data'] ?? ''))->startOfDay()->toDateString(),
+                'data' => $this->parseInputDate($m['data'] ?? null),
                 'hora' => (string) ($m['hora'] ?? ''),
                 'usuario_id' => empty($m['usuario_id']) ? null : (int) $m['usuario_id'],
             ];
@@ -1362,5 +1365,12 @@ class GestacaoCoberturaController extends Controller
         }
 
         return $warnings;
+    }
+
+    private function parseInputDate(?string $input): ?string
+    {
+        if ($input === null || trim($input) === '') return null;
+        $carbon = PigCycleService::parseFilterDate($input);
+        return $carbon ? $carbon->format('Y-m-d') : null;
     }
 }

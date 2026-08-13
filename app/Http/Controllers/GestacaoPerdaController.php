@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PigCycleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -57,7 +58,7 @@ class GestacaoPerdaController extends Controller
                     'matriz' => (string) $row->id_primaria,
                     'matriz_secundaria' => $row->id_secundaria === null ? null : (string) $row->id_secundaria,
                     'tipo' => (string) $row->tipo,
-                    'data' => Carbon::parse($row->data)->format('d/m/Y'),
+                    'data' => PigCycleService::formatDisplayDate(Carbon::parse($row->data)),
                     'hora' => $row->hora === null ? null : (string) $row->hora,
                     'usuario' => $row->usuario_nome === null ? null : (string) $row->usuario_nome,
                     'localizacao' => $row->localizacao === null ? null : (string) $row->localizacao,
@@ -84,7 +85,7 @@ class GestacaoPerdaController extends Controller
             'femea_id' => ['required', 'exists:femea,id'],
             'usuario_id' => ['required', 'exists:usuario,id'],
             'tipo' => ['required', 'in:aborto,repeticao_cio,falsa_prenhez'],
-            'data' => ['required', 'date'],
+            'data' => ['required', 'string', 'max:30'],
             'hora' => ['nullable', 'date_format:H:i'],
             'localizacao' => ['nullable', 'string', 'max:120'],
             'baia' => ['nullable', 'string', 'max:60'],
@@ -103,7 +104,7 @@ class GestacaoPerdaController extends Controller
             'femea_id' => (int) $validated['femea_id'],
             'usuario_id' => Schema::hasColumn('gestacao_perda', 'usuario_id') ? (int) $validated['usuario_id'] : null,
             'tipo' => (string) $validated['tipo'],
-            'data' => Carbon::parse($validated['data'])->toDateString(),
+            'data' => $this->parseInputDate($validated['data']),
             'hora' => empty($validated['hora']) ? null : (string) $validated['hora'],
             'localizacao' => $validated['localizacao'] ?? null,
             'baia' => $validated['baia'] ?? null,
@@ -121,5 +122,12 @@ class GestacaoPerdaController extends Controller
         return response()->json([
             'message' => 'Perda reprodutiva registrada com sucesso!',
         ], 201);
+    }
+
+    private function parseInputDate(?string $input): ?string
+    {
+        if ($input === null || trim($input) === '') return null;
+        $carbon = PigCycleService::parseFilterDate($input);
+        return $carbon ? $carbon->format('Y-m-d') : null;
     }
 }

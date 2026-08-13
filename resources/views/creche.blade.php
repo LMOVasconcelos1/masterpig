@@ -660,7 +660,7 @@
                         <i class="fa-solid fa-times"></i>
                     </button>
                 </div>
-                <form method="POST" action="{{ route('creche.lotes.store') }}" class="p-6 space-y-4">
+                <form accept-charset="UTF-8" method="POST" action="{{ route('creche.lotes.store') }}" class="p-6 space-y-4">
                     @csrf
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Nome *</label>
@@ -686,7 +686,7 @@
                         <i class="fa-solid fa-times"></i>
                     </button>
                 </div>
-                <form method="POST" action="{{ route('creche.compras.store') }}" class="p-6 space-y-6">
+                <form accept-charset="UTF-8" method="POST" action="{{ route('creche.compras.store') }}" class="p-6 space-y-6">
                     @csrf
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="relative">
@@ -790,7 +790,7 @@
                         <i class="fa-solid fa-times"></i>
                     </button>
                 </div>
-                <form method="POST" action="{{ route('creche.mortes.store') }}" class="p-6 space-y-6">
+                <form accept-charset="UTF-8" method="POST" action="{{ route('creche.mortes.store') }}" class="p-6 space-y-6">
                     @csrf
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>

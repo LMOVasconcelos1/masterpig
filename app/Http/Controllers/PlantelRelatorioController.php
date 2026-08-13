@@ -280,7 +280,7 @@ class PlantelRelatorioController extends Controller
             if (! empty($row->ultima_acao)) {
                 $ultimaOperacao = $row->ultima_acao;
                 if (! empty($row->ultima_data)) {
-                    $ultimaOperacao .= ' - '.Carbon::parse($row->ultima_data)->format('d/m/Y');
+                    $ultimaOperacao .= ' - '.PigCycleService::formatDisplayDate(Carbon::parse($row->ultima_data));
                 }
 
                 if (in_array($row->ultima_acao, ['morte', 'descarte', 'venda'], true)) {
@@ -349,7 +349,7 @@ class PlantelRelatorioController extends Controller
             if (! empty($row->ultima_acao)) {
                 $ultimaOperacao = $row->ultima_acao;
                 if (! empty($row->ultima_data)) {
-                    $ultimaOperacao .= ' - '.Carbon::parse($row->ultima_data)->format('d/m/Y');
+                    $ultimaOperacao .= ' - '.PigCycleService::formatDisplayDate(Carbon::parse($row->ultima_data));
                 }
 
                 if (in_array($row->ultima_acao, ['morte', 'descarte', 'venda'], true)) {
@@ -364,7 +364,7 @@ class PlantelRelatorioController extends Controller
                 'raca' => $row->raca_nome,
                 'localizacao' => $row->localizacao,
                 'baia' => $row->baia,
-                'data_compra' => $row->data_compra ? Carbon::parse($row->data_compra)->format('d/m/Y') : null,
+                'data_compra' => $row->data_compra ? PigCycleService::formatDisplayDate(Carbon::parse($row->data_compra)) : null,
                 'ultima_operacao' => $ultimaOperacao,
                 'status' => $status,
             ];

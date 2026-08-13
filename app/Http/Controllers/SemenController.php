@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PigCycleService;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -112,11 +113,14 @@ class SemenController extends Controller
             'id_primaria' => ['required', 'string', 'max:50', 'unique:semen,id_primaria'],
             'id_secundaria' => ['nullable', 'string', 'max:50'],
             'raca_id' => ['nullable', 'integer', 'exists:raca,id'],
-            'data_nascimento' => ['nullable', 'date'],
-            'data_compra' => ['required', 'date'],
+            'data_nascimento' => ['nullable', 'string', 'max:30'],
+            'data_compra' => ['required', 'string', 'max:30'],
             'valor_compra' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'fornecedor_id' => ['nullable', 'integer', 'exists:fornecedor,id'],
         ]);
+
+        $validated['data_nascimento'] = $this->parseInputDate($validated['data_nascimento'] ?? null);
+        $validated['data_compra'] = $this->parseInputDate($validated['data_compra']);
 
         $validated['criado_em'] = now();
         $validated['atualizado_em'] = now();
@@ -193,11 +197,14 @@ class SemenController extends Controller
             'id_primaria' => ['required', 'string', 'max:50', 'unique:semen,id_primaria,' . $id],
             'id_secundaria' => ['nullable', 'string', 'max:50'],
             'raca_id' => ['nullable', 'integer', 'exists:raca,id'],
-            'data_nascimento' => ['nullable', 'date'],
-            'data_compra' => ['required', 'date'],
+            'data_nascimento' => ['nullable', 'string', 'max:30'],
+            'data_compra' => ['required', 'string', 'max:30'],
             'valor_compra' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'fornecedor_id' => ['nullable', 'integer', 'exists:fornecedor,id'],
         ]);
+
+        $validated['data_nascimento'] = $this->parseInputDate($validated['data_nascimento'] ?? null);
+        $validated['data_compra'] = $this->parseInputDate($validated['data_compra']);
 
         $validated['atualizado_em'] = now();
 
@@ -229,5 +236,12 @@ class SemenController extends Controller
         return response()->json([
             'message' => 'Sêmen excluído com sucesso!',
         ]);
+    }
+
+    private function parseInputDate(?string $input): ?string
+    {
+        if ($input === null || trim($input) === '') return null;
+        $carbon = PigCycleService::parseFilterDate($input);
+        return $carbon ? $carbon->format('Y-m-d') : null;
     }
 }

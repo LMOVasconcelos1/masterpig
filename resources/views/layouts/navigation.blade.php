@@ -16,12 +16,27 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
 
+                    <x-nav-link :href="route('plantel.femeas.index', [], false)" :active="request()->routeIs('plantel.*')">
+                        {{ __('Plantel') }}
+                    </x-nav-link>
+
                     <x-nav-link :href="route('gestacao', [], false)" :active="request()->routeIs('gestacao')">
                         {{ __('Gestação') }}
                     </x-nav-link>
 
                     <x-nav-link :href="route('maternidade', [], false)" :active="request()->routeIs('maternidade')">
                         {{ __('Maternidade') }}
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('creche', [], false)" :active="request()->routeIs('creche*')">
+                        {{ __('Creche') }}
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('terminacao', [], false)" :active="request()->routeIs('terminacao*')">
+                        {{ __('Terminação') }}
+                        <span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                            Novo
+                        </span>
                     </x-nav-link>
 
                     @if(!config('masterpig.enforce_perfil_permissions', false) || Auth::user()->perfil === 'administrador')
@@ -53,7 +68,7 @@
                         </x-dropdown-link>
 
                         <!-- Authentication -->
-                        <form method="POST" action="{{ route('logout', [], false) }}">
+                        <form accept-charset="UTF-8" method="POST" action="{{ route('logout', [], false) }}">
                             @csrf
 
                             <x-dropdown-link :href="route('logout', [], false)"
@@ -84,6 +99,29 @@
             <x-responsive-nav-link :href="route('dashboard', [], false)" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('plantel.femeas.index', [], false)" :active="request()->routeIs('plantel.*')">
+                {{ __('Plantel') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('gestacao', [], false)" :active="request()->routeIs('gestacao')">
+                {{ __('Gestação') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('maternidade', [], false)" :active="request()->routeIs('maternidade')">
+                {{ __('Maternidade') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('creche', [], false)" :active="request()->routeIs('creche*')">
+                {{ __('Creche') }}
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('terminacao', [], false)" :active="request()->routeIs('terminacao*')">
+                {{ __('Terminação') }}
+                <span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200">
+                    Novo
+                </span>
+            </x-responsive-nav-link>
         </div>
 
         <!-- Responsive Settings Options -->
@@ -99,7 +137,7 @@
                 </x-responsive-nav-link>
 
                 <!-- Authentication -->
-                <form method="POST" action="{{ route('logout', [], false) }}">
+                <form accept-charset="UTF-8" method="POST" action="{{ route('logout', [], false) }}">
                     @csrf
 
                     <x-responsive-nav-link :href="route('logout', [], false)"

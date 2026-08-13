@@ -6,9 +6,6 @@
 @section('content')
 <div x-data="{ 
         tab: (function(){ const t = (new URLSearchParams(window.location.search).get('tab') || 'visao'); if (t === 'relatorios') return 'analise'; return ['visao','lancamentos','acompanhamento','analise'].includes(t) ? t : 'visao'; })(), 
-        toastOpen: false, 
-        toastMessage: '', 
-        toastType: 'success',
         calendarType: localStorage.getItem('masterpig_calendar_type') || '1000_dias',
         toggleCalendar() {
             const newType = this.calendarType === 'gregoriano' ? '1000_dias' : 'gregoriano';
@@ -125,7 +122,7 @@
 
         saveEditFemea() {
             if (!this.editFemeaData.id_primaria) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'ID Primária é obrigatório', type: 'error' } }));
+                toast('ID Primíria ê obrigatório', 'error');
                 return;
             }
             this.saving = true;
@@ -144,13 +141,13 @@
                 return data;
             })
             .then(data => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Fêmea atualizada com sucesso!', type: 'success' } }));
+                toast('Fêmea atualizada com sucesso!', 'success');
                 this.openEditFemea = false;
                 // Notify tabs to refresh
                 window.dispatchEvent(new CustomEvent('femea-updated', { detail: { id: this.editFemeaData.id } }));
             })
             .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message, type: 'error' } }));
+                toast(e.message, 'error');
             })
             .finally(() => this.saving = false);
         },
@@ -295,45 +292,7 @@
             return typeof toPigDay === 'function' ? toPigDay(iso) : '';
         }
     }"
-     x-init="
-        window.addEventListener('toast', (e) => { toastMessage = e.detail.message; toastType = e.detail.type || 'success'; toastOpen = true; setTimeout(() => toastOpen = false, 4000); });
-     "
      class="space-y-6">
-<div 
-    x-show="toastOpen" 
-    x-transition:enter="transform ease-out duration-500 transition"
-    x-transition:enter-start="translate-y-[-100%] opacity-0"
-    x-transition:enter-end="translate-y-0 opacity-100"
-    x-transition:leave="transition ease-in duration-300"
-    x-transition:leave-start="opacity-100 scale-100"
-    x-transition:leave-end="opacity-0 scale-90"
-    class="fixed top-5 right-5 z-[100] max-w-sm w-full bg-white dark:bg-gray-800 shadow-2xl rounded-xl pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden border-l-4"
-    :class="toastType === 'success' ? 'border-green-500' : 'border-red-500'"
-    x-cloak
->
-    <div class="p-4">
-
-        <div class="flex items-start">
-            <div class="flex-shrink-0">
-                <template x-if="toastType === 'success'">
-                    <i class="fa-solid fa-circle-check text-green-400 text-xl"></i>
-                </template>
-                <template x-if="toastType === 'error'">
-                    <i class="fa-solid fa-circle-xmark text-red-400 text-xl"></i>
-                </template>
-            </div>
-            <div class="ml-3 w-0 flex-1 pt-0.5">
-                <p class="text-sm font-medium text-gray-900 " x-text="toastMessage"></p>
-            </div>
-            <div class="ml-4 flex-shrink-0 flex">
-                <button @click="toastOpen = false" class="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                    <span class="sr-only">Fechar</span>
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 <!-- Header & Topbar -->
 <div>
     <div class="rounded-xl shadow-sm p-6" style="border-color: #78350f;">
@@ -516,7 +475,7 @@
                             </div>
                             <div>
                                 <strong class="text-blue-400 block mb-1 uppercase tracking-tighter">Matriz Vazia Prolongada</strong>
-                                <span class="text-gray-300">Fêmeas ativas e vazias há mais de 250 dias (conforme critério de vazio máximo).</span>
+                                <span class="text-gray-300">Fêmeas ativas e vazias hí mais de 250 dias (conforme critério de vazio míximo).</span>
                             </div>
                             <div>
                                 <strong class="text-red-400 block mb-1 uppercase tracking-tighter">Macho Parado</strong>
@@ -682,7 +641,7 @@
                     this.semenItems = [];
                     this.semenTotal = 0;
                     this.semenPages = 1;
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Não foi possível carregar os registros de sêmen.', type: 'error' } }));
+                    toast(e.message || 'Não foi possível carregar os registros de sêmen.', 'error');
                 })
                 .finally(() => { this.semenLoading = false; });
         },
@@ -700,7 +659,7 @@
         },
         semenSave() {
             if (!this.semenForm.id_primaria || !this.semenForm.data_compra) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Preencha os campos obrigatórios.', type: 'error' } }));
+                toast('Preencha os campos obrigatórios.', 'error');
                 return;
             }
 
@@ -724,7 +683,7 @@
             }
 
             if (!dataCompraIso) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Data de compra inválida.', type: 'error' } }));
+                toast('Data de compra invílida.', 'error');
                 return;
             }
 
@@ -761,13 +720,13 @@
                     return data;
                 })
                 .then(data => {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Sêmen cadastrado com sucesso!', type: 'success' } }));
+                    toast(data.message || 'Sêmen cadastrado com sucesso!', 'success');
                     this.semenOpenCreate = false;
                     this.semenResetForm();
                     this.semenLoadItems();
                 })
                 .catch(e => {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar sêmen.', type: 'error' } }));
+                    toast(e.message || 'Erro ao salvar sêmen.', 'error');
                 });
         },
         semenDelete(id) {
@@ -786,11 +745,11 @@
                     return data;
                 })
                 .then(data => {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Sêmen excluído com sucesso!', type: 'success' } }));
+                    toast(data.message || 'Sêmen excluído com sucesso!', 'success');
                     this.semenLoadItems();
                 })
                 .catch(e => {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao excluir sêmen.', type: 'error' } }));
+                    toast(e.message || 'Erro ao excluir sêmen.', 'error');
                 });
         },
 
@@ -844,7 +803,7 @@
         },
         saveCioEdit() {
             if (!this.editCioData.data) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe a data', type: 'error' } }));
+                toast('Informe a data', 'error');
                 return;
             }
             this.saving = true;
@@ -867,12 +826,12 @@
                 return data;
             })
             .then(data => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Registro atualizado com sucesso!', type: 'success' } }));
+                toast('Registro atualizado com sucesso!', 'success');
                 this.openEditCioModal = false;
                 this.loadCioFemeas();
             })
             .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message, type: 'error' } }));
+                toast(e.message, 'error');
             })
             .finally(() => this.saving = false);
         },
@@ -893,16 +852,16 @@
                 return data;
             })
             .then(data => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Registro excluído com sucesso!', type: 'success' } }));
+                toast('Registro excluído com sucesso!', 'success');
                 this.loadCioFemeas();
             })
             .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message, type: 'error' } }));
+                toast(e.message, 'error');
             })
             .finally(() => { this.saving = false; });
         },
         deleteFemeaRecord(id) {
-            if (!confirm('Tem certeza que deseja excluir esta fêmea permanentemente? Todos os registros relacionados (cios, coberturas, movimentos) também serão removidos.')) return;
+            if (!confirm('Tem certeza que deseja excluir esta fêmea permanentemente? Todos os registros relacionados (cios, coberturas, movimentos) tambêm serúo removidos.')) return;
             
             this.saving = true;
             fetch(`/api/plantel/femeas/${id}`, {
@@ -918,11 +877,11 @@
                 return data;
             })
             .then(data => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Fêmea excluída com sucesso!', type: 'success' } }));
+                toast('Fêmea excluída com sucesso!', 'success');
                 this.ensureFemeasAtivas();
             })
             .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message, type: 'error' } }));
+                toast(e.message, 'error');
             })
             .finally(() => { this.saving = false; });
         },
@@ -1069,7 +1028,7 @@
             const d = new Date(compraIso + 'T00:00:00');
             
             // Se for 1000 dias, usamos ciclo de 142 dias (114+21+7). 
-            // Se for gregoriano, mantemos o padrão de 21 dias (provavelmente ciclos de cio).
+            // Se for gregoriano, mantemos o padrúo de 21 dias (provavelmente ciclos de cio).
             const diasPorCiclo = this.calendarType === '1000_dias' ? 142 : 21;
             
             d.setDate(d.getDate() - Math.round(ciclos * diasPorCiclo));
@@ -1141,8 +1100,8 @@
             fetch(`${API_BASE_URL}/plantel/femeas?${params.toString()}`)
                 .then(async r => {
                     const data = await r.json().catch(() => null);
-                    if (!r.ok) throw new Error(data?.message || 'Falha ao carregar os dados. Verifique a conexão e tente novamente.');
-                    if (!data) throw new Error('Dados inválidos recebidos do servidor.');
+                    if (!r.ok) throw new Error(data?.message || 'Falha ao carregar os dados. Verifique a conexúo e tente novamente.');
+                    if (!data) throw new Error('Dados invílidos recebidos do servidor.');
                     return data;
                 })
                 .then(data => {
@@ -1191,8 +1150,8 @@
             fetch(`${API_BASE_URL}/plantel/machos?${params.toString()}`)
                 .then(async r => {
                     const data = await r.json().catch(() => null);
-                    if (!r.ok) throw new Error(data?.message || 'Falha ao carregar os dados. Verifique a conexão e tente novamente.');
-                    if (!data) throw new Error('Dados inválidos recebidos do servidor.');
+                    if (!r.ok) throw new Error(data?.message || 'Falha ao carregar os dados. Verifique a conexúo e tente novamente.');
+                    if (!data) throw new Error('Dados invílidos recebidos do servidor.');
                     return data;
                 })
                 .then(data => {
@@ -1434,7 +1393,7 @@
                     return data;
                 })
                 .then((data) => {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Excluído com sucesso!', type: 'success' } }));
+                    toast(data.message || 'Excluído com sucesso!', 'success');
                     if (this.item === 'femeas' && this.mov === 'morte') this.loadMortesFemeas();
                     if (this.item === 'femeas' && this.mov === 'descarte') this.loadDescartesFemeas();
                     if (this.item === 'femeas' && this.mov === 'venda') this.loadVendasFemeas();
@@ -1443,7 +1402,7 @@
                     if (this.item === 'machos' && this.mov === 'venda') this.loadVendasMachos();
                 })
                 .catch((e) => {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao excluir.', type: 'error' } }));
+                    toast(e.message || 'Erro ao excluir.', 'error');
                 });
         },
         formatData(iso) {
@@ -1548,7 +1507,7 @@
             if (!this.femeaCioId || !day) return;
             const femea = this.femeasAtivas.find(f => String(f.id) === String(this.femeaCioId));
             if (!femea || !femea.data_cobertura) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Fêmea sem cobertura registrada para cálculo de ciclo', type: 'warning' } }));
+                toast('Fêmea sem cobertura registrada para cílculo de ciclo', 'warning');
                 return;
             }
             const base = new Date(femea.data_cobertura + 'T00:00:00');
@@ -1591,7 +1550,7 @@
         },
         saveRaca() {
             if (!this.novaRacaNome.trim()) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe o nome da raça', type: 'error' } }));
+                toast('Informe o nome da raça', 'error');
                 return;
             }
 
@@ -1623,13 +1582,13 @@
                 this.openNovaRaca = false;
             })
             .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao cadastrar raça', type: 'error' } }));
+                toast(e.message || 'Erro ao cadastrar raça', 'error');
             })
             .finally(() => { this.saving = false; });
         },
         saveFornecedor() {
             if (!this.novoFornecedorNome.trim()) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe o nome do fornecedor', type: 'error' } }));
+                toast('Informe o nome do fornecedor', 'error');
                 return;
             }
 
@@ -1661,13 +1620,13 @@
                     this.openNovoFornecedor = false;
                 })
                 .catch(e => {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao cadastrar fornecedor', type: 'error' } }));
+                    toast(e.message || 'Erro ao cadastrar fornecedor', 'error');
                 })
                 .finally(() => { this.saving = false; });
         },
         saveLocalizacao() {
             if (!this.novaLocalizacaoNome.trim()) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe a localização', type: 'error' } }));
+                toast('Informe a localização', 'error');
                 return;
             }
 
@@ -1694,13 +1653,13 @@
                     this.openNovaLocalizacao = false;
                 })
                 .catch(e => {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar localização', type: 'error' } }));
+                    toast(e.message || 'Erro ao salvar localização', 'error');
                 })
                 .finally(() => { this.saving = false; });
         },
         saveBaia() {
             if (!this.novaBaiaNome.trim()) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe a baia', type: 'error' } }));
+                toast('Informe a baia', 'error');
                 return;
             }
 
@@ -1727,7 +1686,7 @@
                     this.openNovaBaia = false;
                 })
                 .catch(e => {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar baia', type: 'error' } }));
+                    toast(e.message || 'Erro ao salvar baia', 'error');
                 })
                 .finally(() => { this.saving = false; });
         },
@@ -1807,7 +1766,7 @@
                 return response.json();
             })
             .then(data => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Compra registrada com sucesso!', type: 'success' } }));
+                toast(data.message || 'Compra registrada com sucesso!', 'success');
                 this.openNovo = false;
                 this.comprasFemeasLoaded = false;
                 this.femeasAtivas = [];
@@ -1815,7 +1774,7 @@
                 this.loadComprasFemeas(true);
             })
             .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar', type: 'error' } }));
+                toast(e.message || 'Erro ao salvar', 'error');
             })
             .finally(() => { this.saving = false; });
         },
@@ -1895,7 +1854,7 @@
                 return response.json();
             })
             .then(data => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Compra registrada com sucesso!', type: 'success' } }));
+                toast(data.message || 'Compra registrada com sucesso!', 'success');
                 // Limpar apenas IDs e manter modal aberto
                 this.idPrimaria = '';
                 this.idSecundaria = '';
@@ -1905,7 +1864,7 @@
                 this.loadComprasFemeas(true);
             })
             .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar', type: 'error' } }));
+                toast(e.message || 'Erro ao salvar', 'error');
             })
             .finally(() => { this.saving = false; });
         },
@@ -1951,12 +1910,12 @@
                 return response.json();
             })
             .then(data => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Morte registrada com sucesso!', type: 'success' } }));
+                toast(data.message || 'Morte registrada com sucesso!', 'success');
                 this.openNovo = false;
                 this.afterSaveReload();
             })
             .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar', type: 'error' } }));
+                toast(e.message || 'Erro ao salvar', 'error');
             })
             .finally(() => { this.saving = false; });
         },
@@ -2002,12 +1961,12 @@
                 return response.json();
             })
             .then(data => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Morte registrada com sucesso!', type: 'success' } }));
+                toast(data.message || 'Morte registrada com sucesso!', 'success');
                 this.openNovo = false;
                 this.afterSaveReload();
             })
             .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar', type: 'error' } }));
+                toast(e.message || 'Erro ao salvar', 'error');
             })
             .finally(() => { this.saving = false; });
         },
@@ -2053,12 +2012,12 @@
                 return response.json();
             })
             .then(data => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Descarte registrado com sucesso!', type: 'success' } }));
+                toast(data.message || 'Descarte registrado com sucesso!', 'success');
                 this.openNovo = false;
                 this.afterSaveReload();
             })
             .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar', type: 'error' } }));
+                toast(e.message || 'Erro ao salvar', 'error');
             })
             .finally(() => { this.saving = false; });
         },
@@ -2104,12 +2063,12 @@
                 return response.json();
             })
             .then(data => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Descarte registrado com sucesso!', type: 'success' } }));
+                toast(data.message || 'Descarte registrado com sucesso!', 'success');
                 this.openNovo = false;
                 this.afterSaveReload();
             })
             .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar', type: 'error' } }));
+                toast(e.message || 'Erro ao salvar', 'error');
             })
             .finally(() => { this.saving = false; });
         },
@@ -2158,12 +2117,12 @@
                 return response.json();
             })
             .then(data => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Venda registrada com sucesso!', type: 'success' } }));
+                toast(data.message || 'Venda registrada com sucesso!', 'success');
                 this.openNovo = false;
                 this.afterSaveReload();
             })
             .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar', type: 'error' } }));
+                toast(e.message || 'Erro ao salvar', 'error');
             })
             .finally(() => { this.saving = false; });
         },
@@ -2224,7 +2183,7 @@
                 return response.json();
             })
             .then(data => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Compra registrada com sucesso!', type: 'success' } }));
+                toast(data.message || 'Compra registrada com sucesso!', 'success');
                 this.openNovo = false;
                 this.comprasMachosLoaded = false;
                 this.machosAtivos = [];
@@ -2232,7 +2191,7 @@
                 this.loadComprasMachos(true);
             })
             .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar', type: 'error' } }));
+                toast(e.message || 'Erro ao salvar', 'error');
             })
             .finally(() => { this.saving = false; });
         },
@@ -2281,25 +2240,25 @@
                 return response.json();
             })
             .then(data => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Venda registrada com sucesso!', type: 'success' } }));
+                toast(data.message || 'Venda registrada com sucesso!', 'success');
                 this.openNovo = false;
                 this.afterSaveReload();
             })
             .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar', type: 'error' } }));
+                toast(e.message || 'Erro ao salvar', 'error');
             })
             .finally(() => { this.saving = false; });
         },
         saveCioFemea() {
             if (!this.femeaCioId) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Selecione uma fêmea', type: 'error' } }));
+                toast('Selecione uma fêmea', 'error');
                 return;
             }
 
             let dataIso;
             // Tentar converter como dia PIG primeiro
             if (/^\d+$/.test(this.dataCio)) {
-                // É um número, tratar como dia PIG
+                // É um n??mero, tratar como dia PIG
                 dataIso = typeof pigDayToDate === 'function' ? pigDayToDate(this.dataCio) : null;
             } else {
                 // Tentar converter como data gregoriana
@@ -2307,7 +2266,7 @@
             }
             
             if (!dataIso) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Data inválida', type: 'error' } }));
+                toast('Data invílida', 'error');
                 return;
             }
 
@@ -2353,12 +2312,12 @@
                 return data;
             })
             .then(data => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message || 'Cio registrado com sucesso!', type: 'success' } }));
+                toast(data.message || 'Cio registrado com sucesso!', 'success');
                 this.openNovo = false;
                 this.loadCioFemeas();
             })
             .catch(e => {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: e.message || 'Erro ao salvar cio', type: 'error' } }));
+                toast(e.message || 'Erro ao salvar cio', 'error');
             })
             .finally(() => { this.saving = false; });
         },
@@ -2536,8 +2495,8 @@
                                 <thead class="bg-gray-50">
                                     <tr>
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Ação</th>
-                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Primária</th>
-                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Secundária</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Primíria</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Secundíria</th>
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Raça</th>
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Data compra</th>
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Valor</th>
@@ -2579,7 +2538,7 @@
                                     <i class="fa-solid fa-chevron-left"></i>
                                 </button>
                                 <span class="text-sm text-gray-500 px-3">
-                                    Página <span x-text="semenPage"></span> de <span x-text="semenPages"></span>
+                                    Pígina <span x-text="semenPage"></span> de <span x-text="semenPages"></span>
                                 </span>
                                 <button @click="semenPage = Math.min(semenPages, semenPage + 1); semenLoadItems()" :disabled="semenPage >= semenPages" class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
                                     <i class="fa-solid fa-chevron-right"></i>
@@ -2601,11 +2560,11 @@
                                         </div>
                                         <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
-                                                <label class="block text-sm font-medium text-gray-700">ID Primária *</label>
+                                                <label class="block text-sm font-medium text-gray-700">ID Primíria *</label>
                                                 <input type="text" x-model="semenForm.id_primaria" required class="mt-1 w-full shadow-sm text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900" placeholder="Ex: SEM001">
                                             </div>
                                             <div>
-                                                <label class="block text-sm font-medium text-gray-700">ID Secundária</label>
+                                                <label class="block text-sm font-medium text-gray-700">ID Secundíria</label>
                                                 <input type="text" x-model="semenForm.id_secundaria" class="mt-1 w-full shadow-sm text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500 bg-white text-gray-900" placeholder="Ex: SEC001">
                                             </div>
                                             <div>
@@ -2865,8 +2824,8 @@
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase w-20">Ação</th>
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase" x-text="calendarType === '1000_dias' ? 'Dia da compra' : 'Data'"></th>
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Tipo</th>
-                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Primária</th>
-                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Secundária</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Primíria</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Secundíria</th>
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Raça</th>
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Idade</th>
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Fornecedor</th>
@@ -2916,7 +2875,7 @@
                         <div class="flex items-center justify-between bg-white px-4 py-3 sm:px-6 border border-gray-100 rounded-2xl" x-show="femeasTotal > 0">
                             <div class="flex flex-1 justify-between sm:hidden">
                                 <button @click="if(femeasPage > 1) { femeasPage--; ensureFemeasAtivas(); }" :disabled="femeasPage === 1" class="relative inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Anterior</button>
-                                <button @click="if(femeasPage < femeasLastPage) { femeasPage++; ensureFemeasAtivas(); }" :disabled="femeasPage === femeasLastPage" class="relative ml-3 inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Próximo</button>
+                                <button @click="if(femeasPage < femeasLastPage) { femeasPage++; ensureFemeasAtivas(); }" :disabled="femeasPage === femeasLastPage" class="relative ml-3 inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Pr??ximo</button>
                             </div>
                             <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                                 <div>
@@ -2935,10 +2894,10 @@
                                             <i class="fa-solid fa-chevron-left text-xs"></i>
                                         </button>
                                         <span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
-                                            Pág. <span x-text="femeasPage"></span> de <span x-text="femeasLastPage"></span>
+                                            Píg. <span x-text="femeasPage"></span> de <span x-text="femeasLastPage"></span>
                                         </span>
                                         <button @click="if(femeasPage < femeasLastPage) { femeasPage++; ensureFemeasAtivas(); }" :disabled="femeasPage === femeasLastPage" class="relative inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
-                                            <span class="sr-only">Próxima</span>
+                                            <span class="sr-only">Pr??xima</span>
                                             <i class="fa-solid fa-chevron-right text-xs"></i>
                                         </button>
                                         <button @click="femeasPage = femeasLastPage; ensureFemeasAtivas()" :disabled="femeasPage === femeasLastPage" class="relative inline-flex items-center rounded-r-xl px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
@@ -2979,10 +2938,10 @@
                                 <div>
                                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Limite</label>
                                     <select x-model="machosLimit" class="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl text-sm focus:ring-primary-500 focus:border-primary-500">
-                                        <option value="10">10 por pág.</option>
-                                        <option value="25">25 por pág.</option>
-                                        <option value="50">50 por pág.</option>
-                                        <option value="100">100 por pág.</option>
+                                        <option value="10">10 por píg.</option>
+                                        <option value="25">25 por píg.</option>
+                                        <option value="50">50 por píg.</option>
+                                        <option value="100">100 por píg.</option>
                                     </select>
                                 </div>
                                 <div class="flex items-end">
@@ -3000,8 +2959,8 @@
                             <table class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Primária</th>
-                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Secundária</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Primíria</th>
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">ID Secundíria</th>
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Localização</th>
                                         <th class="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase">Baia</th>
                                     </tr>
@@ -3030,7 +2989,7 @@
                         <div class="flex items-center justify-between bg-white px-4 py-3 sm:px-6 border border-gray-100 rounded-2xl" x-show="machosTotal > 0">
                             <div class="flex flex-1 justify-between sm:hidden">
                                 <button @click="if(machosPage > 1) { machosPage--; ensureMachosAtivos(); }" :disabled="machosPage === 1" class="relative inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Anterior</button>
-                                <button @click="if(machosPage < machosLastPage) { machosPage++; ensureMachosAtivos(); }" :disabled="machosPage === machosLastPage" class="relative ml-3 inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Próximo</button>
+                                <button @click="if(machosPage < machosLastPage) { machosPage++; ensureMachosAtivos(); }" :disabled="machosPage === machosLastPage" class="relative ml-3 inline-flex items-center rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">Pr??ximo</button>
                             </div>
                             <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                                 <div>
@@ -3049,10 +3008,10 @@
                                             <i class="fa-solid fa-chevron-left text-xs"></i>
                                         </button>
                                         <span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
-                                            Pág. <span x-text="machosPage"></span> de <span x-text="machosLastPage"></span>
+                                            Píg. <span x-text="machosPage"></span> de <span x-text="machosLastPage"></span>
                                         </span>
                                         <button @click="if(machosPage < machosLastPage) { machosPage++; ensureMachosAtivos(); }" :disabled="machosPage === machosLastPage" class="relative inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
-                                            <span class="sr-only">Próxima</span>
+                                            <span class="sr-only">Pr??xima</span>
                                             <i class="fa-solid fa-chevron-right text-xs"></i>
                                         </button>
                                         <button @click="machosPage = machosLastPage; ensureMachosAtivos()" :disabled="machosPage === machosLastPage" class="relative inline-flex items-center rounded-r-xl px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50">
@@ -3087,7 +3046,7 @@
                                     <input type="text" x-model="cioFilterSearch" @keydown.enter="loadCioFemeas()" class="block w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-primary-500 focus:border-primary-500" placeholder="ID prim./sec.">
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Nº do Cio</label>
+                                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">N?? do Cio</label>
                                     <input type="number" x-model="cioFilterNumero" @keydown.enter="loadCioFemeas()" class="block w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 1">
                                 </div>
                                 <div class="flex items-end">
@@ -3148,7 +3107,7 @@
                         </div>
                     </div>
                 </template>
-                {{-- Tabela genérica 'Status das Fêmeas' removida pois exibia indevidamente em abas não relacionadas (ex: Machos) --}}
+                {{-- Tabela genêrica 'Status das Fêmeas' removida pois exibia indevidamente em abas não relacionadas (ex: Machos) --}}
                 <template x-if="item === 'femeas' && mov === 'morte'">
                     <div>
                         <div class="mb-4 flex items-center justify-between">
@@ -3406,7 +3365,7 @@
                         <div class="flex items-start justify-between">
                             <div class="text-left">
                                 <h3 class="text-lg leading-6 font-semibold text-white" x-text="(item === 'femeas' && mov === 'morte') ? 'Registrar morte' : ((item === 'femeas' && mov === 'descarte') ? 'Registrar descarte' : ((item === 'femeas' && mov === 'venda') ? 'Registrar venda' : modalTitle))"></h3>
-                                <p class="mt-1 text-xs text-primary-100" x-text="(item === 'femeas' && mov === 'compra' && compraFemeasTipo === 'leitoa') ? 'Cadastro de leitoa: use para registrar a compra de uma fêmea jovem que ainda vai entrar no ciclo reprodutivo. Informe identificação, datas e fornecedor.' : ((item === 'femeas' && mov === 'compra' && compraFemeasTipo === 'matriz_vazia') ? 'Cadastro de matriz vazia: use para registrar uma fêmea adulta comprada que não está gestante no momento. Informe a data de compra e os ciclos até a compra para estimarmos a data de nascimento.' : ((item === 'femeas' && mov === 'compra' && compraFemeasTipo === 'matriz_gestante') ? 'Cadastro de matriz gestante: use para registrar uma fêmea adulta comprada já em gestação. Informe data de cobertura (gestação) e a data de compra; o sistema exibe os dias de gestação.' : 'Informe os campos necessários para concluir o cadastro.'))"></p>
+                                <p class="mt-1 text-xs text-primary-100" x-text="(item === 'femeas' && mov === 'compra' && compraFemeasTipo === 'leitoa') ? 'Cadastro de leitoa: use para registrar a compra de uma fêmea jovem que ainda vai entrar no ciclo reprodutivo. Informe identificação, datas e fornecedor.' : ((item === 'femeas' && mov === 'compra' && compraFemeasTipo === 'matriz_vazia') ? 'Cadastro de matriz vazia: use para registrar uma fêmea adulta comprada que não está gestante no momento. Informe a data de compra e os ciclos atê a compra para estimarmos a data de nascimento.' : ((item === 'femeas' && mov === 'compra' && compraFemeasTipo === 'matriz_gestante') ? 'Cadastro de matriz gestante: use para registrar uma fêmea adulta comprada jí em gestação. Informe data de cobertura (gestação) e a data de compra; o sistema exibe os dias de gestação.' : 'Informe os campos necessírios para concluir o cadastro.'))"></p>
                             </div>
                             <button type="button" @click="openNovo = false" class="text-white/80 hover:text-white transition-colors">
                                 <i class="fa-solid fa-xmark text-lg"></i>
@@ -3610,7 +3569,7 @@
                                             <i class="fa-solid fa-calendar"></i>
                                         </button>
                                         
-                                        <!-- Calendário PIG -->
+                                        <!-- Calendírio PIG -->
                                         <div x-show="activePicker === 'descarte'" x-cloak class="absolute z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72" 
                                              :class="{'right-0': window.innerWidth > 640, 'left-0 right-0 mx-auto': window.innerWidth <= 640}" 
                                              @click.away="activePicker = null">
@@ -3690,7 +3649,7 @@
                                             <i class="fa-solid fa-calendar"></i>
                                         </button>
                                         
-                                        <!-- Calendário PIG -->
+                                        <!-- Calendírio PIG -->
                                         <div x-show="activePicker === 'descarte'" x-cloak class="absolute z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72" 
                                              :class="{'right-0': window.innerWidth > 640, 'left-0 right-0 mx-auto': window.innerWidth <= 640}" 
                                              @click.away="activePicker = null">
@@ -3747,7 +3706,7 @@
                         <template x-if="item === 'femeas' && mov === 'venda'">
                             <div class="space-y-4">
                                 <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-900/30 text-amber-900 dark:text-amber-200 rounded-xl px-4 py-3 text-sm">
-                                    É importante fazer o descarte primeiro e depois a venda. A venda marca que o animal deixou de ser produtivo no ato da venda. Se ele já estiver descartado há algum tempo, isso pode atrapalhar as análises do sistema.
+                                    É importante fazer o descarte primeiro e depois a venda. A venda marca que o animal deixou de ser produtivo no ato da venda. Se ele jí estiver descartado hí algum tempo, isso pode atrapalhar as análises do sistema.
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div class="sm:col-span-2">
@@ -3774,7 +3733,7 @@
                                                 <i class="fa-solid fa-calendar"></i>
                                             </button>
                                             
-                                            <!-- Calendário PIG -->
+                                            <!-- Calendírio PIG -->
                                             <div x-show="activePicker === 'venda'" x-cloak class="absolute z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72" 
                                                  :class="{'right-0': window.innerWidth > 640, 'left-0 right-0 mx-auto': window.innerWidth <= 640}" 
                                                  @click.away="activePicker = null">
@@ -3850,7 +3809,7 @@
                         <template x-if="item === 'machos' && mov === 'venda'">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div class="bg-amber-50 border border-amber-100 text-amber-900 rounded-xl px-4 py-3 text-sm">
-                                    É importante fazer o descarte primeiro e depois a venda. A venda marca que o animal deixou de ser produtivo no ato da venda. Se ele já estiver descartado há algum tempo, isso pode atrapalhar as análises do sistema.
+                                    É importante fazer o descarte primeiro e depois a venda. A venda marca que o animal deixou de ser produtivo no ato da venda. Se ele jí estiver descartado hí algum tempo, isso pode atrapalhar as análises do sistema.
                                 </div>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div class="sm:col-span-2">
@@ -3877,7 +3836,7 @@
                                                 <i class="fa-solid fa-calendar"></i>
                                             </button>
                                             
-                                            <!-- Calendário PIG -->
+                                            <!-- Calendírio PIG -->
                                             <div x-show="activePicker === 'venda'" x-cloak class="absolute z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72" 
                                                  :class="{'right-0': window.innerWidth > 640, 'left-0 right-0 mx-auto': window.innerWidth <= 640}" 
                                                  @click.away="activePicker = null">
@@ -3980,7 +3939,7 @@
                                                     <i class="fa-solid fa-calendar"></i>
                                                 </button>
                                                 
-                                                <!-- Calendário PIG -->
+                                                <!-- Calendírio PIG -->
                                                 <div x-show="activePicker === 'cio'" x-cloak class="absolute z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72" 
                                                      :class="{'right-0': window.innerWidth > 640, 'left-0 right-0 mx-auto': window.innerWidth <= 640}" 
                                                      @click.away="activePicker = null">
@@ -4043,11 +4002,11 @@
                                             <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Identificação e Datas</div>
                                             <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div>
-                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">ID primária</label>
+                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">ID primíria</label>
                                                     <input type="text" x-model="idPrimaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 2001">
                                                 </div>
                                                 <div>
-                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">ID secundária</label>
+                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">ID secundíria</label>
                                                     <input type="text" x-model="idSecundaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 dark:text-gray-200 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Opcional">
                                                 </div>
                                                 <div>
@@ -4065,7 +4024,7 @@
                                                             <i class="fa-solid fa-calendar"></i>
                                                         </button>
                                                         
-                                                        <!-- Calendário PIG -->
+                                                        <!-- Calendírio PIG -->
                                                         <div x-show="activePicker === 'compra'" x-cloak class="absolute z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72" 
                                                              :class="{'right-0': window.innerWidth > 640, 'left-0 right-0 mx-auto': window.innerWidth <= 640}" 
                                                              @click.away="activePicker = null">
@@ -4123,7 +4082,7 @@
                                                             <i class="fa-solid fa-calendar"></i>
                                                         </button>
                                                         
-                                                        <!-- Calendário PIG -->
+                                                        <!-- Calendírio PIG -->
                                                         <div x-show="activePicker === 'nascimento'" x-cloak class="absolute z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72" 
                                                              :class="{'right-0': window.innerWidth > 640, 'left-0 right-0 mx-auto': window.innerWidth <= 640}" 
                                                              @click.away="activePicker = null">
@@ -4258,11 +4217,11 @@
                                         <div class="text-xs font-bold text-gray-600 uppercase tracking-wider">Identificação e Datas</div>
                                         <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
-                                                <label class="block text-sm font-medium text-gray-700">ID primária</label>
+                                                <label class="block text-sm font-medium text-gray-700">ID primíria</label>
                                                 <input type="text" x-model="idPrimaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 1001">
                                             </div>
                                             <div>
-                                                <label class="block text-sm font-medium text-gray-700">ID secundária</label>
+                                                <label class="block text-sm font-medium text-gray-700">ID secundíria</label>
                                                 <input type="text" x-model="idSecundaria" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Opcional">
                                             </div>
                                             <div>
@@ -4280,7 +4239,7 @@
                                                         <i class="fa-solid fa-calendar"></i>
                                                     </button>
                                                     
-                                                    <!-- Calendário PIG -->
+                                                    <!-- Calendírio PIG -->
                                                     <div x-show="activePicker === 'compra'" x-cloak class="absolute z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4" @click.away="activePicker = null">
                                                         <div class="flex items-center justify-between mb-3">
                                                             <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
@@ -4322,7 +4281,7 @@
                                                 </div>
                                             </div>
                                                 <div x-show="showHouveCio()" x-cloak>
-                                                    <label class="block text-sm font-medium text-gray-700">Já houve cio?</label>
+                                                    <label class="block text-sm font-medium text-gray-700">Jí houve cio?</label>
                                                     <select x-model="houveCio" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                                                         <option value="nao">Não</option>
                                                         <option value="sim">Sim</option>
@@ -4333,7 +4292,7 @@
                                                     <input type="text" x-model="dataUltimoCio" @input="dataUltimoCio = normalizeDateInput($event.target.value)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
                                                 </div>
                                                 <div x-show="ciclosObrigatorio" x-cloak>
-                                                    <label class="block text-sm font-medium text-gray-700">Ciclos até a compra</label>
+                                                    <label class="block text-sm font-medium text-gray-700">Ciclos atê a compra</label>
                                                     <input type="number" min="0" step="1" x-model="ciclosAteCompra" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="Ex: 3">
                                                     <div class="mt-1 text-xs text-gray-500">Usado para sugerir a data de nascimento.</div>
                                                 </div>
@@ -4352,7 +4311,7 @@
                                                         <i class="fa-solid fa-calendar"></i>
                                                     </button>
                                                     
-                                                    <!-- Calendário PIG -->
+                                                    <!-- Calendírio PIG -->
                                                     <div x-show="activePicker === 'nascimento'" x-cloak class="absolute z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4" @click.away="activePicker = null">
                                                         <div class="flex items-center justify-between mb-3">
                                                             <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
@@ -4393,7 +4352,7 @@
                                                     </div>
                                                 </div>
                                                 <div class="mt-1 text-xs text-gray-500" x-show="!dataNascimento && sugestaoNascimento">
-                                                    Sugestão: <button type="button" class="font-semibold text-primary-700 hover:underline" @click="nascimentoAuto = true; dataNascimento = sugestaoNascimento" x-text="sugestaoNascimento"></button>
+                                                    Sugestúo: <button type="button" class="font-semibold text-primary-700 hover:underline" @click="nascimentoAuto = true; dataNascimento = sugestaoNascimento" x-text="sugestaoNascimento"></button>
                                                 </div>  
                                             </div>
                                             <div x-show="coberturaObrigatorio" x-cloak>
@@ -4412,7 +4371,7 @@
                                                         <i class="fa-solid fa-calendar"></i>
                                                     </button>
                                                     
-                                                    <!-- Calendário PIG -->
+                                                    <!-- Calendírio PIG -->
                                                     <div x-show="activePicker === 'cobertura'" x-cloak class="absolute overflow-hidden z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72" @click.away="activePicker = null">
                                                         <div class="flex items-center justify-between mb-3">
                                                             <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
@@ -4626,7 +4585,7 @@
                         </button>
                     </div>
 
-                    <form @submit.prevent="saveCioEdit()" class="p-6 space-y-5">
+                    <form accept-charset="UTF-8" @submit.prevent="saveCioEdit()" class="p-6 space-y-5">
                         <div class="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700 rounded-2xl p-5 space-y-4">
                             <div>
                                 <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 tracking-wider">Data do Cio</label>
@@ -4641,7 +4600,7 @@
                                         <i class="fa-solid fa-calendar"></i>
                                     </button>
                                     
-                                    <!-- Calendário PIG -->
+                                    <!-- Calendírio PIG -->
                                     <div x-show="activePicker === 'editCio'" x-cloak class="absolute z-50 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72" @click.away="activePicker = null">
                                         <div class="flex items-center justify-between mb-3">
                                             <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded">
@@ -4896,7 +4855,7 @@
                                 <th class="px-4 py-3">ID</th>
                                 <th class="px-4 py-3">Tipo</th>
                                 <th class="px-4 py-3">Fase</th>
-                                <th class="px-4 py-3">Próxima</th>
+                                <th class="px-4 py-3">Pr??xima</th>
                                 <th class="px-4 py-3">Prevista em</th>
                             </tr>
                         </thead>
@@ -4939,7 +4898,7 @@
                             <div>
                                 <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Fase</div>
                                 <div class="mt-1 text-sm text-gray-900" x-text="selected ? selected.fase : ''"></div>
-                                <div class="mt-1 text-xs text-gray-500" x-text="'Próxima: ' + (selected ? selected.proxima_fase : '-') + ' | Prevista em: ' + (selected ? selected.prevista_em : '-')"></div>
+                                <div class="mt-1 text-xs text-gray-500" x-text="'Pr??xima: ' + (selected ? selected.proxima_fase : '-') + ' | Prevista em: ' + (selected ? selected.prevista_em : '-')"></div>
                             </div>
                             <div>
                                 <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Dados</div>
@@ -4948,7 +4907,7 @@
                                 <div class="mt-1 text-sm text-gray-700" x-text="'Compra: ' + ((selected && selected.data_compra) || '-')"></div>
                             </div>
                             <div class="sm:col-span-2">
-                                <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Calendário (previsões)</div>
+                                <div class="text-xs font-bold text-gray-500 uppercase tracking-wider">Calendírio (previsões)</div>
                                 <div class="mt-2 bg-gray-50 border border-gray-100 rounded-2xl p-4">
                                     <template x-if="Array.isArray(selected && selected.calendario) && selected.calendario.length > 0">
                                         <ul class="space-y-2">
@@ -5195,7 +5154,7 @@
         categoriaFromTipo(tipo) {
             const t = String(tipo || '').trim().toLowerCase();
             if (t === 'leitoa') return 'leitoa';
-            if (t === 'leitao' || t === 'leitão') return 'leitao';
+            if (t === 'leitao' || t === 'leitúo') return 'leitao';
             if (t === 'matriz_vazia' || t === 'matriz_gestante' || t === 'matriz') return 'matriz';
             return null;
         },
@@ -5275,7 +5234,7 @@
             const c = String(categoria || '');
             if (c === 'leitoa') return 'Leitoa';
             if (c === 'matriz') return 'Matriz';
-            if (c === 'leitao') return 'Leitão';
+            if (c === 'leitao') return 'Leitúo';
             return c;
         },
         yAt(value) {
@@ -5460,7 +5419,7 @@
                         <i class="fa-solid fa-list mr-2"></i>Listagem
                     </button>
                     <button type="button" @click="analiseSubTab = 'formulario'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors" :class="analiseSubTab === 'formulario' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
-                        <i class="fa-solid fa-file-lines mr-2"></i>Formulário
+                        <i class="fa-solid fa-file-lines mr-2"></i>Formulírio
                     </button>
                 </div>
             </div>
@@ -5560,8 +5519,8 @@
                                     <i class="fa-solid fa-file-pdf"></i>
                                 </div>
                                 <div>
-                                    <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Formulário cio de leitoa</h6>
-                                    <div class="text-sm text-gray-500 mt-1.5">Abrir PDF para impressão e preenchimento.</div>
+                                    <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Formulírio cio de leitoa</h6>
+                                    <div class="text-sm text-gray-500 mt-1.5">Abrir PDF para impressúo e preenchimento.</div>
                                 </div>
                             </div>
                             <div class="text-primary-600 group-hover:text-primary-700 transition-colors">
@@ -5572,7 +5531,7 @@
                     <div class="p-6">
                         <div class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 border-primary-200 bg-white text-primary-700 group-hover:bg-primary-600 group-hover:border-primary-600 group-hover:text-white transition-all duration-300 shadow-sm hover:shadow-md">
                             <i class="fa-solid fa-eye text-xs"></i>
-                            Abrir formulário
+                            Abrir formulírio
                         </div>
                     </div>
                 </a>
@@ -5746,11 +5705,11 @@
                         <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-4">Identificação e Datas</div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">ID Primária</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">ID Primíria</label>
                                 <input type="text" x-model="editFemeaData.id_primaria" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">ID Secundária</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">ID Secundíria</label>
                                 <input type="text" x-model="editFemeaData.id_secundaria" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                             </div>
                             <div>
@@ -5763,7 +5722,7 @@
                                 </select>
                             </div>
                             <div x-show="editFemeaData.tipo_compra !== 'leitoa'" x-cloak>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Ciclos até a compra</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Ciclos atê a compra</label>
                                 <input type="number" x-model="editFemeaData.ciclos_ate_compra" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
                             </div>
                             
@@ -5781,7 +5740,7 @@
                                         <i class="fa-solid fa-calendar"></i>
                                     </button>
                                     
-                                    <!-- Calendário Picker Nascimento -->
+                                    <!-- Calendírio Picker Nascimento -->
                                     <div x-show="activePicker === 'nascimento'" x-cloak 
                                          class="absolute z-[120] mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72 left-0 sm:left-auto sm:right-0" 
                                          @click.away="activePicker = null">
@@ -5833,7 +5792,7 @@
                                         <i class="fa-solid fa-calendar"></i>
                                     </button>
                                     
-                                    <!-- Calendário Picker Compra -->
+                                    <!-- Calendírio Picker Compra -->
                                     <div x-show="activePicker === 'compra'" x-cloak 
                                          class="absolute z-[120] mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72 left-0 sm:left-auto sm:right-0" 
                                          @click.away="activePicker = null">
@@ -5885,7 +5844,7 @@
                                         <i class="fa-solid fa-calendar"></i>
                                     </button>
                                     
-                                    <!-- Calendário Picker Cobertura -->
+                                    <!-- Calendírio Picker Cobertura -->
                                     <div x-show="activePicker === 'cobertura'" x-cloak 
                                          class="absolute z-[120] mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 w-72 left-0 sm:left-auto sm:right-0" 
                                          @click.away="activePicker = null">
@@ -5925,10 +5884,10 @@
                         </div>
                     </div>
 
-                    <!-- Genética e Fornecedor -->
+                    <!-- Genêtica e Fornecedor -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <div class="bg-gray-50 rounded-2xl p-4 border border-gray-200">
-                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-4">Genética</div>
+                            <div class="text-xs font-bold text-gray-600 uppercase tracking-wider mb-4">Genêtica</div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Raça</label>
                                 <select x-model="editFemeaData.raca_id" class="w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500">
@@ -6018,7 +5977,7 @@
         cio: 3
     };
 
-    // Definir constante global para o calendário PIG
+    // Definir constante global para o calendírio PIG
     window.PIG_BASE_DATE = '1968-12-31';
     var PIG_BASE_DATE = window.PIG_BASE_DATE;
 
@@ -6066,7 +6025,7 @@
         
         const targetDate = new Date(start.getTime() + targetAbsoluteDay * 86400000);
         
-        // Validar que a data é válida
+        // Validar que a data ê vílida
         if (isNaN(targetDate.getTime())) return null;
         
         return targetDate.toISOString().split('T')[0];
@@ -6136,11 +6095,11 @@
         } else if (ref < nextCioDate) {
             currentPhase = 'intervalo';
             currentPhaseLabel = 'Intervalo desmame-cio';
-            nextPhaseLabel = 'Cio pós-desmame';
+            nextPhaseLabel = 'Cio p??s-desmame';
             previstaEm = nextCioDate;
         } else if (ref <= endCioDate) {
             currentPhase = 'cio';
-            currentPhaseLabel = 'Cio pós-desmame';
+            currentPhaseLabel = 'Cio p??s-desmame';
             nextPhaseLabel = 'Cobertura';
             previstaEm = nextCioDate;
         }

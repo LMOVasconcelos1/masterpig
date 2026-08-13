@@ -184,9 +184,11 @@ class GestacaoCioController extends Controller
 
         $validated = $request->validate([
             'femea_id' => ['required', 'exists:femea,id'],
-            'data' => ['required', 'date'],
+            'data' => ['required', 'string', 'max:30'],
             'peso' => ['nullable', 'numeric', 'min:0'],
         ]);
+
+        $validated['data'] = $this->parseInputDate($validated['data']);
 
         $row = DB::table('femea')
             ->where('id', (int) $validated['femea_id'])
@@ -333,5 +335,12 @@ class GestacaoCioController extends Controller
         return response()->json([
             'message' => 'Registro excluído com sucesso!',
         ]);
+    }
+
+    private function parseInputDate(?string $input): ?string
+    {
+        if ($input === null || trim($input) === '') return null;
+        $carbon = PigCycleService::parseFilterDate($input);
+        return $carbon ? $carbon->format('Y-m-d') : null;
     }
 }

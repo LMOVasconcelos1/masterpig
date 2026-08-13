@@ -54,7 +54,7 @@
             <i class="fa-solid fa-filter text-blue-600"></i>
             OPÇÕES DE FILTRAGEM AVANÇADA
         </div>
-        <form method="GET" action="{{ route('admin.relatorios.plantel.femeas') }}">
+        <form accept-charset="UTF-8" method="GET" action="{{ route('admin.relatorios.plantel.femeas') }}">
             <!-- Seção 1: Geral -->
             <div style="margin-bottom: 20px;">
                 <div style="font-size: 11px; color: #94a3b8; font-weight: 700; margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px;">CATEGORIA E SITUAÇÃO</div>

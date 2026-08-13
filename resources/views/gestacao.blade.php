@@ -1016,21 +1016,21 @@
                             <i class="fa-solid fa-plus"></i>
                         </button>
                     </div>
-                    <div class="p-5 overflow-x-auto">
+                    <div class="overflow-x-auto border border-gray-100 rounded-xl shadow-sm p-6">
                         <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
                             <thead>
-                                <tr class="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    <th class="py-2 pr-4">Ações</th>
-                                    <th class="py-2 pr-4">Matriz</th>
-                                    <th class="py-2 pr-4">Macho/Sêmen</th>
-                                    <th class="py-2 pr-4">Dia PIG</th>
-                                    <th class="py-2 pr-4">Hora</th>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matriz</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Macho/Sêmen</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dia PIG</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hora</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                                 <template x-for="c in coberturas" :key="c.id">
-                                    <tr class="text-sm text-gray-700 dark:text-gray-300">
-                                        <td class="py-2 pr-4">
+                                    <tr class="hover:bg-gray-50/50 transition-colors text-sm text-gray-700 dark:text-gray-300">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
                                             <div class="flex items-center gap-2">
                                                 <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700" title="Alterar" @click.prevent="openCoberturaEdit(c.id)">
                                                     <i class="fa-solid fa-pen"></i>
@@ -1040,14 +1040,14 @@
                                                 </button>
                                             </div>
                                         </td>
-                                        <td class="py-2 pr-4" x-text="c.matriz"></td>
-                                        <td class="py-2 pr-4" x-text="c.montas_summary || c.macho || c.semen || '-'"></td>
-                                        <td class="py-2 pr-4" x-text="c.data" :title="c.data_br || ''"></td>
-                                        <td class="py-2 pr-4" x-text="c.hora || '-'"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="c.matriz"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="c.montas_summary || c.macho || c.semen || '-'"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="c.data" :title="c.data_br || ''"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="c.hora || '-'"></td>
                                     </tr>
                                 </template>
                                 <tr x-show="coberturas.length === 0">
-                                    <td colspan="5" class="py-4 text-sm text-gray-500">Nenhuma cobertura registrada.</td>
+                                    <td colspan="5" class="px-6 py-8 text-sm text-gray-500 italic text-center">Nenhuma cobertura registrada.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -1066,27 +1066,27 @@
                             <i class="fa-solid fa-plus"></i>
                         </button>
                     </div>
-                    <div class="p-5 overflow-x-auto">
+                    <div class="overflow-x-auto border border-gray-100 rounded-xl shadow-sm p-6">
                         <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
                             <thead>
-                                <tr class="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    <th class="py-2 pr-4">Matriz</th>
-                                    <th class="py-2 pr-4">Tipo</th>
-                                    <th class="py-2 pr-4">Data</th>
-                                    <th class="py-2 pr-4">Hora</th>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matriz</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hora</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
                                 <template x-for="p in perdas" :key="p.id">
-                                    <tr class="text-sm text-gray-700">
-                                        <td class="py-2 pr-4" x-text="p.matriz"></td>
-                                        <td class="py-2 pr-4" x-text="tipoPerdaLabel(p.tipo)"></td>
-                                        <td class="py-2 pr-4" x-text="p.data"></td>
-                                        <td class="py-2 pr-4" x-text="p.hora || '-'"></td>
+                                    <tr class="hover:bg-gray-50/50 transition-colors text-sm text-gray-700">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="p.matriz"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="tipoPerdaLabel(p.tipo)"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="p.data"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="p.hora || '-'"></td>
                                     </tr>
                                 </template>
                                 <tr x-show="perdas.length === 0">
-                                    <td colspan="4" class="py-4 text-sm text-gray-500">Nenhuma perda registrada.</td>
+                                    <td colspan="4" class="px-6 py-8 text-sm text-gray-500 italic text-center">Nenhuma perda registrada.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -1105,29 +1105,29 @@
                             <i class="fa-solid fa-plus"></i>
                         </button>
                     </div>
-                    <div class="p-5 overflow-x-auto">
+                    <div class="overflow-x-auto border border-gray-100 rounded-xl shadow-sm p-6">
                         <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-800">
                             <thead>
-                                <tr class="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    <th class="py-2 pr-4">Ações</th>
-                                    <th class="py-2 pr-4">Fêmea</th>
-                                    <th class="py-2 pr-4">Data</th>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fêmea</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
                                 <template x-for="s in saltasCio" :key="s.id">
-                                    <tr class="text-sm text-gray-700">
-                                        <td class="py-2 pr-4">
+                                    <tr class="hover:bg-gray-50/50 transition-colors text-sm text-gray-700">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
                                             <button type="button" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white text-red-600 hover:bg-red-50" title="Excluir" @click.prevent="deleteSaltaCio(s.id)">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </td>
-                                        <td class="py-2 pr-4" x-text="s.matriz"></td>
-                                        <td class="py-2 pr-4" x-text="s.data"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="s.matriz"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="s.data"></td>
                                     </tr>
                                 </template>
                                 <tr x-show="saltasCio.length === 0">
-                                    <td colspan="3" class="py-4 text-sm text-gray-500">Nenhum registro encontrado.</td>
+                                    <td colspan="3" class="px-6 py-8 text-sm text-gray-500 italic text-center">Nenhum registro encontrado.</td>
                                 </tr>
                             </tbody>
                         </table>

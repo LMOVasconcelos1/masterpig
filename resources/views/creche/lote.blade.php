@@ -5,9 +5,9 @@
 @section('content')
 <div x-data="{
     tab: 'desempenho',
-    query: {{ json_encode($lote['nome'] ?? '') }},
-    lotes: {{ json_encode($lotes ?? []) }},
-    baseUrl: {{ json_encode(url('/creche/lotes', [], false)) }},
+    query: {{ json_encode($lote['nome'] ?? '', JSON_UNESCAPED_UNICODE) }},
+    lotes: {{ json_encode($lotes ?? [], JSON_UNESCAPED_UNICODE) }},
+    baseUrl: {{ json_encode(url('/creche/lotes', [], false), JSON_UNESCAPED_UNICODE) }},
     go() {
         const q = String(this.query || '').trim().toLowerCase();
         if (!q) return;

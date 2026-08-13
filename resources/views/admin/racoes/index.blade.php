@@ -274,7 +274,7 @@
     </div>
 
     <div class="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
-        <form action="{{ route('admin.racoes.index', [], false) }}" method="GET" class="flex flex-1 flex-wrap lg:flex-nowrap items-center gap-3 bg-white dark:bg-gray-900 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+        <form accept-charset="UTF-8" action="{{ route('admin.racoes.index', [], false) }}" method="GET" class="flex flex-1 flex-wrap lg:flex-nowrap items-center gap-3 bg-white dark:bg-gray-900 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
             <div class="w-full lg:min-w-[220px] flex-1">
                 <input type="text" name="codigo" value="{{ request('codigo') }}" placeholder="Código..." class="w-full pl-3 pr-3 py-2 text-sm border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-primary-500 focus:border-primary-500 rounded-lg">
             </div>
@@ -383,7 +383,7 @@
             <div x-show="openCreate" @click="openCreate = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div x-show="openCreate" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full border border-gray-100 dark:border-gray-800">
-                <form action="{{ route('admin.racoes.store', [], false) }}" method="POST">
+                <form accept-charset="UTF-8" action="{{ route('admin.racoes.store', [], false) }}" method="POST">
                     @csrf
                     <div class="bg-gradient-to-r from-primary-700 to-primary-600 px-6 py-5">
                         <div class="flex items-start justify-between">

@@ -6,6 +6,7 @@ use App\Models\Femea;
 use App\Models\Macho;
 use App\Models\Racao;
 use App\Services\PigCycleService;
+use App\Services\TerminacaoService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -238,7 +239,7 @@ class DashboardController extends Controller
                         'id_primaria' => (string) $row->id_primaria,
                         'localizacao' => $row->localizacao ?: '-',
                         'ultima_operacao' => empty($row->ultima_acao) ? '-' : (string) $row->ultima_acao,
-                        'problema' => "Sem registro de Cio/Salta cio previsto para " . $prevCio->format('d/m/Y'),
+                        'problema' => "Sem registro de Cio/Salta cio previsto para " . PigCycleService::formatDisplayDate($prevCio),
                     ];
                 }
             }
@@ -254,8 +255,8 @@ class DashboardController extends Controller
                             'femea_id' => $femeaId,
                             'id_primaria' => (string) $row->id_primaria,
                             'localizacao' => $row->localizacao ?: '-',
-                            'ultima_operacao' => 'Cobertura (' . $lastCob->format('d/m/Y') . ')',
-                            'problema' => "Parto previsto para " . $expected->format('d/m/Y') . " não registrado.",
+                            'ultima_operacao' => 'Cobertura (' . PigCycleService::formatDisplayDate($lastCob) . ')',
+                            'problema' => "Parto previsto para " . PigCycleService::formatDisplayDate($expected) . " não registrado.",
                         ];
                     }
                 }
@@ -273,7 +274,7 @@ class DashboardController extends Controller
                             'id_primaria' => (string) $row->id_primaria,
                             'localizacao' => $row->localizacao ?: '-',
                             'ultima_operacao' => 'Parto (' . PigCycleService::formatDisplayDate(Carbon::parse($lp->data)) . ')',
-                            'problema' => "Desmame previsto para " . $expectedDesmame->format('d/m/Y') . " não registrado.",
+                            'problema' => "Desmame previsto para " . PigCycleService::formatDisplayDate($expectedDesmame) . " não registrado.",
                         ];
                     }
                 }
@@ -314,7 +315,7 @@ class DashboardController extends Controller
                         'femea_id' => $macho->id,
                         'id_primaria' => 'Macho: ' . $macho->id_primaria,
                         'localizacao' => $macho->localizacao ?: '-',
-                        'ultima_operacao' => $lastUsed ? 'Última cobertura em ' . $lastUsed->format('d/m/Y') : 'Nunca utilizado',
+                        'ultima_operacao' => $lastUsed ? 'Última cobertura em ' . PigCycleService::formatDisplayDate($lastUsed) : 'Nunca utilizado',
                         'problema' => "Macho sem atividade há {$daysIdle} dias (Meta: {$cfg['macho_parado_max']} dias).",
                     ];
                 }
@@ -340,6 +341,22 @@ class DashboardController extends Controller
             'matriz_gestante' => 0,
         ];
         $inconsistenciasPlantel = $this->buildInconsistenciasPlantel();
+
+        $statsTerminacao = [
+            'lotes_abertos' => 0,
+            'estoque_animais' => 0,
+            'mortalidade_taxa' => 0.0,
+            'vendidos_30d' => 0,
+        ];
+        $inconsistenciasTerminacao = [];
+        try {
+            $terminacaoSvc = app(TerminacaoService::class);
+            if (Schema::hasTable('terminacao_lotes')) {
+                $statsTerminacao = $terminacaoSvc->calcularStatsGerais();
+                $inconsistenciasTerminacao = $terminacaoSvc->buildInconsistencias();
+            }
+        } catch (\Throwable $e) {
+        }
 
         if (Schema::hasTable('racao') && Schema::hasColumn('racao', 'estoque')) {
             $estoqueRacoes = (float) Racao::sum('estoque');
@@ -434,6 +451,8 @@ class DashboardController extends Controller
             'machosAtivos' => $machosAtivos,
             'entradasFemeas' => $entradasFemeas,
             'inconsistenciasPlantel' => $inconsistenciasPlantel,
+            'inconsistenciasTerminacao' => $inconsistenciasTerminacao,
+            'statsTerminacao' => $statsTerminacao,
             'saidasLeitoas' => $saidasLeitoas,
             'saidasMatrizes' => $saidasMatrizes,
             'saidasMachos' => $saidasMachos,

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PigCycleService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -37,7 +38,7 @@ class GestacaoSaltaCioController extends Controller
                     'id' => (int) $row->id,
                     'matriz' => (string) $row->id_primaria,
                     'matriz_secundaria' => $row->id_secundaria === null ? null : (string) $row->id_secundaria,
-                    'data' => Carbon::parse($row->data)->format('d/m/Y'),
+                    'data' => PigCycleService::formatDisplayDate(Carbon::parse($row->data)),
                 ];
             })
             ->values();
@@ -57,10 +58,10 @@ class GestacaoSaltaCioController extends Controller
 
         $validated = $request->validate([
             'femea_id' => ['required', 'exists:femea,id'],
-            'data' => ['required', 'date'],
+            'data' => ['required', 'string', 'max:30'],
         ]);
 
-        $data = Carbon::parse($validated['data'])->toDateString();
+        $data = $this->parseInputDate($validated['data']);
         $femeaId = (int) $validated['femea_id'];
 
         $exists = DB::table('gestacao_salta_cio')
@@ -147,5 +148,12 @@ class GestacaoSaltaCioController extends Controller
         return response()->json([
             'message' => 'Registro excluído com sucesso!',
         ]);
+    }
+
+    private function parseInputDate(?string $input): ?string
+    {
+        if ($input === null || trim($input) === '') return null;
+        $carbon = PigCycleService::parseFilterDate($input);
+        return $carbon ? $carbon->format('Y-m-d') : null;
     }
 }

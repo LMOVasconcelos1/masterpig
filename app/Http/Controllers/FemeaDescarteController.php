@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Causa;
 use App\Models\Femea;
+use App\Services\PigCycleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +22,7 @@ class FemeaDescarteController extends Controller
 
         $validated = $request->validate([
             'femea_id' => ['required', 'exists:femea,id'],
-            'data_descarte' => ['required', 'date'],
+            'data_descarte' => ['required', 'string', 'max:30'],
             'causa_id' => ['required', 'exists:causa,id'],
         ]);
 
@@ -51,7 +52,7 @@ class FemeaDescarteController extends Controller
             'femea_id' => $femea->id,
             'femea_id_primaria' => $femea->id_primaria,
             'acao' => 'descarte',
-            'data' => Carbon::parse($validated['data_descarte'])->format('Y-m-d'),
+            'data' => $this->parseInputDate($validated['data_descarte']),
             'valor' => null,
             'peso' => null,
             'fornecedor_id' => null,
@@ -67,5 +68,12 @@ class FemeaDescarteController extends Controller
         return response()->json([
             'message' => 'Descarte registrado com sucesso!',
         ], 201);
+    }
+
+    private function parseInputDate(?string $input): ?string
+    {
+        if ($input === null || trim($input) === '') return null;
+        $carbon = PigCycleService::parseFilterDate($input);
+        return $carbon ? $carbon->format('Y-m-d') : null;
     }
 }

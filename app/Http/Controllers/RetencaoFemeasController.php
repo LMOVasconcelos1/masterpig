@@ -89,11 +89,15 @@ class RetencaoFemeasController extends Controller
 
         // Verificar se tabela de partos existe
         if (Schema::hasTable('maternidade_parto')) {
+            $allFemeaIds = $femeas->pluck('id')->toArray();
+            $allPartos = DB::table('maternidade_parto')
+                ->whereIn('femea_id', $allFemeaIds)
+                ->orderBy('data')
+                ->get();
+            $partosPorFemea = $allPartos->groupBy('femea_id');
+
             foreach ($femeas as $femea) {
-                $partos = DB::table('maternidade_parto')
-                    ->where('femea_id', $femea->id)
-                    ->orderBy('data')
-                    ->get();
+                $partos = $partosPorFemea[$femea->id] ?? collect();
 
                 $numPartos = $partos->count();
                 $totalCiclos += $numPartos;

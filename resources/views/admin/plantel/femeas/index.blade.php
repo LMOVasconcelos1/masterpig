@@ -49,22 +49,22 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+        <div class="overflow-x-auto border border-gray-100 shadow-sm rounded-xl p-6">
+            <table class="w-full text-left border-collapse divide-y divide-gray-100">
                 <thead>
                     <tr class="bg-gray-50/50">
-                        <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase">ID</th>
-                        <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase">Tipo</th>
-                        <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase">Localização</th>
-                        <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase">Última Operação</th>
-                        <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase">Status</th>
-                        <th class="px-6 py-3 text-xs font-bold text-gray-500 uppercase">Ações</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Localização</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Última Operação</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse($items as $row)
-                        <tr class="hover:bg-gray-50/30 transition-colors" x-show="!q || (('{{ strtolower($row['id_primaria'].' '.$row['id_secundaria'].' '.$row['tipo'].' '.$row['localizacao'].' '.$row['baia'].' '.$row['ultima_operacao'].' '.$row['status']) }}').includes(q.toLowerCase()))">
-                            <td class="px-6 py-4">
+                        <tr class="hover:bg-gray-50/50 transition-colors" x-show="!q || (('{{ strtolower($row['id_primaria'].' '.$row['id_secundaria'].' '.$row['tipo'].' '.$row['localizacao'].' '.$row['baia'].' '.$row['ultima_operacao'].' '.$row['status']) }}').includes(q.toLowerCase()))">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 <div class="text-sm font-semibold text-primary-700">
                                     <a href="{{ route('admin.plantel.femeas.show', $row['id'], false) }}" class="hover:underline">
                                         {{ $row['id_primaria'] }}
@@ -72,18 +72,18 @@
                                 </div>
                                 <div class="text-xs text-gray-500">{{ $row['id_secundaria'] ?? '-' }}</div>
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-700">{{ $row['tipo'] }}</td>
-                            <td class="px-6 py-4 text-sm text-gray-700">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $row['tipo'] }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                 {{ $row['localizacao'] }}
                                 <div class="text-xs text-gray-500">{{ $row['baia'] }}</div>
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-700">{{ $row['ultima_operacao'] }}</td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ $row['ultima_operacao'] }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold {{ $row['status'] === 'Ativo' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
                                     {{ $row['status'] }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
                                 <a href="{{ route('admin.plantel.femeas.show', $row['id'], false) }}" class="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 bg-white text-gray-600 hover:bg-gray-50" title="Abrir cadastro">
                                     <i class="fa-solid fa-arrow-up-right-from-square"></i>
                                 </a>
@@ -91,7 +91,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center text-gray-500 italic text-sm">
+                            <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500 italic">
                                 Nenhum registro encontrado.
                             </td>
                         </tr>
