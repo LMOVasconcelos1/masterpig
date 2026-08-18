@@ -5419,7 +5419,7 @@
                         <i class="fa-solid fa-list mr-2"></i>Listagem
                     </button>
                     <button type="button" @click="analiseSubTab = 'formulario'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors" :class="analiseSubTab === 'formulario' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
-                        <i class="fa-solid fa-file-lines mr-2"></i>Formulírio
+                        <i class="fa-solid fa-file-lines mr-2"></i>Formulário
                     </button>
                 </div>
             </div>
@@ -5519,8 +5519,8 @@
                                     <i class="fa-solid fa-file-pdf"></i>
                                 </div>
                                 <div>
-                                    <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Formulírio cio de leitoa</h6>
-                                    <div class="text-sm text-gray-500 mt-1.5">Abrir PDF para impressúo e preenchimento.</div>
+                                    <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Formulário cio de leitoa</h6>
+                                    <div class="text-sm text-gray-500 mt-1.5">Abrir PDF para impressão e preenchimento.</div>
                                 </div>
                             </div>
                             <div class="text-primary-600 group-hover:text-primary-700 transition-colors">
@@ -5531,7 +5531,7 @@
                     <div class="p-6">
                         <div class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 border-primary-200 bg-white text-primary-700 group-hover:bg-primary-600 group-hover:border-primary-600 group-hover:text-white transition-all duration-300 shadow-sm hover:shadow-md">
                             <i class="fa-solid fa-eye text-xs"></i>
-                            Abrir formulírio
+                            Abrir formulário
                         </div>
                     </div>
                 </a>

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
+use App\Services\PigCycleService;
 
 class RetencaoFemeasController extends Controller
 {
@@ -22,13 +23,13 @@ class RetencaoFemeasController extends Controller
             ], 422);
         }
 
-        // Converter datas DD/MM/YYYY para YYYY-MM-DD
-        $dataInicialIso = $this->parseBrDate($dataInicial);
-        $dataFinalIso = $this->parseBrDate($dataFinal);
+        // Aceita Dia PIG (3 dígitos), DD/MM/AAAA ou ISO (Y-m-d)
+        $dataInicialIso = $this->parseInputDate($dataInicial);
+        $dataFinalIso = $this->parseInputDate($dataFinal);
 
         if (!$dataInicialIso || !$dataFinalIso) {
             return response()->json([
-                'message' => 'Formato de data inválido. Use DD/MM/AAAA.',
+                'message' => 'Formato de data inválido. Use Dia PIG (ex: 842), DD/MM/AAAA ou data ISO.',
             ], 422);
         }
 
@@ -168,18 +169,10 @@ class RetencaoFemeasController extends Controller
         ]);
     }
 
-    private function parseBrDate($value)
+    private function parseInputDate(?string $value): ?string
     {
-        $v = trim((string) $value);
-        if ($v === '') {
-            return null;
-        }
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $v)) {
-            return $v;
-        }
-        if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', $v, $matches)) {
-            return $matches[3] . '-' . $matches[2] . '-' . $matches[1];
-        }
-        return null;
+        if ($value === null || trim($value) === '') return null;
+        $carbon = PigCycleService::parseFilterDate($value);
+        return $carbon ? $carbon->format('Y-m-d') : null;
     }
 }

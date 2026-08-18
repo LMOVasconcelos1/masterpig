@@ -9,17 +9,141 @@
     retencaoData: null,
     retencaoFiltroRaca: '',
     retencaoFiltroTipo: 'leitoas',
-    retencaoDataInicial: '',
-    retencaoDataFinal: '',
     racasRetencao: [],
 
-    normalizeDateInput(value) {
-        if (!value) return '';
-        let v = value.replace(/\\D/g, '');
-        if (v.length > 8) v = v.slice(0, 8);
-        if (v.length > 4) v = v.replace(/^(\\d{2})(\\d{2})(\\d{0,4}).*/, '$1/$2/$3');
-        else if (v.length > 2) v = v.replace(/^(\\d{2})(\\d{0,2}).*/, '$1/$2');
-        return v;
+    criteriosLoaded: false,
+    calendarType: '1000_dias',
+    activePicker: null,
+    calendarMonth: new Date().getMonth(),
+    calendarYear: new Date().getFullYear(),
+    calendarMonths: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
+    pickerTop: 0,
+    pickerLeft: 0,
+    pickerDirection: 'down',
+
+    HOJE_ISO: {{ json_encode(now()->format('Y-m-d'), JSON_UNESCAPED_UNICODE) }},
+
+    dataInicialIso: '',
+    dataInicialDisplay: '',
+    dataFinalIso: '',
+    dataFinalDisplay: '',
+
+    pickerConfig: {
+        'ret_inicio': { isoKey: 'dataInicialIso', displayKey: 'dataInicialDisplay', refKey: 'retRefInicio' },
+        'ret_fim':    { isoKey: 'dataFinalIso',   displayKey: 'dataFinalDisplay',   refKey: 'retRefFim' },
+    },
+
+    isoToBr(iso) {
+        const v = String(iso || '').trim();
+        const m = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!m) return '';
+        return `${m[3]}/${m[2]}/${m[1]}`;
+    },
+    brToIso(br) {
+        const v = String(br || '').trim();
+        const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (!m) return null;
+        let d = parseInt(m[1], 10), mo = parseInt(m[2], 10), y = parseInt(m[3], 10);
+        if (d < 1 || d > 31 || mo < 1 || mo > 12) return null;
+        const pad = (n) => String(n).padStart(2, '0');
+        const dt = new Date(y, mo - 1, d);
+        if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return null;
+        return `${y}-${pad(mo)}-${pad(d)}`;
+    },
+    setIsoAndDisplay(isoKey, displayKey, iso) {
+        const v = String(iso || '').trim();
+        this[isoKey] = v;
+        if (!v) { this[displayKey] = ''; return; }
+        if (this.calendarType === '1000_dias' && typeof toPigDay === 'function') {
+            this[displayKey] = String(toPigDay(v + 'T00:00:00'));
+        } else {
+            this[displayKey] = this.isoToBr(v);
+        }
+    },
+    normalizeDisplay(isoKey, displayKey) {
+        const isPig = this.calendarType === '1000_dias';
+        const raw = String(this[displayKey] || '').trim();
+        if (!raw) { this.setIsoAndDisplay(isoKey, displayKey, ''); return; }
+        let iso = null;
+        if (isPig && /^\d{1,4}$/.test(raw) && typeof pigDayToDate === 'function') iso = pigDayToDate(raw);
+        if (!iso) iso = this.brToIso(raw);
+        if (iso) this.setIsoAndDisplay(isoKey, displayKey, iso);
+    },
+    getPickerSelectedIso() {
+        const cfg = this.pickerConfig[this.activePicker];
+        if (!cfg) return '';
+        return String(this[cfg.isoKey] || '');
+    },
+    prevCalendarMonth() {
+        if (this.calendarMonth === 0) { this.calendarMonth = 11; this.calendarYear--; }
+        else this.calendarMonth--;
+    },
+    nextCalendarMonth() {
+        if (this.calendarMonth === 11) { this.calendarMonth = 0; this.calendarYear++; }
+        else this.calendarMonth++;
+    },
+    getCalendarDays() {
+        const firstDay = new Date(this.calendarYear, this.calendarMonth, 1);
+        const startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - firstDay.getDay());
+        const selectedIso = this.getPickerSelectedIso();
+        const days = [];
+        for (let i = 0; i < 42; i++) {
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + i);
+            const pad = (n) => String(n).padStart(2, '0');
+            const iso = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+            days.push({
+                date: iso,
+                day: date.getDate(),
+                isCurrentMonth: date.getMonth() === this.calendarMonth,
+                isSelected: selectedIso ? iso === selectedIso : false,
+                pigDay: typeof toPigDay === 'function' ? toPigDay(iso + 'T00:00:00') : ''
+            });
+        }
+        return days;
+    },
+    openDatePicker(which) {
+        const cfg = this.pickerConfig[which];
+        if (!cfg) return;
+        const iso = String(this[cfg.isoKey] || '').trim();
+        const ref = this.$refs[cfg.refKey] || null;
+        const base = iso && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(iso + 'T12:00:00') : new Date();
+        this.calendarMonth = base.getMonth();
+        this.calendarYear = base.getFullYear();
+        this.activePicker = which;
+        this.$nextTick(() => {
+            const el = ref;
+            if (!el || typeof el.getBoundingClientRect !== 'function') return;
+            const rect = el.getBoundingClientRect();
+            const popW = window.innerWidth >= 640 ? 288 : Math.min(320, Math.max(260, window.innerWidth - 32));
+            const half = popW / 2;
+            const minLeft = half + 8;
+            const maxLeft = Math.max(minLeft, window.innerWidth - half - 8);
+            const centerLeft = rect.left + rect.width / 2;
+            const left = Math.min(maxLeft, Math.max(minLeft, centerLeft));
+            const desiredH = 360;
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const spaceAbove = rect.top;
+            const direction = (spaceBelow < desiredH && spaceAbove > spaceBelow) ? 'up' : 'down';
+            const top = direction === 'up' ? rect.top : rect.bottom;
+            this.pickerLeft = left;
+            this.pickerTop = top;
+            this.pickerDirection = direction;
+        });
+    },
+    selectCalendarDate(dateStr) {
+        const cfg = this.pickerConfig[this.activePicker];
+        if (!cfg) return;
+        const iso = String(dateStr || '').trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return;
+        this.setIsoAndDisplay(cfg.isoKey, cfg.displayKey, iso);
+        this.activePicker = null;
+    },
+    resetAllDatasToToday() {
+        Object.entries(this.pickerConfig).forEach(([k, cfg]) => {
+            this.setIsoAndDisplay(cfg.isoKey, cfg.displayKey, this.HOJE_ISO);
+        });
     },
 
     loadRacasRetencao() {
@@ -35,16 +159,22 @@
     },
 
     loadRetencaoData() {
-        if (!this.retencaoDataInicial || !this.retencaoDataFinal) {
+        if (!this.dataInicialDisplay || !this.dataFinalDisplay) {
             this.retencaoError = 'Selecione o período para análise.';
+            return;
+        }
+        if (!this.dataInicialIso) this.normalizeDisplay('dataInicialIso','dataInicialDisplay');
+        if (!this.dataFinalIso)   this.normalizeDisplay('dataFinalIso','dataFinalDisplay');
+        if (!this.dataInicialIso || !this.dataFinalIso) {
+            this.retencaoError = 'Datas inválidas. Use o calendário ou digite um formato válido.';
             return;
         }
         this.retencaoLoading = true;
         this.retencaoError = '';
         const params = new URLSearchParams({
-            data_inicial: this.retencaoDataInicial,
-            data_final: this.retencaoDataFinal,
-            raca_id: this.retencaoFiltroRaca,
+            data_inicial: this.isoToBr(this.dataInicialIso),
+            data_final:   this.isoToBr(this.dataFinalIso),
+            raca_id:      this.retencaoFiltroRaca,
             tipo_entrada: this.retencaoFiltroTipo
         });
         fetch(`/api/plantel/femeas/retencao?${params.toString()}`, { headers: { 'Accept': 'application/json' } })
@@ -62,7 +192,24 @@
             })
             .finally(() => { this.retencaoLoading = false; });
     },
-}" class="space-y-6">
+
+    init() {
+        this.loadRacasRetencao();
+        this.resetAllDatasToToday();
+        fetch('/api/criterios', { headers: { 'Accept': 'application/json' } })
+            .then(r => r.json())
+            .then(data => {
+                const items = data.items || {};
+                const tipo = (items.criterio_calendario_tipo === null || items.criterio_calendario_tipo === undefined || String(items.criterio_calendario_tipo).trim() === '')
+                    ? '1000_dias'
+                    : String(items.criterio_calendario_tipo);
+                this.calendarType = tipo;
+                this.resetAllDatasToToday();
+                this.criteriosLoaded = true;
+            })
+            .catch(() => { this.criteriosLoaded = true; });
+    },
+}" x-init="init()" class="space-y-6">
 
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-emerald-50 via-emerald-50/80 to-emerald-100/50">
@@ -83,11 +230,43 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Data Inicial</label>
-                        <input type="text" x-model="retencaoDataInicial" @input="retencaoDataInicial = normalizeDateInput($event.target.value)" @focus="loadRacasRetencao()" class="block w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 shadow-sm hover:border-emerald-300" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
+                        <input type="hidden" name="data_inicial_iso" :value="dataInicialIso">
+                        <div class="relative">
+                            <input type="text"
+                                   x-ref="retRefInicio"
+                                   :value="dataInicialDisplay"
+                                   @input="dataInicialDisplay = $event.target.value"
+                                   @focus="openDatePicker('ret_inicio')"
+                                   @click="openDatePicker('ret_inicio')"
+                                   @blur="normalizeDisplay('dataInicialIso','dataInicialDisplay')"
+                                   :placeholder="calendarType === '1000_dias' ? 'Dia PIG (ex: 842)' : 'DD/MM/AAAA'"
+                                   inputmode="numeric"
+                                   autocomplete="off"
+                                   class="block w-full px-3 py-2 pr-10 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 shadow-sm hover:border-emerald-300">
+                            <button type="button" tabindex="-1" @click.stop="openDatePicker('ret_inicio')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors">
+                                <i class="fa-solid fa-calendar-days"></i>
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Data Final</label>
-                        <input type="text" x-model="retencaoDataFinal" @input="retencaoDataFinal = normalizeDateInput($event.target.value)" class="block w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 shadow-sm hover:border-emerald-300" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="off">
+                        <input type="hidden" name="data_final_iso" :value="dataFinalIso">
+                        <div class="relative">
+                            <input type="text"
+                                   x-ref="retRefFim"
+                                   :value="dataFinalDisplay"
+                                   @input="dataFinalDisplay = $event.target.value"
+                                   @focus="openDatePicker('ret_fim')"
+                                   @click="openDatePicker('ret_fim')"
+                                   @blur="normalizeDisplay('dataFinalIso','dataFinalDisplay')"
+                                   :placeholder="calendarType === '1000_dias' ? 'Dia PIG (ex: 842)' : 'DD/MM/AAAA'"
+                                   inputmode="numeric"
+                                   autocomplete="off"
+                                   class="block w-full px-3 py-2 pr-10 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 shadow-sm hover:border-emerald-300">
+                            <button type="button" tabindex="-1" @click.stop="openDatePicker('ret_fim')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-emerald-600 transition-colors">
+                                <i class="fa-solid fa-calendar-days"></i>
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Raça</label>
@@ -115,14 +294,14 @@
                 </div>
             </div>
 
-            <div x-show="retencaoLoading" class="text-center py-8">
+            <div x-show="retencaoLoading" class="text-center py-8" x-cloak>
                 <i class="fa-solid fa-spinner fa-spin text-emerald-500 text-3xl"></i>
                 <div class="text-sm text-gray-500 mt-3">Carregando dados de retenção...</div>
             </div>
 
-            <div x-show="retencaoError" class="bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm mb-4" x-text="retencaoError"></div>
+            <div x-show="retencaoError" class="bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm mb-4" x-text="retencaoError" x-cloak></div>
 
-            <div x-show="retencaoData && !retencaoLoading">
+            <div x-show="retencaoData && !retencaoLoading" x-cloak>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div class="bg-gradient-to-br from-emerald-50 to-emerald-100/50 rounded-xl p-4 border border-emerald-200">
                         <div class="flex items-center gap-3">
@@ -206,6 +385,47 @@
             </div>
         </div>
     </div>
+
+    <!-- Picker flutuante único para ambas as datas -->
+    <div x-show="activePicker !== null"
+         x-cloak
+         :style="`top:${pickerTop}px; left:${pickerLeft}px;`"
+         :class="pickerDirection === 'up' ? '-translate-y-full -mt-2' : 'mt-2'"
+         class="fixed z-[200] bg-white border border-gray-200 rounded-xl shadow-lg p-4 w-[calc(100vw-2rem)] max-w-xs sm:w-72 -translate-x-1/2 max-h-[calc(100vh-12rem)] overflow-y-auto"
+         @click.away="activePicker = null">
+        <div class="flex items-center justify-between mb-3">
+            <button type="button" @click.stop="prevCalendarMonth()" class="p-1 hover:bg-gray-100 rounded">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div class="text-sm font-semibold text-gray-800">
+                <span x-text="calendarMonths[calendarMonth]"></span> <span x-text="calendarYear"></span>
+            </div>
+            <button type="button" @click.stop="nextCalendarMonth()" class="p-1 hover:bg-gray-100 rounded">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+        <div class="grid grid-cols-7 gap-1 text-center text-xs">
+            <div class="font-semibold text-gray-500 py-1">D</div>
+            <div class="font-semibold text-gray-500 py-1">S</div>
+            <div class="font-semibold text-gray-500 py-1">T</div>
+            <div class="font-semibold text-gray-500 py-1">Q</div>
+            <div class="font-semibold text-gray-500 py-1">Q</div>
+            <div class="font-semibold text-gray-500 py-1">S</div>
+            <div class="font-semibold text-gray-500 py-1">S</div>
+            <template x-for="d in getCalendarDays()" :key="d.date">
+                <button type="button"
+                        @click="selectCalendarDate(d.date)"
+                        class="aspect-square flex flex-col items-center justify-center rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
+                        :class="{
+                            'opacity-50': !d.isCurrentMonth,
+                            'bg-emerald-600 text-white border-emerald-600': d.isSelected,
+                            'text-gray-800': d.isCurrentMonth && !d.isSelected
+                        }">
+                    <div class="text-sm font-medium" x-text="d.day"></div>
+                    <div class="text-[10px]" x-show="calendarType === '1000_dias' && d.isCurrentMonth && d.pigDay !== ''" x-text="d.pigDay"></div>
+                </button>
+            </template>
+        </div>
+    </div>
 </div>
 @endsection
-
