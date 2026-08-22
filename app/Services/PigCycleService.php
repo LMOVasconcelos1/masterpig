@@ -51,43 +51,64 @@ class PigCycleService
     {
         $base = Carbon::parse(self::PIG_BASE_DATE)->startOfDay();
         $today = Carbon::today();
-        
-        // Dia PIG Absoluto atual
+
+        $day = $day % 1000;
+        if ($day < 0) $day += 1000;
+
         $currentAbsoluteDay = (int) $base->diffInDays($today, false);
-        
-        // Encontrar o milhar mais recente que tenha os últimos 3 dígitos = $day
+
         $currentThousand = floor($currentAbsoluteDay / 1000) * 1000;
         $targetAbsoluteDay = $currentThousand + $day;
-        
-        // Se o dia alvo for maior que o atual, voltar um milhar
+
         if ($targetAbsoluteDay > $currentAbsoluteDay) {
             $targetAbsoluteDay -= 1000;
         }
-        
-        return $base->addDays($targetAbsoluteDay);
+
+        return $base->copy()->addDays($targetAbsoluteDay);
     }
 
     /**
-     * Realiza o parse de uma string de data vinda do filtro, 
+     * Realiza o parse de uma string de data vinda do filtro,
      * tratando como Dia PIG ou data DD/MM/AAAA conforme a config.
+     * Também aceita formato ISO (YYYY-MM-DD) diretamente, já que o frontend converte antes de enviar.
      */
     public static function parseFilterDate(?string $input): ?Carbon
     {
         if (!$input || trim($input) === '') return null;
+        $input = trim($input);
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $input)) {
+            try {
+                return Carbon::createFromFormat('Y-m-d', $input)->startOfDay();
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+
+        if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $input)) {
+            try {
+                return Carbon::createFromFormat('d/m/Y', $input)->startOfDay();
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
 
         $type = self::getCalendarType();
 
         if ($type === self::CALENDAR_1000_DAYS) {
-            $day = (int) preg_replace('/\D/', '', $input);
-            if ($day <= 0) return null;
-            return self::fromPigDay($day);
+            if (preg_match('/^\d{1,4}$/', $input)) {
+                $day = (int) $input;
+                if ($day <= 0) return null;
+                return self::fromPigDay($day);
+            }
+
+            $digits = (int) preg_replace('/\D/', '', $input);
+            if ($digits > 0) {
+                return self::fromPigDay($digits);
+            }
         }
 
-        // Tenta parse de data gregoriana no formato brasileiro
         try {
-            if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $input)) {
-                return Carbon::createFromFormat('d/m/Y', $input)->startOfDay();
-            }
             return Carbon::parse($input)->startOfDay();
         } catch (\Exception $e) {
             return null;
