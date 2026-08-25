@@ -17,7 +17,7 @@
  *   Altere $TOUR_CENTER_LIBERADO para true quando quiser liberar para todos os usuários.
  *   Enquanto false, componente NÃO RENDERIZA NADA (sem botão flutuante, sem script).
  */
-$TOUR_CENTER_LIBERADO = false;
+$TOUR_CENTER_LIBERADO = true;
 ?>
 @if($TOUR_CENTER_LIBERADO)
 <style>
@@ -221,19 +221,15 @@ $TOUR_CENTER_LIBERADO = false;
         </div>
     </template>
 
-    {{-- ================ OVERLAY + HIGHLIGHT (SOBREPÕEM DURANTE TUTORIAL) ================ --}}
-    <template x-if="stepIndex >= 0">
-        <div class="fixed inset-0 z-[9998] bg-slate-950/55 pointer-events-none"></div>
-    </template>
-
+    {{-- ================ HIGHLIGHT (SOBREPÕEM DURANTE TUTORIAL) — box-shadow gigante já funciona como overlay fullscreen ================ --}}
     <template x-if="stepIndex >= 0">
         <div id="tour-highlight"
-             class="fixed z-[9998] pointer-events-none rounded-2xl ring-4 ring-amber-400 ring-offset-2 ring-offset-slate-950/10 shadow-[0_0_0_9999px_rgba(2,6,23,0.38)] transition-all duration-300 ease-out"></div>
+             class="fixed z-[9998] pointer-events-none rounded-2xl ring-[5px] ring-amber-400 ring-offset-0 shadow-[0_0_0_9999px_rgba(2,6,23,0.78)] shadow-amber-400/15 transition-[top,left,width,height,border-radius] duration-250 ease-out"></div>
     </template>
 
     {{-- ================ TOOLTIP DO PASSO (mobile: 95% width, topo se necessário) ================ --}}
     <template x-if="stepIndex >= 0 && tutorialAtivo">
-        <div class="fixed z-[9999] w-[95vw] sm:w-[400px] max-w-[400px]"
+        <div id="tour-tooltip" class="fixed z-[9999] w-[95vw] sm:w-[400px] max-w-[400px]"
              :style="tooltipStyle">
             <div class="relative rounded-3xl bg-white shadow-2xl shadow-slate-900/30 border border-amber-100 overflow-hidden">
                 <div class="px-4 sm:px-5 pt-3.5 pb-3 bg-gradient-to-r from-amber-50 via-amber-50/60 to-white border-b border-amber-100/80 flex items-start justify-between gap-3">
@@ -291,17 +287,17 @@ $TOUR_CENTER_LIBERADO = false;
                         </template>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 order-2 sm:order-3">
-                        <template x-if="stepIndex === tutorialAtivo.steps.length - 1">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 order-2 sm:order-3 min-w-0 flex-1 sm:flex-none sm:min-w-[160px] sm:justify-end">
+                        <template x-if="tutorialAtivo && stepIndex >= tutorialAtivo.steps.length - 1">
                             <button type="button" @click="finishTutorial()"
-                                class="min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold bg-gradient-to-b from-emerald-500 to-emerald-600 text-white border border-emerald-500 shadow-sm shadow-emerald-900/20 active:scale-[0.98] transition-all">
+                                class="sm:w-auto w-full min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold bg-gradient-to-b from-emerald-500 to-emerald-600 text-white border border-emerald-500 shadow-sm shadow-emerald-900/20 active:scale-[0.98] transition-all shrink-0">
                                 <i class="fa-solid fa-check"></i>
                                 Concluir
                             </button>
                         </template>
-                        <template x-else>
+                        <template x-if="tutorialAtivo && stepIndex < tutorialAtivo.steps.length - 1">
                             <button type="button" @click="nextStep()"
-                                class="min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold bg-gradient-to-b from-amber-600 to-amber-700 text-white border border-amber-600 shadow-sm shadow-amber-900/20 active:scale-[0.98] transition-all">
+                                class="sm:w-auto w-full min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold bg-gradient-to-b from-amber-600 to-amber-700 text-white border border-amber-600 shadow-sm shadow-amber-900/20 active:scale-[0.98] transition-all shrink-0">
                                 Próximo
                                 <i class="fa-solid fa-arrow-right"></i>
                             </button>
@@ -730,8 +726,14 @@ function tourCenter() {
         tutorialAtivo: null,
         stepIndex: -1,
         tooltipStyle: 'opacity:0;visibility:hidden;left:16px;top:16px;',
-        _updateTooltipTimer: null,
+        _updatePositionTimer: null,
         _tourPollTimer: null,
+        _mutationObserver: null,
+        _resizeObserver: null,
+        _scrollStableTimer: null,
+        _isScrolling: false,
+        _lastScrollX: 0,
+        _lastScrollY: 0,
         _manejoInfo: null,
 
         init() {
@@ -743,12 +745,11 @@ function tourCenter() {
                 ? loaded.categoriasAbertas
                 : (this.filtrarManejo ? [this._manejoInfo.id] : ['plantel']);
 
-            window.addEventListener('resize', () => this.repositionTooltip());
-            window.addEventListener('scroll', () => this.repositionTooltip(), true);
-            window.addEventListener('orientationchange', () => this.repositionTooltip());
+            window.addEventListener('resize', () => this.updateTourPosition());
+            window.addEventListener('orientationchange', () => this.updateTourPosition());
+            window.addEventListener('scroll', () => this._onScrollChange(), true);
             window.addEventListener('hashchange', () => { this._manejoInfo = detectarManejoAtual(); });
 
-            // Evento global disparado pelos botões do MENU (header, dropdown, sidebar mobile)
             window.addEventListener('tourcenter:toggle', () => {
                 this.$nextTick(() => { this.togglePanel(); });
             });
@@ -757,6 +758,151 @@ function tourCenter() {
             });
             window.addEventListener('tourcenter:close', () => {
                 this.$nextTick(() => { if (this.panelOpen) this.panelOpen = false; });
+            });
+        },
+
+        _onScrollChange() {
+            this._isScrolling = true;
+            if (this._scrollStableTimer) clearTimeout(this._scrollStableTimer);
+            this._scrollStableTimer = setTimeout(() => {
+                if (window.scrollX === this._lastScrollX && window.scrollY === this._lastScrollY) {
+                    this._isScrolling = false;
+                    this.updateTourPosition();
+                }
+            }, 120);
+            this._lastScrollX = window.scrollX;
+            this._lastScrollY = window.scrollY;
+        },
+
+        _startObservingDOM() {
+            if (this._mutationObserver) return;
+            try {
+                this._mutationObserver = new MutationObserver((mutations) => {
+                    let needsUpdate = false;
+                    for (const m of mutations) {
+                        if (m.type === 'childList' || m.type === 'attributes') {
+                            needsUpdate = true; break;
+                        }
+                    }
+                    if (needsUpdate) {
+                        if (this._resizeObserver) {
+                            const tooltip = document.getElementById('tour-tooltip');
+                            if (tooltip) { try { this._resizeObserver.observe(tooltip); } catch(e){} }
+                            const hl = document.getElementById('tour-highlight');
+                            if (hl) { try { this._resizeObserver.observe(hl); } catch(e){} }
+                        }
+                        this.updateTourPosition();
+                    }
+                });
+                this._mutationObserver.observe(document.body, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true,
+                    attributeFilter: ['style', 'class', 'open', 'aria-hidden', 'aria-expanded', 'data-open', 'x-show', 'x-transition']
+                });
+            } catch (e) {}
+            try {
+                this._resizeObserver = new ResizeObserver(() => {
+                    this.updateTourPosition();
+                });
+                this._resizeObserver.observe(document.body);
+                const root = this.$el && this.$el.nodeType === 1 ? this.$el : document.querySelector('[x-data="tourCenter()"]');
+                if (root) { try { this._resizeObserver.observe(root); } catch(e){} }
+                document.querySelectorAll('[x-data]').forEach(el => {
+                    try { this._resizeObserver.observe(el); } catch(e){}
+                });
+                document.querySelectorAll('nav, header, aside, .modal, [role="dialog"]').forEach(el => {
+                    try { this._resizeObserver.observe(el); } catch(e){}
+                });
+            } catch (e) {}
+        },
+
+        _stopObservingDOM() {
+            if (this._mutationObserver) { try { this._mutationObserver.disconnect(); } catch(e){} this._mutationObserver = null; }
+            if (this._resizeObserver) { try { this._resizeObserver.disconnect(); } catch(e){} this._resizeObserver = null; }
+        },
+
+        _isElementVisible(el) {
+            if (!el) return false;
+            if (!el.isConnected) return false;
+            const style = window.getComputedStyle(el);
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') return false;
+            const r = el.getBoundingClientRect();
+            if (r.width < 2 || r.height < 2) return false;
+            const vw = window.innerWidth, vh = window.innerHeight;
+            return !(r.right < 0 || r.bottom < 0 || r.left > vw || r.top > vh);
+        },
+
+        _waitForStablePosition(el, maxAttempts) {
+            maxAttempts = maxAttempts || 20;
+            return new Promise((resolve) => {
+                let attempts = 0;
+                let lastRect = null;
+                let stableCount = 0;
+                const check = () => {
+                    attempts++;
+                    const rect = el ? el.getBoundingClientRect() : null;
+                    const rectStr = rect ? `${rect.top},${rect.left},${rect.width},${rect.height}` : 'null';
+                    const scrollStr = `${window.scrollX},${window.scrollY}`;
+                    const combined = rectStr + '|' + scrollStr;
+                    if (lastRect && lastRect === combined && !this._isScrolling) {
+                        stableCount++;
+                    } else {
+                        stableCount = 0;
+                    }
+                    lastRect = combined;
+                    if (stableCount >= 3 || attempts >= maxAttempts) {
+                        resolve();
+                    } else {
+                        requestAnimationFrame(() => setTimeout(check, 16));
+                    }
+                };
+                check();
+            });
+        },
+
+        _scrollIntoViewIfNeeded(el) {
+            return new Promise((resolve) => {
+                if (!el) { resolve(); return; }
+                const r = el.getBoundingClientRect();
+                const margin = 40;
+                const isOutside = (
+                    r.top < margin ||
+                    r.left < margin ||
+                    r.right > window.innerWidth - margin ||
+                    r.bottom > window.innerHeight - margin
+                );
+                if (!isOutside) { resolve(); return; }
+                this._isScrolling = true;
+                let resolved = false;
+                const finish = () => {
+                    if (resolved) return;
+                    resolved = true;
+                    setTimeout(resolve, 150);
+                };
+                const onScrollEnd = () => {
+                    let stable = 0;
+                    const check = () => {
+                        const sx = window.scrollX, sy = window.scrollY;
+                        if (this._lastScrollX === sx && this._lastScrollY === sy) {
+                            stable++;
+                            if (stable >= 6) { this._isScrolling = false; finish(); return; }
+                        } else {
+                            stable = 0;
+                        }
+                        this._lastScrollX = sx;
+                        this._lastScrollY = sy;
+                        requestAnimationFrame(check);
+                    };
+                    check();
+                };
+                try {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                } catch(e) {
+                    finish(); return;
+                }
+                onScrollEnd();
+                setTimeout(finish, 2500);
             });
         },
 
@@ -830,14 +976,16 @@ function tourCenter() {
             this.panelOpen = false;
             t.progresso = this.stepIndex + 1;
             this.persist();
-            this.$nextTick(() => { this.repositionTooltip(); this.piscarElementoAlvo(); });
-            // Poll de reposicionamento enquanto tutorial estiver aberto (elementos dinâmicos / lazy load)
+            this._startObservingDOM();
+            this.$nextTick(() => { this._prepareStep(); });
             if (this._tourPollTimer) clearInterval(this._tourPollTimer);
-            this._tourPollTimer = setInterval(() => { this.repositionTooltip(); }, 1200);
+            this._tourPollTimer = setInterval(() => { this.updateTourPosition(); }, 300);
         },
 
         stopTutorial() {
             if (this._tourPollTimer) { clearInterval(this._tourPollTimer); this._tourPollTimer = null; }
+            this._stopObservingDOM();
+            if (this._updatePositionTimer) { clearTimeout(this._updatePositionTimer); this._updatePositionTimer = null; }
             if (this.tutorialAtivo) { this.tutorialAtivo.progresso = this.stepIndex + 1; this.persist(); }
             this.tutorialAtivo = null;
             this.stepIndex = -1;
@@ -869,121 +1017,193 @@ function tourCenter() {
                 this.stepIndex++;
                 this.tutorialAtivo.progresso = this.stepIndex + 1;
                 this.persist();
-                this.$nextTick(() => { this.repositionTooltip(); this.piscarElementoAlvo(); });
+                this.$nextTick(() => { this._prepareStep(); });
             }
         },
         prevStep() {
             if (this.stepIndex > 0) {
                 this.stepIndex--;
-                this.$nextTick(() => { this.repositionTooltip(); this.piscarElementoAlvo(); });
+                this.$nextTick(() => { this._prepareStep(); });
             }
         },
-        piscarElementoAlvo() {
+
+        async _prepareStep() {
             const el = this.findTarget(this.currentStep ? this.currentStep.seletor : null);
-            if (el && typeof el.scrollIntoView === 'function') {
-                try {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-                } catch(e){}
-                try {
-                    const orig = el.style.boxShadow;
-                    el.style.boxShadow = '0 0 0 4px rgba(251,191,36,0.55), 0 0 30px 4px rgba(251,191,36,0.35)';
-                    setTimeout(() => { try { el.style.boxShadow = orig; } catch(e){} }, 1200);
-                } catch(e){}
-            }
+            this._applyHighlightPulse(el);
+            await this._scrollIntoViewIfNeeded(el);
+            await this._waitForStablePosition(el, 25);
+            this.updateTourPosition();
         },
+
+        _applyHighlightPulse(el) {
+            if (!el) return;
+            try {
+                const orig = el.style.boxShadow;
+                el.style.boxShadow = '0 0 0 4px rgba(251,191,36,0.55), 0 0 30px 4px rgba(251,191,36,0.35)';
+                setTimeout(() => { try { el.style.boxShadow = orig; } catch(e){} }, 1200);
+            } catch(e){}
+        },
+
         findTarget(sel) {
             if (!sel) return null;
             const selectors = sel.split(',').map(s => s.trim()).filter(Boolean);
+            const seen = new Set();
             for (const s of selectors) {
                 try {
                     const els = document.querySelectorAll(s);
                     for (const el of els) {
-                        if (!el) continue;
-                        // Preferir elementos VISÍVEIS / com tamanho não zero
-                        const cs = el.getClientRects();
-                        if (cs && cs.length > 0) return el;
-                        const r = el.getBoundingClientRect();
-                        if (r && r.width > 2 && r.height > 2) return el;
+                        if (!el || !el.isConnected || seen.has(el)) continue;
+                        seen.add(el);
+                        if (this._isElementVisible(el)) return el;
                     }
-                    // Fallback: retorna o primeiro mesmo que invisível
-                    const f = document.querySelector(s);
-                    if (f) return f;
                 } catch(e){}
             }
+            for (const s of selectors) {
+                try {
+                    const els = document.querySelectorAll(s);
+                    for (const el of els) {
+                        if (!el || !el.isConnected) continue;
+                        let cur = el;
+                        let depth = 0;
+                        while (cur && depth < 12) {
+                            if (cur.nodeType !== 1) { cur = cur.parentElement; depth++; continue; }
+                            if (this._isElementVisible(cur)) return cur;
+                            cur = cur.parentElement;
+                            depth++;
+                        }
+                    }
+                } catch(e){}
+            }
+            for (const s of selectors) {
+                try {
+                    const f = document.querySelector(s);
+                    if (f && f.isConnected) {
+                        const r = f.getBoundingClientRect();
+                        if (r.width > 2 || r.height > 2) return f;
+                    }
+                } catch(e){}
+            }
+            const titleSel = 'h1, .page-title, [data-page-title], .module-title, h2.font-black.text-slate-900, .dashboard-tabs > button';
+            try {
+                const t = document.querySelector(titleSel);
+                if (t && this._isElementVisible(t)) return t;
+            } catch(e){}
             return null;
         },
-        repositionTooltip() {
+
+        updateTourPosition() {
             if (this.stepIndex < 0 || !this.tutorialAtivo || !this.currentStep) {
                 this.tooltipStyle = 'opacity:0;visibility:hidden;';
+                const hl = document.getElementById('tour-highlight');
+                if (hl) hl.style.cssText = '';
                 return;
             }
-            clearTimeout(this._updateTooltipTimer);
-            this._updateTooltipTimer = setTimeout(() => {
-                const hl = document.getElementById('tour-highlight');
-                const el = this.findTarget(this.currentStep.seletor);
-                let rect;
-                if (el) {
-                    const r = el.getBoundingClientRect();
-                    // Padding maior para enquadrar BOTÕES (em vez de 8 agora é 14px)
-                    const pad = 14;
-                    rect = {
-                        top: Math.max(4, r.top - pad),
-                        left: Math.max(4, r.left - pad),
-                        width: r.width + pad * 2,
-                        height: r.height + pad * 2
-                    };
-                } else if (this.currentStep.fallback) {
-                    const fb = this.currentStep.fallback;
-                    const w = 260, h = 96;
-                    const parseV = (v, max) => typeof v === 'string' && v.includes('%') ? (max * parseFloat(v) / 100) : (typeof v === 'number' ? v : max/2);
-                    rect = {
-                        width: w,
-                        height: h,
-                        top: Math.max(16, parseV(fb.y, window.innerHeight) - h/2),
-                        left: Math.max(16, parseV(fb.x, window.innerWidth) - w/2)
-                    };
-                } else {
-                    rect = {
-                        top: Math.max(20, window.innerHeight/2 - 70),
-                        left: Math.max(20, window.innerWidth/2 - 140),
-                        width: 280,
-                        height: 140
-                    };
-                }
-                if (hl) hl.style.cssText = `top:${rect.top}px;left:${rect.left}px;width:${rect.width}px;height:${rect.height}px;`;
+            this._remeasureCount = 0;
+            if (this._isScrolling) return;
+            if (this._updatePositionTimer) { clearTimeout(this._updatePositionTimer); }
+            this._updatePositionTimer = setTimeout(() => { this._doUpdateTourPosition(); }, 0);
+        },
 
-                const isMobile = window.innerWidth < 640;
-                const TOOLTIP_W = isMobile ? Math.min(window.innerWidth - 20, 420) : Math.min(window.innerWidth - 32, 400);
-                const TOOLTIP_H = isMobile ? 420 : 360;
-                let top, left;
-                const pos = this.currentStep.posicao || 'auto';
-                const margin = 14;
+        _doUpdateTourPosition() {
+            const hl = document.getElementById('tour-highlight');
+            const el = this.findTarget(this.currentStep.seletor);
+            let rect;
+            if (el) {
+                const r = el.getBoundingClientRect();
+                const pad = 8;
+                rect = {
+                    top: r.top - pad,
+                    left: r.left - pad,
+                    width: r.width + pad * 2,
+                    height: r.height + pad * 2
+                };
+            } else if (this.currentStep.fallback) {
+                const fb = this.currentStep.fallback;
+                const w = 260, h = 96;
+                const parseV = (v, max) => typeof v === 'string' && v.includes('%') ? (max * parseFloat(v) / 100) : (typeof v === 'number' ? v : max/2);
+                rect = {
+                    width: w,
+                    height: h,
+                    top: Math.max(16, parseV(fb.y, window.innerHeight) - h/2),
+                    left: Math.max(16, parseV(fb.x, window.innerWidth) - w/2)
+                };
+            } else {
+                rect = {
+                    top: Math.max(20, window.innerHeight/2 - 70),
+                    left: Math.max(20, window.innerWidth/2 - 140),
+                    width: 280,
+                    height: 140
+                };
+            }
+            if (hl) hl.style.cssText = `top:${rect.top}px;left:${rect.left}px;width:${rect.width}px;height:${rect.height}px;`;
 
-                const fitsBelow = (window.innerHeight - (rect.top + rect.height)) > TOOLTIP_H + margin + 40;
-                const fitsAbove = rect.top > TOOLTIP_H + margin + 40;
-
-                if (pos === 'top' || (pos === 'auto' && !fitsBelow && fitsAbove)) {
-                    top = rect.top - TOOLTIP_H - margin;
-                    left = isMobile ? (window.innerWidth - TOOLTIP_W) / 2 : Math.max(16, Math.min(window.innerWidth - TOOLTIP_W - 16, rect.left + rect.width/2 - TOOLTIP_W/2));
-                } else if (pos === 'left') {
-                    left = rect.left - TOOLTIP_W - margin;
-                    if (left < 16 || isMobile) { left = Math.max(16, rect.left + rect.width + margin); if (left + TOOLTIP_W > window.innerWidth - 16) left = (window.innerWidth - TOOLTIP_W)/2; }
-                    top = Math.max(16, Math.min(window.innerHeight - TOOLTIP_H - 16, rect.top + rect.height/2 - TOOLTIP_H/2));
-                } else if (pos === 'right' && !isMobile) {
-                    left = rect.left + rect.width + margin;
-                    if (left + TOOLTIP_W > window.innerWidth - 16) {
-                        left = Math.max(16, rect.left - TOOLTIP_W - margin);
+            const isMobile = window.innerWidth < 640;
+            const vh = window.innerHeight;
+            const vw = window.innerWidth;
+            const TOOLTIP_W = isMobile ? Math.min(vw - 20, 420) : Math.min(vw - 32, 400);
+            let TOOLTIP_H_EST = isMobile ? 620 : 500;
+            if (isMobile && vh < 700) TOOLTIP_H_EST = Math.min(TOOLTIP_H_EST, Math.floor(vh * 0.92));
+            if (!isMobile && vh < 700) TOOLTIP_H_EST = Math.min(TOOLTIP_H_EST, Math.floor(vh * 0.88));
+            let TOOLTIP_H = TOOLTIP_H_EST;
+            const tooltipEl = document.getElementById('tour-tooltip');
+            if (tooltipEl && tooltipEl.isConnected) {
+                try {
+                    const ttRect = tooltipEl.getBoundingClientRect();
+                    if (ttRect.height > 150) {
+                        const scrollH = tooltipEl.scrollHeight || 0;
+                        TOOLTIP_H = Math.max(ttRect.height, scrollH) + 12;
                     }
-                    top = Math.max(16, Math.min(window.innerHeight - TOOLTIP_H - 16, rect.top + rect.height/2 - TOOLTIP_H/2));
-                } else {
-                    top = rect.top + rect.height + margin;
-                    if (top + TOOLTIP_H > window.innerHeight - 16) {
-                        top = Math.max(16, window.innerHeight - TOOLTIP_H - 32);
-                    }
-                    left = isMobile ? (window.innerWidth - TOOLTIP_W) / 2 : Math.max(16, Math.min(window.innerWidth - TOOLTIP_W - 16, rect.left + rect.width/2 - TOOLTIP_W/2));
+                } catch(e){}
+            }
+            const SAFE_BOTTOM = isMobile ? Math.max(28, 16 + (window.innerHeight - document.documentElement.clientHeight) + 12) : 24;
+            let top, left;
+            const pos = this.currentStep.posicao || 'auto';
+            const margin = 12;
+
+            const fitsBelow = (vh - (rect.top + rect.height)) > TOOLTIP_H + margin + SAFE_BOTTOM;
+            const fitsAbove = rect.top > TOOLTIP_H + margin + SAFE_BOTTOM + 24;
+
+            if (pos === 'top' || (pos === 'auto' && !fitsBelow && fitsAbove)) {
+                top = rect.top - TOOLTIP_H - margin;
+                left = isMobile ? (vw - TOOLTIP_W) / 2 : Math.max(16, Math.min(vw - TOOLTIP_W - 16, rect.left + rect.width/2 - TOOLTIP_W/2));
+            } else if (pos === 'left') {
+                left = rect.left - TOOLTIP_W - margin;
+                if (left < 16 || isMobile) {
+                    left = Math.max(16, rect.left + rect.width + margin);
+                    if (left + TOOLTIP_W > vw - 16) left = (vw - TOOLTIP_W)/2;
                 }
-                this.tooltipStyle = `top:${Math.round(top)}px;left:${Math.round(left)}px;width:${Math.round(TOOLTIP_W)}px;`;
-            }, 90);
+                top = Math.max(16, Math.min(vh - TOOLTIP_H - SAFE_BOTTOM, rect.top + rect.height/2 - TOOLTIP_H/2));
+            } else if (pos === 'right' && !isMobile) {
+                left = rect.left + rect.width + margin;
+                if (left + TOOLTIP_W > vw - 16) {
+                    left = Math.max(16, rect.left - TOOLTIP_W - margin);
+                }
+                top = Math.max(16, Math.min(vh - TOOLTIP_H - SAFE_BOTTOM, rect.top + rect.height/2 - TOOLTIP_H/2));
+            } else {
+                top = rect.top + rect.height + margin;
+                const topFloor = 16;
+                const topCeil = vh - TOOLTIP_H - SAFE_BOTTOM;
+                if (top > topCeil) {
+                    top = topCeil;
+                }
+                if (top < topFloor) top = topFloor;
+                if (topCeil < topFloor) {
+                    top = 8;
+                }
+                left = isMobile ? (vw - TOOLTIP_W) / 2 : Math.max(16, Math.min(vw - TOOLTIP_W - 16, rect.left + rect.width/2 - TOOLTIP_W/2));
+            }
+            this.tooltipStyle = `top:${Math.round(top)}px;left:${Math.round(left)}px;width:${Math.round(TOOLTIP_W)}px;max-width:${Math.round(TOOLTIP_W)}px;`;
+            if (typeof this._remeasureCount === 'undefined') this._remeasureCount = 0;
+            if (this._remeasureCount < 2) {
+                this._remeasureCount++;
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        if (this.stepIndex >= 0) this._doUpdateTourPosition();
+                    });
+                });
+            } else {
+                this._remeasureCount = 0;
+            }
         }
     };
 }

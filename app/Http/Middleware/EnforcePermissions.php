@@ -214,26 +214,27 @@ class EnforcePermissions
             }
 
             if (! $permitido) {
-                $msg = sprintf(
-                    'Acesso negado. Perfil "%s" não tem permissão para %s "%s" (%s). Contate o administrador.',
-                    $perfil,
-                    $escrita ? 'executar ação de escrita em' : 'visualizar',
-                    $chavePai,
-                    $path
-                );
+                $msgUsuario = 'Usuário não tem acesso nessa rotina.';
 
                 if ($request->expectsJson() || str_starts_with($path, '/api/')) {
                     return response()->json([
                         'success' => false,
-                        'message' => $msg,
-                        'codigo' => 403,
-                        'perfil' => $perfil,
-                        'chave'  => $chaveParaValidar,
+                        'message' => $msgUsuario,
+                        'codigo'  => 403,
+                        'perfil'  => $perfil,
+                        'chave'   => $chaveParaValidar,
                         'escrita' => $escrita,
                     ], 403);
                 }
 
-                abort(403, $msg);
+                $redirect = redirect();
+                if ($request->headers->has('Referer') && (string) $request->headers->get('Referer') !== '') {
+                    $redirect = $redirect->back();
+                } else {
+                    $redirect = $redirect->to(route('dashboard', [], false));
+                }
+
+                return $redirect->with('error', $msgUsuario);
             }
 
             return $next($request);

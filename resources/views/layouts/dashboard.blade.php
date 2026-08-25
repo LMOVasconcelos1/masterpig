@@ -125,19 +125,6 @@
         </div>
         <!-- Top Navigation -->
         <header class="bg-amber-800 border-b border-amber-700 shadow-lg z-20">
-            <div class="px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between h-16">
-                    <!-- Logo and Brand -->
-                    <div class="flex items-center space-x-4">
-                        <i class="fa-solid fa-piggy-bank text-2xl text-white"></i>
-                        <div class="hidden sm:block">
-                            <span class="text-xl font-bold tracking-wider uppercase text-white">{{ \App\Models\Configuracao::getGranjaAtual() }}</span>
-                            <span class="text-xs text-amber-200 block">Sui Control</span>
-                        </div>
-                    </div>
-
-                    <!-- Navigation Menu -->
-                    <nav class="hidden lg:flex items-center space-x-1">
 @php
     $__menuUser = Auth::user();
     $__menuIsAdmin = $__menuUser && (string) $__menuUser->perfil === \App\Services\PermissaoService::PERFIL_ADMIN;
@@ -159,12 +146,62 @@
     $__menuCanMetas        = $__menuIsAdmin || $__can('sistema.metas');
     $__menuCanAjustes      = $__can('sistema.ajustes_gerais');
     $__menuCanAnalises     = $__can('analises');
-    $__menuShowManejos     = $__menuCanPlantel || $__menuCanGestacao || $__menuCanMaternidade || $__menuCanProducao || $__menuCanAnalises;
-    $__menuShowCadastros   = $__menuCanCadastros || $__menuIsAdmin;
-    $__menuShowUtilitarios = $__menuCanUsuarios || $__menuCanMetas || $__menuCanAjustes || $__menuIsAdmin;
+
+    $__rbacMsg = 'Usuário não tem acesso nessa rotina.';
+    $__onclickBloq = ' onclick="(typeof window.toast===\'function\'?window.toast(\''.e(str_replace("'", "\\'", $__rbacMsg)).'\',\'warning\'):alert(\''.e(str_replace("'", "\\'", $__rbacMsg)).'\'));event.preventDefault();event.stopPropagation();return false;"';
+    $__classeBloq = ' opacity-60 grayscale cursor-not-allowed !bg-slate-50/60 hover:!bg-slate-100 !text-slate-600 border-l-4 border-amber-400/60';
+    $__classeBloqMobile = ' opacity-60 grayscale cursor-not-allowed !bg-slate-800/40 hover:!bg-slate-700/40 !text-slate-300 border-l-4 border-amber-400/60';
+
+    $__a = static function (bool $pode, string $href, string $classBase, bool $requestAtivo = false) use ($__onclickBloq, $__classeBloq): string {
+        $attrs = 'href="'.$href.'"';
+        if (! $pode) {
+            $attrs .= $__onclickBloq;
+        }
+        $classe = $classBase;
+        if (! $pode) {
+            $classe .= $__classeBloq;
+        } elseif ($requestAtivo) {
+            $classe .= ' bg-amber-50 text-amber-900 font-semibold';
+        }
+        $attrs .= ' class="'.$classe.'"';
+        return $attrs;
+    };
+
+    $__m = static function (bool $pode, string $href, string $classBase, bool $requestAtivo = false) use ($__rbacMsg): string {
+        $attrs = 'href="'.$href.'"';
+        if (! $pode) {
+            $js = '(typeof window.toast===\'function\'?window.toast(\''.e(str_replace("'", "\\'", $__rbacMsg)).'\',\'warning\'):alert(\''.e(str_replace("'", "\\'", $__rbacMsg)).'\'));event.preventDefault();event.stopPropagation();return false;';
+            $attrs .= ' onclick="'.$js.'"';
+        }
+        $classe = $classBase;
+        if (! $pode) {
+            $classe .= ' opacity-60 grayscale cursor-not-allowed !bg-slate-800/40 hover:!bg-slate-700/40 !text-slate-300 border-l-4 border-amber-400/60';
+        } elseif ($requestAtivo) {
+            $classe .= ' bg-amber-700 font-semibold';
+        }
+        $attrs .= ' class="'.$classe.'"';
+        if (! $pode) {
+            $attrs .= ' @click.stop.prevent=""';
+        } else {
+            $attrs .= ' @click="mobileMenuOpen = false"';
+        }
+        return $attrs;
+    };
 @endphp
+            <div class="px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <!-- Logo and Brand -->
+                    <div class="flex items-center space-x-4">
+                        <i class="fa-solid fa-piggy-bank text-2xl text-white"></i>
+                        <div class="hidden sm:block">
+                            <span class="text-xl font-bold tracking-wider uppercase text-white">{{ \App\Models\Configuracao::getGranjaAtual() }}</span>
+                            <span class="text-xs text-amber-200 block">Sui Control</span>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Menu -->
+                    <nav class="hidden lg:flex items-center space-x-1">
                         <!-- Manejos Dropdown -->
-                        @if($__menuShowManejos)
                         <div x-data="{ open: false }" class="relative">
                             <button @click="open = !open" class="flex items-center px-4 py-2 text-sm font-medium text-amber-100 hover:bg-amber-700 hover:text-white rounded-lg transition-colors">
                                 <i class="fa-solid fa-leaf mr-2"></i>
@@ -172,37 +209,27 @@
                                 <i class="fa-solid fa-chevron-down ml-2 text-xs"></i>
                             </button>
                             <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-amber-200">
-                                @if($__menuCanPlantel)
-                                <a href="{{ route('dashboard', [], false) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 {{ request()->routeIs('dashboard') ? 'bg-amber-50 text-amber-900 font-semibold' : '' }}">
+                                <a {!! $__a($__menuCanPlantel, route('dashboard', [], false), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->routeIs('dashboard')) !!}>
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Plantel Reprodutivo
                                 </a>
-                                @endif
-                                @if($__menuCanGestacao)
-                                <a href="{{ url('/gestacao') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 {{ request()->routeIs('gestacao') ? 'bg-amber-50 text-amber-900 font-semibold' : '' }}">
+                                <a {!! $__a($__menuCanGestacao, url('/gestacao'), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->routeIs('gestacao')) !!}>
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Gestação
                                 </a>
-                                @endif
-                                @if($__menuCanMaternidade)
-                                <a href="{{ route('maternidade', [], false) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 {{ request()->routeIs('maternidade') ? 'bg-amber-50 text-amber-900 font-semibold' : '' }}">
+                                <a {!! $__a($__menuCanMaternidade, route('maternidade', [], false), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->routeIs('maternidade')) !!}>
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Maternidade
                                 </a>
-                                @endif
-                                @if($__menuCanProducao)
-                                <a href="{{ url('/creche') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 {{ request()->routeIs('creche') ? 'bg-amber-50 text-amber-900 font-semibold' : '' }}">
+                                <a {!! $__a($__menuCanProducao, url('/creche'), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->routeIs('creche')) !!}>
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Creche
                                 </a>
-                                <a href="{{ url('/terminacao') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 {{ request()->routeIs('terminacao') ? 'bg-amber-50 text-amber-900 font-semibold' : '' }}">
+                                <a {!! $__a($__menuCanProducao, url('/terminacao'), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->routeIs('terminacao')) !!}>
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Terminação
                                 </a>
-                                @endif
-                                @if(($__menuCanPlantel || $__menuCanProducao || $__menuCanAnalises) && ($__menuCanPlantel || $__menuCanGestacao || $__menuCanMaternidade || $__menuCanProducao))
                                 <div class="my-1 border-t border-amber-100"></div>
-                                @endif
                                 <button type="button"
                                         onclick="(typeof window.toast==='function'?window.toast('🚧 Tour Center (Tutoriais) está em desenvolvimento e será liberado em breve!','info'):alert('Tour Center (Tutoriais) está em desenvolvimento.\nAguarde a próxima versão!'));event&&event.stopPropagation();"
                                         @click.stop.prevent="open=false"
@@ -219,10 +246,8 @@
                                 </button>
                             </div>
                         </div>
-                        @endif
 
                         <!-- Cadastros Dropdown -->
-                        @if($__menuShowCadastros)
                         <div x-data="{ open: false }" class="relative">
                             <button @click="open = !open" class="flex items-center px-4 py-2 text-sm font-medium text-amber-100 hover:bg-amber-700 hover:text-white rounded-lg transition-colors">
                                 <i class="fa-solid fa-folder-open mr-2"></i>
@@ -230,30 +255,26 @@
                                 <i class="fa-solid fa-chevron-down ml-2 text-xs"></i>
                             </button>
                             <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-amber-200">
-                                @if($__menuCanCadastros)
-                                <a href="{{ route('admin.causas.index', [], false) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 {{ request()->routeIs('admin.causas.index') ? 'bg-amber-50 text-amber-900 font-semibold' : '' }}">
+                                <a {!! $__a($__menuCanCadastros, route('admin.causas.index', [], false), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->routeIs('admin.causas.index')) !!}>
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Causas
                                 </a>
-                                <a href="{{ route('admin.racoes.index', [], false) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 {{ request()->routeIs('admin.racoes.index') ? 'bg-amber-50 text-amber-900 font-semibold' : '' }}">
+                                <a {!! $__a($__menuCanCadastros, route('admin.racoes.index', [], false), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->routeIs('admin.racoes.index')) !!}>
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Rações
                                 </a>
-                                <a href="{{ url('/admin/fornecedores') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 {{ request()->is('admin/fornecedores*') ? 'bg-amber-50 text-amber-900 font-semibold' : '' }}">
+                                <a {!! $__a($__menuCanCadastros, url('/admin/fornecedores'), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->is('admin/fornecedores*')) !!}>
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Fornecedor
                                 </a>
-                                <a href="{{ url('/admin/clientes') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 {{ request()->is('admin/clientes*') ? 'bg-amber-50 text-amber-900 font-semibold' : '' }}">
+                                <a {!! $__a($__menuCanCadastros, url('/admin/clientes'), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->is('admin/clientes*')) !!}>
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Cliente
                                 </a>
-                                @endif
                             </div>
                         </div>
-                        @endif
 
                         <!-- Utilitários Dropdown -->
-                        @if($__menuShowUtilitarios)
                         <div x-data="{ open: false }" class="relative">
                             <button @click="open = !open" class="flex items-center px-4 py-2 text-sm font-medium text-amber-100 hover:bg-amber-700 hover:text-white rounded-lg transition-colors">
                                 <i class="fa-solid fa-screwdriver-wrench mr-2"></i>
@@ -261,39 +282,28 @@
                                 <i class="fa-solid fa-chevron-down ml-2 text-xs"></i>
                             </button>
                             <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-amber-200">
-                                @if($__menuCanUsuarios)
-                                <a href="{{ route('admin.usuarios.index', [], false) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 {{ request()->routeIs('admin.usuarios.index') ? 'bg-amber-50 text-amber-900 font-semibold' : '' }}">
+                                <a {!! $__a($__menuCanUsuarios, route('admin.usuarios.index', [], false), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->routeIs('admin.usuarios.index')) !!}>
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Usuários
                                 </a>
-                                @endif
-                                @if($__menuCanMetas)
-                                <a href="{{ route('admin.metas.index', [], false) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 {{ (request()->routeIs('admin.metas.index') || request()->is('admin/criterios*')) ? 'bg-amber-50 text-amber-900 font-semibold' : '' }}">
+                                <a {!! $__a($__menuCanMetas, route('admin.metas.index', [], false), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', (request()->routeIs('admin.metas.index') || request()->is('admin/criterios*'))) !!}>
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Metas e Critérios
                                 </a>
-                                @endif
-                                @if($__menuCanMetas || $__menuCanAjustes)
-                                <a href="{{ url('/admin/criterios/logs') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 {{ request()->is('admin/criterios/logs*') ? 'bg-amber-50 text-amber-900 font-semibold' : '' }}">
+                                <a {!! $__a(($__menuCanMetas || $__menuCanAjustes), url('/admin/criterios/logs'), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->is('admin/criterios/logs*')) !!}>
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Logs de critérios
                                 </a>
-                                @endif
-                                @if($__menuIsAdmin && $__menuCanAjustes)
-                                <a href="{{ route('admin.zerar.index', [], false) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 {{ request()->routeIs('admin.zerar.index') ? 'bg-amber-50 text-amber-900 font-semibold' : '' }}">
+                                <a {!! $__a(($__menuIsAdmin && $__menuCanAjustes), route('admin.zerar.index', [], false), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->routeIs('admin.zerar.index')) !!}>
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Começar do zero
                                 </a>
-                                @endif
-                                @if($__menuCanAjustes)
-                                <a href="{{ url('/admin/alteracoes') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900 {{ request()->is('admin/alteracoes*') ? 'bg-amber-50 text-amber-900 font-semibold' : '' }}">
+                                <a {!! $__a($__menuCanAjustes, url('/admin/alteracoes'), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->is('admin/alteracoes*')) !!}>
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Atualizações do sistema
                                 </a>
-                                @endif
                             </div>
                         </div>
-                        @endif
                     </nav>
 
                     <!-- Right side items -->
@@ -405,37 +415,28 @@
                 </div>
 
                 <div class="flex-1 px-3 py-4 space-y-2 overflow-y-auto">
-                    @if($__menuShowManejos)
                     <div class="space-y-1">
                         <div class="px-3 py-2 text-xs font-semibold text-amber-200 uppercase tracking-wider">Manejos</div>
-                        @if($__menuCanPlantel)
-                        <a href="{{ route('dashboard', [], false) }}" class="flex items-center px-4 py-3 text-white hover:bg-amber-700 {{ request()->routeIs('dashboard') ? 'bg-amber-700 font-semibold' : '' }}" @click="mobileMenuOpen = false">
+                        <a {!! $__m($__menuCanPlantel, route('dashboard', [], false), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->routeIs('dashboard')) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Plantel Reprodutivo
                         </a>
-                        @endif
-                        @if($__menuCanGestacao)
-                        <a href="{{ url('/gestacao') }}" class="flex items-center px-4 py-3 text-white hover:bg-amber-700 {{ request()->routeIs('gestacao') ? 'bg-amber-700 font-semibold' : '' }}" @click="mobileMenuOpen = false">
+                        <a {!! $__m($__menuCanGestacao, url('/gestacao'), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->routeIs('gestacao')) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Gestação
                         </a>
-                        @endif
-                        @if($__menuCanMaternidade)
-                        <a href="{{ route('maternidade', [], false) }}" class="flex items-center px-4 py-3 text-white hover:bg-amber-700 {{ request()->routeIs('maternidade') ? 'bg-amber-700 font-semibold' : '' }}" @click="mobileMenuOpen = false">
+                        <a {!! $__m($__menuCanMaternidade, route('maternidade', [], false), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->routeIs('maternidade')) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Maternidade
                         </a>
-                        @endif
-                        @if($__menuCanProducao)
-                        <a href="{{ url('/creche') }}" class="flex items-center px-4 py-3 text-white hover:bg-amber-700 {{ request()->routeIs('creche') ? 'bg-amber-700 font-semibold' : '' }}" @click="mobileMenuOpen = false">
+                        <a {!! $__m($__menuCanProducao, url('/creche'), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->routeIs('creche')) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Creche
                         </a>
-                        <a href="{{ url('/terminacao') }}" class="flex items-center px-4 py-3 text-white hover:bg-amber-700 {{ request()->routeIs('terminacao') ? 'bg-amber-700 font-semibold' : '' }}" @click="mobileMenuOpen = false">
+                        <a {!! $__m($__menuCanProducao, url('/terminacao'), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->routeIs('terminacao')) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Terminação
                         </a>
-                        @endif
                         <button type="button"
                                 onclick="(typeof window.toast==='function'?window.toast('🚧 Tour Center (Tutoriais) está em desenvolvimento e será liberado em breve!','info'):alert('Tour Center (Tutoriais) está em desenvolvimento.\nAguarde a próxima versão!'));event&&event.stopPropagation();"
                                 @click.stop.prevent="mobileMenuOpen = false"
@@ -449,73 +450,54 @@
                             </span>
                         </button>
                     </div>
-                    @endif
 
-                    @if($__menuShowCadastros)
                     <div class="space-y-1">
                         <div class="px-3 py-2 text-xs font-semibold text-amber-200 uppercase tracking-wider">Cadastros</div>
-                        @if($__menuCanPlantel)
-                        <a href="{{ route('admin.plantel.femeas.index', [], false) }}" class="flex items-center px-4 py-3 text-white hover:bg-amber-700 {{ (request()->routeIs('admin.plantel.femeas.index') || request()->routeIs('admin.plantel.femeas.show')) ? 'bg-amber-700 font-semibold' : '' }}" @click="mobileMenuOpen = false">
+                        <a {!! $__m($__menuCanPlantel, route('admin.plantel.femeas.index', [], false), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', (request()->routeIs('admin.plantel.femeas.index') || request()->routeIs('admin.plantel.femeas.show'))) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Fêmeas (cadastro)
                         </a>
-                        @endif
-                        @if($__menuCanCadastros)
-                        <a href="{{ route('admin.causas.index', [], false) }}" class="flex items-center px-4 py-3 text-white hover:bg-amber-700 {{ request()->routeIs('admin.causas.index') ? 'bg-amber-700 font-semibold' : '' }}" @click="mobileMenuOpen = false">
+                        <a {!! $__m($__menuCanCadastros, route('admin.causas.index', [], false), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->routeIs('admin.causas.index')) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Causas
                         </a>
-                        <a href="{{ route('admin.racoes.index', [], false) }}" class="flex items-center px-4 py-3 text-white hover:bg-amber-700 {{ request()->routeIs('admin.racoes.index') ? 'bg-amber-700 font-semibold' : '' }}" @click="mobileMenuOpen = false">
+                        <a {!! $__m($__menuCanCadastros, route('admin.racoes.index', [], false), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->routeIs('admin.racoes.index')) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Rações
                         </a>
-                        <a href="{{ url('/admin/fornecedores') }}" class="flex items-center px-4 py-3 text-white hover:bg-amber-700 {{ request()->is('admin/fornecedores*') ? 'bg-amber-700 font-semibold' : '' }}" @click="mobileMenuOpen = false">
+                        <a {!! $__m($__menuCanCadastros, url('/admin/fornecedores'), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->is('admin/fornecedores*')) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Fornecedor
                         </a>
-                        <a href="{{ url('/admin/clientes') }}" class="flex items-center px-4 py-3 text-white hover:bg-amber-700 {{ request()->is('admin/clientes*') ? 'bg-amber-700 font-semibold' : '' }}" @click="mobileMenuOpen = false">
+                        <a {!! $__m($__menuCanCadastros, url('/admin/clientes'), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->is('admin/clientes*')) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Cliente
                         </a>
-                        @endif
                     </div>
-                    @endif
 
-                    @if($__menuShowUtilitarios)
                     <div class="space-y-1">
                         <div class="px-3 py-2 text-xs font-semibold text-amber-200 uppercase tracking-wider">Utilitários</div>
-                        @if($__menuCanUsuarios)
-                        <a href="{{ route('admin.usuarios.index', [], false) }}" class="flex items-center px-4 py-3 text-white hover:bg-amber-700 {{ request()->routeIs('admin.usuarios.index') ? 'bg-amber-700 font-semibold' : '' }}" @click="mobileMenuOpen = false">
+                        <a {!! $__m($__menuCanUsuarios, route('admin.usuarios.index', [], false), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->routeIs('admin.usuarios.index')) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Usuários
                         </a>
-                        @endif
-                        @if($__menuCanMetas)
-                        <a href="{{ route('admin.metas.index', [], false) }}" class="flex items-center px-4 py-3 text-white hover:bg-amber-700 {{ (request()->routeIs('admin.metas.index') || request()->is('admin/criterios*')) ? 'bg-amber-700 font-semibold' : '' }}" @click="mobileMenuOpen = false">
+                        <a {!! $__m($__menuCanMetas, route('admin.metas.index', [], false), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', (request()->routeIs('admin.metas.index') || request()->is('admin/criterios*'))) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Metas e Critérios
                         </a>
-                        @endif
-                        @if($__menuCanMetas || $__menuCanAjustes)
-                        <a href="{{ url('/admin/criterios/logs') }}" class="flex items-center px-4 py-3 text-white hover:bg-amber-700 {{ request()->is('admin/criterios/logs*') ? 'bg-amber-700 font-semibold' : '' }}" @click="mobileMenuOpen = false">
+                        <a {!! $__m(($__menuCanMetas || $__menuCanAjustes), url('/admin/criterios/logs'), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->is('admin/criterios/logs*')) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Logs de critérios
                         </a>
-                        @endif
-                        @if($__menuIsAdmin && $__menuCanAjustes)
-                        <a href="{{ route('admin.zerar.index', [], false) }}" class="flex items-center px-4 py-3 text-white hover:bg-amber-700 {{ request()->routeIs('admin.zerar.index') ? 'bg-amber-700 font-semibold' : '' }}" @click="mobileMenuOpen = false">
+                        <a {!! $__m(($__menuIsAdmin && $__menuCanAjustes), route('admin.zerar.index', [], false), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->routeIs('admin.zerar.index')) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Começar do zero
                         </a>
-                        @endif
-                        @if($__menuCanAjustes)
-                        <a href="{{ url('/admin/alteracoes') }}" class="flex items-center px-4 py-3 text-white hover:bg-amber-700 {{ request()->is('admin/alteracoes*') ? 'bg-amber-700 font-semibold' : '' }}" @click="mobileMenuOpen = false">
+                        <a {!! $__m($__menuCanAjustes, url('/admin/alteracoes'), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->is('admin/alteracoes*')) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Atualizações do sistema
                         </a>
-                        @endif
                     </div>
-                    @endif
 
                 </div>
             </div>
