@@ -11,6 +11,16 @@ use Illuminate\Support\Facades\Schema;
 
 class PlantelRelatorioController extends Controller
 {
+    public function femeasFilter()
+    {
+        return view('admin.plantel.relatorios.femeas-filter');
+    }
+
+    public function machosFilter()
+    {
+        return view('admin.plantel.relatorios.machos-filter');
+    }
+
     public function femeas(Request $request)
     {
         $data_emissao = Carbon::now()->format('d/m/Y H:i');

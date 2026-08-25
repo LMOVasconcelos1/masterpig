@@ -39,7 +39,7 @@ class CriteriosController extends Controller
             'criterio_dias_lactacao_max' => '28',
             'criterio_dias_intervalo_desmame_cio' => '5',
             'criterio_leitoa_idade_min_dias' => '150',
-            'criterio_leitoa_idade_max_dias' => '150',
+            'criterio_leitoa_idade_max_dias' => '210',
             'criterio_maturidade_idade_min_dias' => '151',
             'criterio_maturidade_idade_max_dias' => '220',
             'criterio_calendario_tipo' => 'gregoriano',

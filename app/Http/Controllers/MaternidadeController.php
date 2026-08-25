@@ -165,8 +165,11 @@ class MaternidadeController extends Controller
         }
 
         $morteCausas = [];
-        if (Schema::hasTable('maternidade_morte_leitao_causas')) {
-            $morteCausas = DB::table('maternidade_morte_leitao_causas')->orderBy('nome')->get();
+        if (Schema::hasTable('causa')) {
+            $morteCausas = DB::table('causa')
+                ->where('situacao', 1)
+                ->orderBy('nome')
+                ->get(['id', 'nome']);
         }
 
         $mortesLeitaoRegistradas = [];

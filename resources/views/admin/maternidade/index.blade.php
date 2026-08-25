@@ -44,7 +44,7 @@
         disponiveis: 0,
         dataIso: '{{ date('Y-m-d') }}',
         data: '',
-        nova_causa_nome: ''
+        causa_id: ''
     },
     desmameForm: {
         femea_id: '',
@@ -433,22 +433,6 @@
         if (!Number.isFinite(q) || !Number.isFinite(pm)) return 0;
         return q * pm;
     },
-
-    async adicionarCausa() {
-        if(!this.morteForm.nova_causa_nome) return;
-        try {
-            const res = await fetch('{{ route('maternidade.causas.store') }}', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                body: JSON.stringify({ nome: this.morteForm.nova_causa_nome })
-            });
-            const data = await res.json();
-            this.morteCausas.push(data);
-            this.morteForm.causa_id = data.id;
-            this.morteForm.nova_causa_nome = '';
-            alert('Causa cadastrada com sucesso!');
-        } catch(e) { console.error(e); }
-    }
 }" x-init="init()">
     <!-- Header & Topbar -->
     <div>
@@ -907,16 +891,12 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Causa da Morte</label>
-                        <div class="flex gap-2">
-                            <select name="causa_id" x-model="morteForm.causa_id" class="flex-1 rounded-lg border-gray-300 text-sm">
-                                <option value="">Selecione uma causa</option>
-                                <template x-for="c in morteCausas" :key="c.id">
-                                    <option :value="c.id" x-text="c.nome"></option>
-                                </template>
-                            </select>
-                            <input type="text" x-model="morteForm.nova_causa_nome" placeholder="Nova causa..." class="w-32 rounded-lg border-gray-300 text-sm">
-                            <button type="button" @click="adicionarCausa()" class="p-2 bg-gray-100 rounded-lg hover:bg-gray-200"><i class="fa-solid fa-plus"></i></button>
-                        </div>
+                        <select name="causa_id" x-model="morteForm.causa_id" class="w-full rounded-lg border-gray-300 text-sm">
+                            <option value="">Selecione uma causa</option>
+                            <template x-for="c in morteCausas" :key="c.id">
+                                <option :value="c.id" x-text="c.nome"></option>
+                            </template>
+                        </select>
                     </div>
 
                     <div class="mt-6 flex justify-end gap-3">

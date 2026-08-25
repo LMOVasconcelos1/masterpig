@@ -82,11 +82,12 @@ class DashboardController extends Controller
 
         $durations = PigCycleService::getCycleDurations();
         $cfg = [
-            'dias_ate_cio' => $this->metaInt('criterio_cio_intervalo_min', 21), // Reutilizando intervalo mínimo como base de aviso
-            'cio_dias' => 5, // Janela padrão
+            'dias_ate_cio' => $this->metaInt('criterio_cio_intervalo_min', 21),
+            'cio_dias' => $this->metaInt('criterio_janela_cio', 5),
             'gestacao_dias' => $durations['gestacao'],
             'lactacao_min_dias' => $durations['lactacao'],
             'intervalo_desmame_cio_dias' => $durations['intervalo'],
+            'preparto_alerta_dias' => $this->metaInt('criterio_preparto_alerta_dias', 5),
             'maturidade_min_dias' => $this->metaInt('meta_selecao_idade_selecao', 150),
             'matriz_vazia_max' => $this->metaInt('criterio_matriz_vazia_max_dias', 250),
             'macho_parado_max' => $this->metaInt('criterio_inconsistencia_macho_parado_max', 60),
@@ -216,14 +217,14 @@ class DashboardController extends Controller
                 }
             }
 
-            // Cio Previsto (Só alerta se houver registro de cio anterior e tiver passado 21 dias)
+            // Cio Previsto (Só alerta se houver registro de cio anterior e tiver passado o mínimo definido nas metas)
             $prevCio = null;
             if ($lastCob) {
                 $prevCio = (clone $lastCob)->addDays($cfg['gestacao_dias'] + $cfg['lactacao_min_dias'] + $cfg['intervalo_desmame_cio_dias']);
             } elseif ($lastCio) {
-                // Só calcula cio previsto se houver registro de cio anterior E tiver passado 21 dias
+                // Só calcula cio previsto se houver registro de cio anterior E tiver passado o mínimo em dias
                 $diasDesdeUltimoCio = $today->diffInDays($lastCio);
-                if ($diasDesdeUltimoCio >= 21) {
+                if ($diasDesdeUltimoCio >= max(1, $cfg['dias_ate_cio'])) {
                     $prevCio = (clone $lastCio)->addDays(max(1, $cfg['dias_ate_cio']));
                 }
             }
@@ -327,6 +328,13 @@ class DashboardController extends Controller
 
     public function __invoke()
     {
+        // Proteção: Dashboard tem muitas queries de agregação — evita o timeout
+        // "Maximum execution time of 30 seconds exceeded" no primeiro acesso.
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(120);
+        }
+        @ini_set('max_execution_time', '120');
+
         $estoqueRacoes = 0;
         $leitoasAtivas = 0;
         $matrizesAtivas = 0;
@@ -363,28 +371,59 @@ class DashboardController extends Controller
         }
 
         if (Schema::hasTable('femea')) {
-            $femeasAtivasQuery = Femea::query();
+            $leitoasAtivas = 0;
+            $matrizesAtivas = 0;
 
-            if (Schema::hasTable('femea_movimento')) {
-                $femeasAtivasQuery->whereDoesntHave('movimentos', function ($q) {
-                    $q->whereIn('acao', ['morte', 'descarte', 'venda']);
-                });
+            try {
+                // Otimização: whereDoesntHave() é N+1 / NOT EXISTS muito lento.
+                // Coleta os IDs que JÁ TEM movimento de saída UMA ÚNICA VEZ,
+                // depois aplica um WHERE id NOT IN (array de IDs) = 2 queries.
+                $idsFemeasComSaida = [];
+                if (Schema::hasTable('femea_movimento')) {
+                    $idsFemeasComSaida = DB::table('femea_movimento')
+                        ->whereIn('acao', ['morte', 'descarte', 'venda'])
+                        ->distinct()
+                        ->pluck('femea_id')
+                        ->all();
+                }
+
+                // Query 1: fêmeas ATIVAS (sem saída) → count em 2 grupos
+                $femeaStats = Femea::query()
+                    ->when(! empty($idsFemeasComSaida), static function ($q) use ($idsFemeasComSaida) {
+                        $q->whereNotIn('id', $idsFemeasComSaida);
+                    })
+                    ->select('tipo_compra', DB::raw('COUNT(*) as total'))
+                    ->groupBy('tipo_compra')
+                    ->pluck('total', 'tipo_compra');
+
+                $leitoasAtivas = (int) ($femeaStats['leitoa'] ?? 0);
+                $matrizesAtivas = (int) ($femeaStats['matriz_vazia'] ?? 0) + (int) ($femeaStats['matriz_gestante'] ?? 0);
+            } catch (\Throwable) {
+                $leitoasAtivas = 0;
+                $matrizesAtivas = 0;
             }
-
-            $leitoasAtivas = (clone $femeasAtivasQuery)->where('tipo_compra', 'leitoa')->count();
-            $matrizesAtivas = (clone $femeasAtivasQuery)->whereIn('tipo_compra', ['matriz_vazia', 'matriz_gestante'])->count();
         }
 
         if (Schema::hasTable('macho')) {
-            $machosAtivosQuery = Macho::query();
+            $machosAtivos = 0;
+            try {
+                $idsMachosComSaida = [];
+                if (Schema::hasTable('macho_movimento')) {
+                    $idsMachosComSaida = DB::table('macho_movimento')
+                        ->whereIn('acao', ['morte', 'descarte', 'venda'])
+                        ->distinct()
+                        ->pluck('macho_id')
+                        ->all();
+                }
 
-            if (Schema::hasTable('macho_movimento')) {
-                $machosAtivosQuery->whereDoesntHave('movimentos', function ($q) {
-                    $q->whereIn('acao', ['morte', 'descarte', 'venda']);
-                });
+                $machosAtivos = (int) Macho::query()
+                    ->when(! empty($idsMachosComSaida), static function ($q) use ($idsMachosComSaida) {
+                        $q->whereNotIn('id', $idsMachosComSaida);
+                    })
+                    ->count();
+            } catch (\Throwable) {
+                $machosAtivos = 0;
             }
-
-            $machosAtivos = (clone $machosAtivosQuery)->count();
         }
 
         if (Schema::hasTable('femea') && Schema::hasTable('femea_movimento')) {

@@ -979,6 +979,11 @@
                     class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
                     Análise
                 </button>
+                <button type="button" @click="tab = 'relatorios'" 
+                    :class="tab === 'relatorios' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
+                    class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                    Relatórios
+                </button>
             </nav>
         </div>
     </div>
@@ -1530,14 +1535,31 @@
             <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
                     <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Análise</h6>
-                    <div class="text-sm text-gray-500 mt-1">Formulário de coleta resumida de cobertura</div>
+                    <div class="text-sm text-gray-500 mt-1">Análises detalhadas, comparativos e métricas do manejo de gestação.</div>
                 </div>
             </div>
-            
             <div class="p-6">
-                <!-- Card Formulário de Cobertura Quadrado -->
+                <div class="text-center py-10 text-gray-400 dark:text-gray-500">
+                    <i class="fa-solid fa-chart-line text-4xl mb-3 block text-gray-300 dark:text-gray-600"></i>
+                    <p class="italic text-sm">Em desenvolvimento: painéis analíticos, gráficos e indicadores.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aba Relatórios -->
+    <div x-show="tab === 'relatorios'" x-cloak class="space-y-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                    <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Relatórios</h6>
+                    <div class="text-sm text-gray-500 mt-1">Formulários para impressão e coleta resumida do manejo.</div>
+                </div>
+            </div>
+
+            <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <button type="button" @click="openFormularioCobertura = true" class="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-[1.02] hover:border-primary-300">
+                    <button type="button" @click="openFormularioCobertura = true" class="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-200 hover:scale-[1.02] hover:border-primary-300 text-left">
                         <div class="p-6">
                             <div class="flex flex-col items-center text-center space-y-4">
                                 <div class="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center group-hover:bg-primary-200 transition-colors duration-200">

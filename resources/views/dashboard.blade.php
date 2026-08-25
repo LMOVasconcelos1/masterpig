@@ -5,7 +5,7 @@
 
 @section('content')
 <div x-data="{ 
-        tab: (function(){ const t = (new URLSearchParams(window.location.search).get('tab') || 'visao'); if (t === 'relatorios') return 'analise'; return ['visao','lancamentos','acompanhamento','analise'].includes(t) ? t : 'visao'; })(), 
+        tab: (function(){ const t = (new URLSearchParams(window.location.search).get('tab') || 'visao'); return ['visao','lancamentos','acompanhamento','analise','relatorios'].includes(t) ? t : 'visao'; })(), 
         calendarType: localStorage.getItem('masterpig_calendar_type') || '1000_dias',
         toggleCalendar() {
             const newType = this.calendarType === 'gregoriano' ? '1000_dias' : 'gregoriano';
@@ -320,6 +320,11 @@
                 :class="tab === 'analise' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
                 class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
                 Análise
+            </button>
+            <button type="button" @click="tab = 'relatorios'" 
+                :class="tab === 'relatorios' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
+                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                Relatórios
             </button>
         </nav>
     </div>
@@ -4942,7 +4947,7 @@
 
 <div x-show="tab === 'analise'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-4">
     <div x-data="{
-        analiseSubTab: (function(){ const p = new URLSearchParams(window.location.search); const t = p.get('tab'); const s = p.get('subtab'); if (s && ['desempenho','listagem','formulario'].includes(s)) return s; if (t === 'relatorios') return 'listagem'; return 'desempenho'; })(),
+        analiseSubTab: (function(){ const p = new URLSearchParams(window.location.search); const s = p.get('subtab'); if (s === 'desempenho') return s; return 'desempenho'; })(),
         loading: false,
         loaded: false,
         error: '',
@@ -5415,12 +5420,6 @@
                     <button type="button" @click="analiseSubTab = 'desempenho'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors" :class="analiseSubTab === 'desempenho' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
                         <i class="fa-solid fa-chart-line mr-2"></i>Desempenho
                     </button>
-                    <button type="button" @click="analiseSubTab = 'listagem'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors" :class="analiseSubTab === 'listagem' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
-                        <i class="fa-solid fa-list mr-2"></i>Listagem
-                    </button>
-                    <button type="button" @click="analiseSubTab = 'formulario'" class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors" :class="analiseSubTab === 'formulario' ? 'bg-primary-600 text-white' : 'text-gray-600 hover:bg-gray-100'">
-                        <i class="fa-solid fa-file-lines mr-2"></i>Formulário
-                    </button>
                 </div>
             </div>
         </div>
@@ -5475,68 +5474,6 @@
         </div>
 
         <div x-show="error && analiseSubTab === 'desempenho'" class="bg-amber-50 border border-amber-100 text-amber-800 rounded-xl px-4 py-3 text-sm" x-text="error" x-cloak></div>
-
-        <div x-show="analiseSubTab === 'listagem'" x-cloak>
-            <div class="mb-4 bg-amber-50 border border-amber-100 text-amber-900 rounded-xl px-4 py-3 text-sm">
-                Relatórios em desenvolvimento.
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                        <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Relatório de Fêmeas</h6>
-                        <div class="text-sm text-gray-500 mt-1">Lista completa do plantel de fêmeas com status e última operação.</div>
-                    </div>
-                    <div class="p-6">
-                        <a href="{{ route('admin.relatorios.plantel.femeas', [], false) }}" target="_blank" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                            <i class="fa-solid fa-eye mr-2"></i>
-                            Pré-visualizar
-                        </a>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                        <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Relatório de Machos</h6>
-                        <div class="text-sm text-gray-500 mt-1">Lista completa do plantel de machos com status e última operação.</div>
-                    </div>
-                    <div class="p-6">
-                        <a href="{{ route('admin.relatorios.plantel.machos', [], false) }}" target="_blank" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                            <i class="fa-solid fa-eye mr-2"></i>
-                            Pré-visualizar
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div x-show="analiseSubTab === 'formulario'" x-cloak>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <a href="{{ route('plantel.analises.formularios.cio-leitoa.pdf', [], false) }}" target="_blank" class="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all">
-                    <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-primary-50/60 via-primary-50/40 to-primary-100/20">
-                        <div class="flex items-center justify-between gap-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-white border-2 border-primary-200 text-primary-600 flex items-center justify-center">
-                                    <i class="fa-solid fa-file-pdf"></i>
-                                </div>
-                                <div>
-                                    <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Formulário cio de leitoa</h6>
-                                    <div class="text-sm text-gray-500 mt-1.5">Abrir PDF para impressão e preenchimento.</div>
-                                </div>
-                            </div>
-                            <div class="text-primary-600 group-hover:text-primary-700 transition-colors">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <div class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border-2 border-primary-200 bg-white text-primary-700 group-hover:bg-primary-600 group-hover:border-primary-600 group-hover:text-white transition-all duration-300 shadow-sm hover:shadow-md">
-                            <i class="fa-solid fa-eye text-xs"></i>
-                            Abrir formulário
-                        </div>
-                    </div>
-                </a>
-            </div>
-        </div>
 
         <div x-show="analiseSubTab === 'desempenho'" x-cloak class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -5961,6 +5898,93 @@
                     <template x-if="!saving"><span>Salvar Alterações</span></template>
                     <template x-if="saving"><span>Salvando...</span></template>
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div x-show="tab === 'relatorios'" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-y-4" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-4">
+    <div class="space-y-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-primary-50/70 via-primary-50/40 to-emerald-50/40">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-white border-2 border-primary-200 text-primary-600 flex items-center justify-center shadow-sm">
+                        <i class="fa-solid fa-file-invoice text-lg"></i>
+                    </div>
+                    <div>
+                        <h5 class="font-bold text-primary-800 uppercase text-sm tracking-wider">Relatórios e Formulários</h5>
+                        <div class="text-sm text-gray-500 mt-1">Geração de PDFs, CSVs e formulários para impressão do plantel reprodutivo.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-primary-50/70 via-primary-50/50 to-primary-100/30">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-white border-2 border-primary-200 text-primary-700 flex items-center justify-center">
+                            <i class="fa-solid fa-cow"></i>
+                        </div>
+                        <div>
+                            <h6 class="font-bold text-primary-800 uppercase text-xs tracking-wider">Relatório de Fêmeas</h6>
+                            <div class="text-sm text-gray-500 mt-1">Lista completa do plantel de fêmeas com status e última operação.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <a href="{{ route('admin.relatorios.plantel.femeas.filter', [], false) }}" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                        <i class="fa-solid fa-sliders mr-2"></i>
+                        Filtrar e gerar
+                    </a>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-primary-50/70 via-primary-50/50 to-primary-100/30">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-white border-2 border-primary-200 text-primary-700 flex items-center justify-center">
+                            <i class="fa-solid fa-mars"></i>
+                        </div>
+                        <div>
+                            <h6 class="font-bold text-primary-800 uppercase text-xs tracking-wider">Relatório de Machos</h6>
+                            <div class="text-sm text-gray-500 mt-1">Lista completa do plantel de machos com status e última operação.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <a href="{{ route('admin.relatorios.plantel.machos.filter', [], false) }}" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                        <i class="fa-solid fa-sliders mr-2"></i>
+                        Filtrar e gerar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all md:col-span-2">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-primary-50/70 via-primary-50/50 to-emerald-50/40">
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-white border-2 border-primary-200 text-primary-700 flex items-center justify-center">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </div>
+                            <div>
+                                <h6 class="font-bold text-primary-800 uppercase text-xs tracking-wider">Formulário cio de leitoa</h6>
+                                <div class="text-sm text-gray-500 mt-1.5">Abrir PDF para impressão e preenchimento.</div>
+                            </div>
+                        </div>
+                        <a href="{{ route('plantel.analises.formularios.cio-leitoa.pdf', [], false) }}" target="_blank" class="text-primary-600 hover:text-primary-700 transition-colors" title="Abrir em nova aba">
+                            <i class="fa-solid fa-arrow-up-right-from-square text-lg"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <a href="{{ route('plantel.analises.formularios.cio-leitoa.pdf', [], false) }}" target="_blank" class="inline-flex items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors">
+                        <i class="fa-solid fa-eye mr-2"></i>
+                        Abrir formulário
+                    </a>
+                </div>
             </div>
         </div>
     </div>

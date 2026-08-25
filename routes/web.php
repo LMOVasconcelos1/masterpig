@@ -261,10 +261,29 @@ HTML;
             ->header('Expires', '0');
     })->name('documentacao.pdf');
 
-    Route::get('/usuarios', [UsuarioController::class, 'index'])->name('usuarios.index');
-    Route::post('/usuarios', [UsuarioController::class, 'store'])->name('usuarios.store');
-    Route::patch('/usuarios/{user}', [UsuarioController::class, 'update'])->name('usuarios.update');
-    Route::delete('/usuarios/{user}', [UsuarioController::class, 'destroy'])->name('usuarios.destroy');
+    Route::group([
+        'prefix' => '/usuarios',
+        'as' => 'usuarios.',
+        'middleware' => [
+            static function (\Illuminate\Http\Request $request, \Closure $next) {
+                $auth = \Illuminate\Support\Facades\Auth::class;
+                if (! $auth::check()) {
+                    return redirect()->to(route('login', [], false));
+                }
+                $perfil = (string) ($auth::user()->perfil ?? '');
+                if ($perfil !== \App\Services\PermissaoService::PERFIL_ADMIN) {
+                    abort(403, 'Somente administradores podem gerenciar usuários e controle de acesso.');
+                }
+                return $next($request);
+            },
+        ],
+    ], function (): void {
+        Route::get('/', [UsuarioController::class, 'index'])->name('index');
+        Route::post('/', [UsuarioController::class, 'store'])->name('store');
+        Route::patch('/{user}', [UsuarioController::class, 'update'])->name('update');
+        Route::delete('/{user}', [UsuarioController::class, 'destroy'])->name('destroy');
+        Route::post('/{user}/permissoes', [UsuarioController::class, 'savePermissoes'])->name('permissoes.update');
+    });
 
     Route::get('/causas', [CausaController::class, 'index'])->name('causas.index');
     Route::post('/causas', [CausaController::class, 'store'])->name('causas.store');
@@ -298,7 +317,9 @@ HTML;
     Route::delete('/plantel/machos/movimentos/{id}', [MachoMovimentoController::class, 'destroy'])->whereNumber('id')->name('plantel.machos.movimentos.destroy');
     Route::get('/plantel/femeas', [FemeaController::class, 'index'])->name('plantel.femeas.index');
     Route::get('/plantel/femeas/{femea}', [FemeaController::class, 'show'])->name('plantel.femeas.show');
+    Route::get('/relatorios/plantel/femeas/filtro', [PlantelRelatorioController::class, 'femeasFilter'])->name('relatorios.plantel.femeas.filter');
     Route::get('/relatorios/plantel/femeas', [PlantelRelatorioController::class, 'femeas'])->name('relatorios.plantel.femeas');
+    Route::get('/relatorios/plantel/machos/filtro', [PlantelRelatorioController::class, 'machosFilter'])->name('relatorios.plantel.machos.filter');
     Route::get('/relatorios/plantel/machos', [PlantelRelatorioController::class, 'machos'])->name('relatorios.plantel.machos');
     Route::get('/metas', [MetasController::class, 'page'])->name('metas.index');
     Route::post('/metas', [MetasController::class, 'store'])->name('metas.store');

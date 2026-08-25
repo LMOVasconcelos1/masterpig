@@ -24,11 +24,15 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->prependToPriorityList(
             AuthenticatesRequests::class,
-            \App\Http\Middleware\EnsureTenantSelected::class
+            \App\Http\Middleware\EnsureTenantSelected::class,
+            \App\Http\Middleware\ApplyUserSchema::class,
         );
 
         $middleware->web(append: [
             \App\Http\Middleware\EnsureTenantSelected::class,
+            \App\Http\Middleware\ApplyUserSchema::class,
+            \App\Http\Middleware\InjectDashboardNotifications::class,
+            \App\Http\Middleware\EnforcePermissions::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

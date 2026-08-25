@@ -283,6 +283,7 @@ class GestacaoCoberturaController extends Controller
         };
 
         $cioDias = max(1, $metaInt('criterio_dias_cio', 3));
+        $coberturaAposCioMaxDias = max($cioDias, $metaInt('criterio_cobertura_apos_cio_max_dias', 5));
         $diasAteCio = max(1, $metaInt('criterio_dias_ate_cio', 21));
         $gestacaoDias = max(1, $metaInt('criterio_dias_gestacao', 114));
         $lactacaoMinDias = max(1, $metaInt('criterio_dias_lactacao_min', 21));
@@ -422,8 +423,9 @@ class GestacaoCoberturaController extends Controller
             $warnings[] = 'Atenção: Não foi encontrado um registro de cio anterior para esta cobertura. Recomenda-se registrar o cio na ficha da matriz.';
         } else {
             $dataCio = Carbon::parse($lastCio->data)->startOfDay();
-            if ($dataCio->diffInDays($dataCobertura) > 5) {
-                $warnings[] = 'Atenção: O último cio registrado para esta matriz foi há mais de 5 dias.';
+            $diff = $dataCio->diffInDays($dataCobertura);
+            if ($diff > $coberturaAposCioMaxDias) {
+                $warnings[] = 'Atenção: O último cio registrado para esta matriz foi há mais de '.$coberturaAposCioMaxDias.' dias.';
             }
         }
 

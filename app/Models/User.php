@@ -42,6 +42,7 @@ class User extends Authenticatable
         'cpf',
         'usuario',
         'perfil',
+        'permissoes',
         'senha',
         'foto_perfil',
     ];
@@ -66,7 +67,31 @@ class User extends Authenticatable
         return [
             'email_verificado_em' => 'datetime',
             'senha' => 'hashed',
+            'permissoes' => 'array',
         ];
+    }
+
+    /**
+     * Verifica se o usuário tem permissão para executar a ação.
+     *
+     * @param  string  $chave   (ex: 'plantel.lancamentos.femeas')
+     * @param  bool    $escrita  True = ação de incluir/alterar/excluir. False = só visualizar.
+     */
+    public function pode(string $chave, bool $escrita = false): bool
+    {
+        return \App\Services\PermissaoService::check($this, $chave, $escrita);
+    }
+
+    /**
+     * Retorna o perfil formatado para exibição (primeira letra maiúscula).
+     */
+    public function getPerfilFormatadoAttribute(): string
+    {
+        return match ((string) ($this->perfil ?? 'operador')) {
+            'administrador' => 'Administrador',
+            'leitor'        => 'Leitor',
+            default         => 'Operador',
+        };
     }
 
     /**

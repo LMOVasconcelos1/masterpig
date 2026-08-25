@@ -14,13 +14,17 @@ class PigCycleService
 
     public static function getCalendarType(): string
     {
-        if (!Schema::hasTable('meta')) {
+        // Proteção total: nunca propagar erro de DB/Schema nem conexão indisponível
+        try {
+            if (!Schema::hasTable('meta')) {
+                return self::CALENDAR_1000_DAYS;
+            }
+
+            $type = DB::table('meta')->where('chave', 'criterio_calendario_tipo')->value('valor');
+            return in_array($type, [self::CALENDAR_GREGORIAN, self::CALENDAR_1000_DAYS], true) ? $type : self::CALENDAR_1000_DAYS;
+        } catch (\Throwable) {
             return self::CALENDAR_1000_DAYS;
         }
-
-        $type = DB::table('meta')->where('chave', 'criterio_calendario_tipo')->value('valor');
-        // Default to 1000_dias as requested
-        return in_array($type, [self::CALENDAR_GREGORIAN, self::CALENDAR_1000_DAYS]) ? $type : self::CALENDAR_1000_DAYS;
     }
 
     public static function toPigDay(?\DateTimeInterface $date): ?int
@@ -124,35 +128,58 @@ class PigCycleService
                 'gestacao' => 114,
                 'lactacao' => 21,
                 'intervalo' => 7,
-                'recria' => 63,
-                'terminacao' => 70,
-                'cio' => 3, // Default cio duration
+                'recria' => self::metaInt('meta_creche_recria_dias', 63),
+                'terminacao' => self::metaInt('meta_terminacao_ciclo_dias', 70),
+                'cio' => 3,
             ];
         }
 
-        // Gregorian durations from meta table or defaults
         return [
             'gestacao' => self::metaInt('meta_gestacao_periodo_gestacao', self::metaInt('criterio_dias_gestacao', 114)),
             'lactacao' => self::metaInt('criterio_dias_lactacao_min', 21),
             'intervalo' => self::metaInt('meta_gestacao_intervalo_desmame_cobertura', self::metaInt('criterio_dias_intervalo_desmame_cio', 7)),
-            'recria' => 63,
-            'terminacao' => 70,
+            'recria' => self::metaInt('meta_creche_recria_dias', 63),
+            'terminacao' => self::metaInt('meta_terminacao_ciclo_dias', 70),
             'cio' => self::metaInt('meta_gestacao_montas_por_cobertura', self::metaInt('criterio_dias_cio', 3)),
         ];
     }
 
+    /**
+     * Cache em memória (por request) das metas inteiras lidas do banco.
+     * Evita repetir N mil queries por request no dashboard (100 animais × 3 keys = 300 queries → agora 3).
+     *
+     * @var array<string, int|null>
+     */
+    private static array $metaIntCache = [];
+
     private static function metaInt(string $key, int $default): int
     {
-        if (!Schema::hasTable('meta')) {
-            return $default;
+        // 1) Hit em cache por request (RAM) → SEM query SQL.
+        if (array_key_exists($key, self::$metaIntCache)) {
+            $cached = self::$metaIntCache[$key];
+            return $cached === null ? $default : $cached;
         }
 
-        $raw = DB::table('meta')->where('chave', $key)->value('valor');
-        if ($raw === null || trim((string) $raw) === '') {
+        // Proteção total: qualquer erro de conexão / tabela inexistente → default
+        try {
+            if (! Schema::hasTable('meta')) {
+                self::$metaIntCache[$key] = null;
+                return $default;
+            }
+
+            $raw = DB::table('meta')->where('chave', $key)->value('valor');
+            if ($raw === null || trim((string) $raw) === '') {
+                self::$metaIntCache[$key] = null;
+                return $default;
+            }
+
+            $valor = (int) $raw;
+            self::$metaIntCache[$key] = $valor;
+            return $valor;
+        } catch (\Throwable) {
+            self::$metaIntCache[$key] = null;
             return $default;
         }
-
-        return (int) $raw;
     }
 
     public static function formatDisplayDate(?\DateTimeInterface $date, ?\DateTimeInterface $unused = null): string
@@ -235,10 +262,11 @@ class PigCycleService
     {
         $alerts = [];
         $now = Carbon::today();
+        $prepartoAlertaDias = max(1, self::metaInt('criterio_preparto_alerta_dias', 5));
 
-        // Alerta pré-parto (5 dias antes)
+        // Alerta pré-parto (X dias antes, configurável por meta de admin)
         $diffParto = $now->diffInDays($cycle['expectedBirthDate'], false);
-        if ($diffParto >= 0 && $diffParto <= 5) {
+        if ($diffParto >= 0 && $diffParto <= $prepartoAlertaDias) {
             $alerts[] = "[{$animalId}]: parto previsto em {$diffParto} dias ? preparar maternidade";
         }
 

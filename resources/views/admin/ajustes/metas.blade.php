@@ -90,6 +90,20 @@
         criterio_cobertura_matriz_peso_min: '100',
         criterio_cobertura_matriz_peso_max: '350',
         criterio_cobertura_lactante_permitida: 'nao',
+        criterio_cobertura_idade_min_dias: '210',
+        criterio_cobertura_idade_max_dias: '240',
+        criterio_cobertura_ciclos_min: '3',
+        criterio_cobertura_peso_min_kg: '0',
+        criterio_cobertura_peso_max_kg: '0',
+        criterio_cobertura_presenca_cio: 'sim',
+        criterio_leitoa_idade_min_dias: '150',
+        criterio_leitoa_idade_max_dias: '210',
+        criterio_maturidade_idade_min_dias: '151',
+        criterio_maturidade_idade_max_dias: '220',
+        criterio_dias_ate_cio: '21',
+        criterio_dias_cio: '3',
+        criterio_dias_gestacao: '114',
+        criterio_dias_intervalo_desmame_cio: '5',
 
         // Critérios Perdas (Dias)
         criterio_perda_aborto_dias_min: '12',
@@ -127,6 +141,21 @@
         
         criterio_dias_lactacao_min: '21',
         criterio_dias_lactacao_max: '28',
+
+        // Gestacao / Cio / Cobertura - Novas chaves (admin configura tudo)
+        criterio_cio_intervalo_min: '21',
+        criterio_janela_cio: '5',
+        criterio_preparto_alerta_dias: '5',
+        criterio_cobertura_apos_cio_max_dias: '5',
+
+        // Manejo de Terminação (100% configurável - nada fixo no código)
+        meta_creche_recria_dias: '63',
+        meta_terminacao_ciclo_dias: '70',
+        meta_terminacao_dias_permanencia: '90',
+        meta_terminacao_peso_abate_kg: '115',
+        meta_terminacao_mortalidade_pct: '3.0',
+        meta_terminacao_dias_sem_movimento: '15',
+        meta_terminacao_lote_residual_pct: '10.0',
 
         // Geral
         criterios_enabled: true,
@@ -220,9 +249,10 @@
     </div>
 
     <!-- Módulos -->
-    <div class="flex items-center gap-2 p-1.5 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm w-fit">
+    <div class="flex items-center gap-2 p-1.5 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm w-fit flex-wrap">
         <button @click="mainTab = 'plantel'" :class="mainTab === 'plantel' ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 ring-1 ring-primary-100 dark:ring-primary-900/50' : 'text-gray-500'" class="px-6 py-2.5 text-sm font-bold rounded-xl transition-all">Plantel Reprodutivo</button>
         <button @click="mainTab = 'gestacao'" :class="mainTab === 'gestacao' ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 ring-1 ring-primary-100 dark:ring-primary-900/50' : 'text-gray-500'" class="px-6 py-2.5 text-sm font-bold rounded-xl transition-all">Manejo de Gestação</button>
+        <button @click="mainTab = 'terminacao'" :class="mainTab === 'terminacao' ? 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 ring-1 ring-orange-100 dark:ring-orange-900/50' : 'text-gray-500'" class="px-6 py-2.5 text-sm font-bold rounded-xl transition-all">Manejo de Terminação</button>
         <button @click="mainTab = 'geral'" :class="mainTab === 'geral' ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 ring-1 ring-primary-100 dark:ring-primary-900/50' : 'text-gray-500'" class="px-6 py-2.5 text-sm font-bold rounded-xl transition-all">Geral</button>
     </div>
 
@@ -371,6 +401,91 @@
                             <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Matriz Peso Mín/Máx</label><div class="flex gap-1"><input type="number" x-model="metas.criterio_cobertura_matriz_peso_min" class="w-full text-xs border-gray-200 p-1 rounded-lg"><input type="number" x-model="metas.criterio_cobertura_matriz_peso_max" class="w-full text-xs border-gray-200 p-1 rounded-lg"></div></div>
                             <div><label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cobertura Lactante</label><select x-model="metas.criterio_cobertura_lactante_permitida" class="w-full text-xs border-gray-200 rounded-lg"><option value="sim">Permitida</option><option value="nao">Não Permitida</option></select></div>
                         </div>
+                        <div class="pt-4 border-t border-dashed border-gray-100">
+                            <h4 class="text-[11px] font-black text-gray-500 uppercase tracking-wide mb-3">Critérios de Idade e Peso para Cobertura</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                                    <label class="block text-[10px] font-bold text-emerald-700 uppercase mb-1.5">Idade Mínima Cobertura (dias)</label>
+                                    <input type="number" x-model="metas.criterio_cobertura_idade_min_dias" class="w-full bg-white border-emerald-200 rounded-lg text-sm font-bold text-emerald-900">
+                                </div>
+                                <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                                    <label class="block text-[10px] font-bold text-emerald-700 uppercase mb-1.5">Idade Máxima Cobertura (dias)</label>
+                                    <input type="number" x-model="metas.criterio_cobertura_idade_max_dias" class="w-full bg-white border-emerald-200 rounded-lg text-sm font-bold text-emerald-900">
+                                </div>
+                                <div class="p-3 rounded-xl bg-lime-50 border border-lime-100">
+                                    <label class="block text-[10px] font-bold text-lime-700 uppercase mb-1.5">Peso Mínimo Cobertura (kg)</label>
+                                    <input type="number" step="0.01" x-model="metas.criterio_cobertura_peso_min_kg" class="w-full bg-white border-lime-200 rounded-lg text-sm font-bold text-lime-900">
+                                </div>
+                                <div class="p-3 rounded-xl bg-lime-50 border border-lime-100">
+                                    <label class="block text-[10px] font-bold text-lime-700 uppercase mb-1.5">Peso Máximo Cobertura (kg)</label>
+                                    <input type="number" step="0.01" x-model="metas.criterio_cobertura_peso_max_kg" class="w-full bg-white border-lime-200 rounded-lg text-sm font-bold text-lime-900">
+                                </div>
+                                <div class="p-3 rounded-xl bg-teal-50 border border-teal-100">
+                                    <label class="block text-[10px] font-bold text-teal-700 uppercase mb-1.5">Idade Mínima Leitoa (dias)</label>
+                                    <input type="number" x-model="metas.criterio_leitoa_idade_min_dias" class="w-full bg-white border-teal-200 rounded-lg text-sm font-bold text-teal-900">
+                                </div>
+                                <div class="p-3 rounded-xl bg-teal-50 border border-teal-100">
+                                    <label class="block text-[10px] font-bold text-teal-700 uppercase mb-1.5">Idade Máxima Leitoa (dias)</label>
+                                    <input type="number" x-model="metas.criterio_leitoa_idade_max_dias" class="w-full bg-white border-teal-200 rounded-lg text-sm font-bold text-teal-900">
+                                </div>
+                                <div class="p-3 rounded-xl bg-green-50 border border-green-100">
+                                    <label class="block text-[10px] font-bold text-green-700 uppercase mb-1.5">Maturidade Idade Mín (dias)</label>
+                                    <input type="number" x-model="metas.criterio_maturidade_idade_min_dias" class="w-full bg-white border-green-200 rounded-lg text-sm font-bold text-green-900">
+                                </div>
+                                <div class="p-3 rounded-xl bg-green-50 border border-green-100">
+                                    <label class="block text-[10px] font-bold text-green-700 uppercase mb-1.5">Maturidade Idade Máx (dias)</label>
+                                    <input type="number" x-model="metas.criterio_maturidade_idade_max_dias" class="w-full bg-white border-green-200 rounded-lg text-sm font-bold text-green-900">
+                                </div>
+                                <div class="p-3 rounded-xl bg-orange-50 border border-orange-100">
+                                    <label class="block text-[10px] font-bold text-orange-700 uppercase mb-1.5">Ciclos Mínimos Cobertura</label>
+                                    <input type="number" x-model="metas.criterio_cobertura_ciclos_min" class="w-full bg-white border-orange-200 rounded-lg text-sm font-bold text-orange-900">
+                                </div>
+                                <div class="p-3 rounded-xl bg-orange-50 border border-orange-100">
+                                    <label class="block text-[10px] font-bold text-orange-700 uppercase mb-1.5">Presença de Cio Obrigatória</label>
+                                    <select x-model="metas.criterio_cobertura_presenca_cio" class="w-full bg-white border-orange-200 rounded-lg text-sm font-bold text-orange-900">
+                                        <option value="sim">Sim</option>
+                                        <option value="nao">Não</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pt-4 border-t border-dashed border-gray-100">
+                            <h4 class="text-[11px] font-black text-gray-500 uppercase tracking-wide mb-3">Ciclos Reprodutivos (Dias)</h4>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div class="p-3 rounded-xl bg-amber-50 border border-amber-100">
+                                    <label class="block text-[10px] font-bold text-amber-700 uppercase mb-1.5">Intervalo Mín. Cio → Cio</label>
+                                    <input type="number" x-model="metas.criterio_cio_intervalo_min" class="w-full bg-white border-amber-200 rounded-lg text-sm font-bold text-amber-900">
+                                </div>
+                                <div class="p-3 rounded-xl bg-rose-50 border border-rose-100">
+                                    <label class="block text-[10px] font-bold text-rose-700 uppercase mb-1.5">Janela de Cio (dias)</label>
+                                    <input type="number" x-model="metas.criterio_janela_cio" class="w-full bg-white border-rose-200 rounded-lg text-sm font-bold text-rose-900">
+                                </div>
+                                <div class="p-3 rounded-xl bg-sky-50 border border-sky-100">
+                                    <label class="block text-[10px] font-bold text-sky-700 uppercase mb-1.5">Cio → Cobertura (Máx)</label>
+                                    <input type="number" x-model="metas.criterio_cobertura_apos_cio_max_dias" class="w-full bg-white border-sky-200 rounded-lg text-sm font-bold text-sky-900">
+                                </div>
+                                <div class="p-3 rounded-xl bg-violet-50 border border-violet-100">
+                                    <label class="block text-[10px] font-bold text-violet-700 uppercase mb-1.5">Pré-Parto Alerta (dias)</label>
+                                    <input type="number" x-model="metas.criterio_preparto_alerta_dias" class="w-full bg-white border-violet-200 rounded-lg text-sm font-bold text-violet-900">
+                                </div>
+                                <div class="p-3 rounded-xl bg-cyan-50 border border-cyan-100">
+                                    <label class="block text-[10px] font-bold text-cyan-700 uppercase mb-1.5">Dias Até Cio Previsto</label>
+                                    <input type="number" x-model="metas.criterio_dias_ate_cio" class="w-full bg-white border-cyan-200 rounded-lg text-sm font-bold text-cyan-900">
+                                </div>
+                                <div class="p-3 rounded-xl bg-cyan-50 border border-cyan-100">
+                                    <label class="block text-[10px] font-bold text-cyan-700 uppercase mb-1.5">Duração do Cio (dias)</label>
+                                    <input type="number" x-model="metas.criterio_dias_cio" class="w-full bg-white border-cyan-200 rounded-lg text-sm font-bold text-cyan-900">
+                                </div>
+                                <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-100">
+                                    <label class="block text-[10px] font-bold text-indigo-700 uppercase mb-1.5">Duração Gestação (dias)</label>
+                                    <input type="number" x-model="metas.criterio_dias_gestacao" class="w-full bg-white border-indigo-200 rounded-lg text-sm font-bold text-indigo-900">
+                                </div>
+                                <div class="p-3 rounded-xl bg-indigo-50 border border-indigo-100">
+                                    <label class="block text-[10px] font-bold text-indigo-700 uppercase mb-1.5">Intervalo Desmame→Cio</label>
+                                    <input type="number" x-model="metas.criterio_dias_intervalo_desmame_cio" class="w-full bg-white border-indigo-200 rounded-lg text-sm font-bold text-indigo-900">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                  </div>
 
@@ -418,6 +533,121 @@
                             </div>
                         </div>
                     @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Módulo Terminação -->
+    <div x-show="mainTab === 'terminacao'" class="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-8 space-y-10 animate-in" x-cloak>
+        <div class="flex flex-col gap-2">
+            <h3 class="text-xl font-black text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <i class="fa-solid fa-weight-scale text-orange-500"></i> Manejo de Terminação
+            </h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">100% parametrizável pelo cliente — nenhum valor fixo no código. Configure metas, pesos alvo e ciclos abaixo.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div class="space-y-6">
+                <h4 class="font-bold flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                    <i class="fa-solid fa-calendar-days text-sky-500"></i> Ciclos e Permanência
+                </h4>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                        Dias de Creche (Recria)
+                        <span class="block text-[10px] font-normal normal-case text-gray-400 mt-1">
+                            Fase logo após o desmame — até transferência para terminação.
+                        </span>
+                    </label>
+                    <div class="relative">
+                        <input type="number" step="1" min="1" x-model="metas.meta_creche_recria_dias" class="w-full rounded-xl border-sky-200 bg-sky-50/40 px-4 py-3 pr-16 text-base font-bold text-sky-900 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 dark:bg-sky-900/20 dark:border-sky-700/50 dark:text-sky-50 focus:ring-offset-0">
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-sm font-black text-sky-500">DIAS</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                        Dias de Ciclo Terminação (1000 Dias / PIG)
+                        <span class="block text-[10px] font-normal normal-case text-gray-400 mt-1">
+                            Usado no cálculo do calendário PIG após a recria.
+                        </span>
+                    </label>
+                    <div class="relative">
+                        <input type="number" step="1" min="1" x-model="metas.meta_terminacao_ciclo_dias" class="w-full rounded-xl border-cyan-200 bg-cyan-50/40 px-4 py-3 pr-16 text-base font-bold text-cyan-900 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100 dark:bg-cyan-900/20 dark:border-cyan-700/50 dark:text-cyan-50 focus:ring-offset-0">
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-sm font-black text-cyan-500">DIAS</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                        Meta de Dias de Permanência (Terminação)
+                        <span class="block text-[10px] font-normal normal-case text-gray-400 mt-1">
+                            Quantidade média ideal de dias que um lote permanece aberto.
+                        </span>
+                    </label>
+                    <div class="relative">
+                        <input type="number" step="1" min="1" x-model="metas.meta_terminacao_dias_permanencia" class="w-full rounded-xl border-indigo-200 bg-indigo-50/40 px-4 py-3 pr-16 text-base font-bold text-indigo-900 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 dark:bg-indigo-900/20 dark:border-indigo-700/50 dark:text-indigo-50 focus:ring-offset-0">
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-sm font-black text-indigo-500">DIAS</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <h4 class="font-bold flex items-center gap-2 pb-2 border-b border-gray-100 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                    <i class="fa-solid fa-target text-orange-500"></i> Peso Alvo & Metas
+                </h4>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                        Peso Alvo de Abate
+                        <span class="block text-[10px] font-normal normal-case text-gray-400 mt-1">
+                            Meta de peso médio para envio ao frigorífico (Kg).
+                        </span>
+                    </label>
+                    <div class="relative">
+                        <input type="number" step="0.1" min="0" x-model="metas.meta_terminacao_peso_abate_kg" class="w-full rounded-xl border-orange-200 bg-orange-50/40 px-4 py-3 pr-16 text-base font-bold text-orange-900 focus:border-orange-400 focus:ring-2 focus:ring-orange-100 dark:bg-orange-900/20 dark:border-orange-700/50 dark:text-orange-50 focus:ring-offset-0">
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-sm font-black text-orange-500">KG</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                        Meta Máxima de Mortalidade
+                        <span class="block text-[10px] font-normal normal-case text-gray-400 mt-1">
+                            Limite aceitável em percentual de mortalidade por lote.
+                        </span>
+                    </label>
+                    <div class="relative">
+                        <input type="number" step="0.1" min="0" x-model="metas.meta_terminacao_mortalidade_pct" class="w-full rounded-xl border-rose-200 bg-rose-50/40 px-4 py-3 pr-16 text-base font-bold text-rose-900 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 dark:bg-rose-900/20 dark:border-rose-700/50 dark:text-rose-50 focus:ring-offset-0">
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-sm font-black text-rose-500">%</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                        Dias sem Movimentação (Lote Suspeito)
+                        <span class="block text-[10px] font-normal normal-case text-gray-400 mt-1">
+                            Um lote sem nenhum registro por mais de N dias é sinalizado em inconsistências.
+                        </span>
+                    </label>
+                    <div class="relative">
+                        <input type="number" step="1" min="1" x-model="metas.meta_terminacao_dias_sem_movimento" class="w-full rounded-xl border-amber-200 bg-amber-50/40 px-4 py-3 pr-16 text-base font-bold text-amber-900 focus:border-amber-400 focus:ring-2 focus:ring-amber-100 dark:bg-amber-900/20 dark:border-amber-700/50 dark:text-amber-50 focus:ring-offset-0">
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-sm font-black text-amber-500">DIAS</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                        Lote Residual Máximo (%)
+                        <span class="block text-[10px] font-normal normal-case text-gray-400 mt-1">
+                            Após vendas, percentual máximo de cabeças que pode restar em um lote para ser encerrado sem inconsistência.
+                        </span>
+                    </label>
+                    <div class="relative">
+                        <input type="number" step="0.1" min="0" x-model="metas.meta_terminacao_lote_residual_pct" class="w-full rounded-xl border-teal-200 bg-teal-50/40 px-4 py-3 pr-16 text-base font-bold text-teal-900 focus:border-teal-400 focus:ring-2 focus:ring-teal-100 dark:bg-teal-900/20 dark:border-teal-700/50 dark:text-teal-50 focus:ring-offset-0">
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-sm font-black text-teal-500">%</span>
+                    </div>
                 </div>
             </div>
         </div>

@@ -482,7 +482,8 @@
                             <i class="fa-solid {{$aba['icon']}} transition-colors duration-300" :class="subTab === '{{$key}}' ? 'text-primary-600' : 'text-gray-600'"></i>
                             {{$aba['label']}}
                             <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-bold tracking-tight
-                                {{ $aba['count'] > 0 ? (subTab === $key ? 'bg-primary-50 text-primary-700' : 'bg-gray-200 text-gray-700') : 'bg-gray-100 text-gray-400' }}">
+                                {{ $aba['count'] > 0 ? 'bg-gray-200 text-gray-700' : 'bg-gray-100 text-gray-400' }}"
+                                :class="(subTab === '{{$key}}') && ({{ (int)($aba['count'] > 0) }}) ? '!bg-primary-50 !text-primary-700' : ''">
                                 {{ $aba['count'] }}
                             </span>
                         </button>

@@ -55,6 +55,9 @@ class TerminacaoController extends Controller
 
         $metaMortalidade = TerminacaoService::getMetaFloat('meta_terminacao_mortalidade_pct', 3.0);
         $metaDias = TerminacaoService::getMetaInt('meta_terminacao_dias_permanencia', 90);
+        $metaPesoAbate = TerminacaoService::getMetaFloat('meta_terminacao_peso_abate_kg', 115.00);
+        $metaDiasSemMovimento = TerminacaoService::getMetaInt('meta_terminacao_dias_sem_movimento', 15);
+        $metaLoteResidualPct = TerminacaoService::getMetaFloat('meta_terminacao_lote_residual_pct', 10.0);
 
         if (Schema::hasTable('terminacao_lotes')) {
             $lotesCadastrados = DB::table('terminacao_lotes')
@@ -327,6 +330,9 @@ class TerminacaoController extends Controller
             'inconsistencias' => $inconsistencias,
             'metaMortalidade' => $metaMortalidade,
             'metaDias' => $metaDias,
+            'metaPesoAbate' => $metaPesoAbate,
+            'metaDiasSemMovimento' => $metaDiasSemMovimento,
+            'metaLoteResidualPct' => $metaLoteResidualPct,
             'calendarioTipo' => PigCycleService::getCalendarType(),
             'hojeIso' => Carbon::today()->format('Y-m-d'),
         ]);

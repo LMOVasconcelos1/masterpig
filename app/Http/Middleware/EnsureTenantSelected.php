@@ -50,8 +50,22 @@ class EnsureTenantSelected
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 
+                // Se o applyDatabase já lançou ValidationException com mensagem REAL → REPASSA (não sobrescreve)
+                if ($e instanceof \Illuminate\Validation\ValidationException) {
+                    $errors = $e->errors();
+                    $msgReal = (string) ($errors['cnpj'][0] ?? $e->getMessage());
+                    return redirect()->to(route('login', [], false))->withErrors([
+                        'cnpj' => $msgReal,
+                    ]);
+                }
+
+                $message = (string) $e->getMessage();
+                $preview = trim($message);
+                if ($preview === '') $preview = get_class($e);
+                $preview = mb_strimwidth($preview, 0, 200, '…');
+                $codigo  = is_scalar($e->getCode()) ? (string) $e->getCode() : '—';
                 return redirect()->to(route('login', [], false))->withErrors([
-                    'cnpj' => 'Não foi possível conectar ao banco deste CNPJ.',
+                    'cnpj' => 'Falha middleware tenant (cód. '.$codigo.'): '.$preview,
                 ]);
             }
         }

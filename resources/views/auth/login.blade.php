@@ -12,7 +12,7 @@
             </div>
         </div>
 
-        <div class="bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 dark:border-gray-700/30 p-8 transition-all duration-300 hover:shadow-3xl">
+        <div class="bg-white/12 dark:bg-gray-900/20 backdrop-blur-md rounded-3xl shadow-2xl border border-white/25 dark:border-gray-700/40 p-8 transition-all duration-300 hover:shadow-3xl shadow-[0_20px_60px_-12px_rgba(0,0,0,0.4)]">
             <x-auth-session-status class="mb-4" :status="session('status')" />
 
             <form accept-charset="UTF-8" id="login-form" method="POST" action="{{ route('login', [], false) }}" class="space-y-5">

@@ -88,14 +88,19 @@
     <body class="font-sans text-gray-900 antialiased">
         <div class="flex flex-col sm:justify-center items-center pt-6 sm:pt-0 relative"
              style="min-height: 100vh; min-height: 100dvh; padding-top: calc(1.5rem + var(--sat)); padding-right: var(--sar); padding-bottom: calc(1.5rem + var(--sab)); padding-left: var(--sal);">
-            <!-- Wallpaper Background -->
-            <div class="absolute inset-0 z-0">
-                <img src="/login.png" alt="Background" class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-black/20"></div>
+            <!-- Wallpaper Background — qualidade máxima (não estica cortes, preserve detalhes) -->
+            <div class="absolute inset-0 z-0 overflow-hidden">
+                <img src="/login.png"
+                     alt="Background"
+                     class="absolute inset-0 w-full h-full object-cover object-center sm:object-cover"
+                     style="image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; -ms-interpolation-mode: bicubic; background-repeat: no-repeat; background-position: center; background-size: cover; transform: translateZ(0); backface-visibility: hidden; will-change: transform;">
+                <!-- Overlay suave (mínima opacidade) → não apaga detalhes do wallpaper -->
+                <div class="absolute inset-0 bg-gradient-to-br from-black/10 via-black/5 to-black/25"></div>
+                <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(0,0,0,0)_30%,_rgba(0,0,0,0.35)_100%)]"></div>
             </div>
-            
+
             <!-- Content Overlay -->
-            <div class="relative z-10 w-full sm:max-w-md mt-6 px-6 py-4">
+            <div class="relative z-10 w-full sm:max-w-lg mt-6 px-6 py-4">
                 {{ $slot }}
             </div>
         </div>

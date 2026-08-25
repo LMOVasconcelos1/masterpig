@@ -10,19 +10,24 @@ class TerminacaoService
 {
     public static function getMeta(string $chave, $default = null)
     {
-        if (!Schema::hasTable('meta')) {
-            return $default;
-        }
+        // Proteção total externa (fora do Schema::) — evita até o hasTable abrir conexão prematura
         try {
-            $row = DB::table('meta')->where('chave', $chave)->first();
-            if (!$row) {
+            if (!Schema::hasTable('meta')) {
                 return $default;
             }
-            $valor = $row->valor ?? null;
-            if ($valor === null || $valor === '') {
+            try {
+                $row = DB::table('meta')->where('chave', $chave)->first();
+                if (!$row) {
+                    return $default;
+                }
+                $valor = $row->valor ?? null;
+                if ($valor === null || $valor === '') {
+                    return $default;
+                }
+                return $valor;
+            } catch (\Throwable) {
                 return $default;
             }
-            return $valor;
         } catch (\Throwable) {
             return $default;
         }
