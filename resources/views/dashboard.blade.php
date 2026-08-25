@@ -297,18 +297,20 @@
 <div>
     <div class="rounded-xl shadow-sm p-6" style="border-color: #78350f;">
         <div class="text-center">
-            <h2 class="text-2xl font-bold text-white mb-2">Plantel Reprodutivo</h2>
+            <h2 class="text-2xl font-bold text-white mb-2" data-tour="plantel-reprodutivo">Plantel Reprodutivo</h2>
             <p class="text-sm text-white">Visão geral, lançamentos e relatórios</p>
         </div>
         <nav class="flex justify-center space-x-8 overflow-x-auto mt-6">
             <button type="button" @click="tab = 'visao'" 
                 :class="tab === 'visao' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
-                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors"
+                data-tour="visao-geral-plantel">
                 Visão Geral
             </button>
             <button type="button" @click="tab = 'lancamentos'" 
                 :class="tab === 'lancamentos' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
-                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors"
+                data-tour="aba-lancamentos">
                 Lançamentos
             </button>
             <button type="button" @click="tab = 'acompanhamento'; $dispatch('acompanhamento-open')" 
@@ -2337,7 +2339,7 @@
             <div class="p-6">
                 <div class="flex flex-col gap-6">
                     <div class="flex justify-center items-center gap-2 bg-gray-100 p-1.5 rounded-xl overflow-x-auto max-w-full">
-                        <button type="button" @click="item = 'femeas'; mov = 'compra'; compraFemeasTipo = 'leitoa';" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg" :class="item === 'femeas' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30 scale-105' : 'text-gray-700 hover:text-gray-800 hover:bg-white/80'">
+                        <button type="button" @click="item = 'femeas'; mov = 'compra'; compraFemeasTipo = 'leitoa';" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg" :class="item === 'femeas' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30 scale-105' : 'text-gray-700 hover:text-gray-800 hover:bg-white/80'" data-tour="femeas">
                             <i class="fa-solid fa-piggy-bank text-primary-600 transition-colors duration-300" :class="item === 'femeas' ? 'text-primary-600' : 'text-gray-600'"></i> Fêmeas
                         </button>
                         <button type="button" @click="item = 'machos'; mov = 'compra'; loadComprasMachos()" class="flex-shrink-0 flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg" :class="item === 'machos' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30 scale-105' : 'text-gray-700 hover:text-gray-800 hover:bg-white/80'">
@@ -2352,7 +2354,7 @@
                         <button x-show="item === 'femeas'" x-cloak type="button" @click="mov = 'plantel'; loadPlantelFemeas()" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border" :class="mov === 'plantel' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'">
                             <i class="fa-solid fa-list w-4"></i> Plantel
                         </button>
-                        <button type="button" @click="mov = 'compra'; if(item === 'femeas') loadComprasFemeas(); else loadComprasMachos();" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border" :class="mov === 'compra' ? 'bg-primary-50 border-primary-200 text-primary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'">
+                        <button type="button" @click="mov = 'compra'; if(item === 'femeas') loadComprasFemeas(); else loadComprasMachos();" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border" :class="mov === 'compra' ? 'bg-primary-50 border-primary-200 text-primary-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'" data-tour="movimento-compra">
                             <i class="fa-solid fa-cart-shopping w-4"></i> Compra
                         </button>
                         <button x-show="item === 'femeas'" x-cloak type="button" @click="mov = 'cio'; loadCioFemeas()" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border" :class="mov === 'cio' ? 'bg-pink-50 border-pink-200 text-pink-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'">
@@ -2384,19 +2386,19 @@
                 <div class="flex items-center gap-2">
                     <template x-if="item === 'femeas' && mov === 'compra'">
                         <div class="flex items-center justify-center gap-2">
-                            <button type="button" @click="openNovoForm('leitoa')" class="inline-flex items-center gap-2 rounded-full border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <button type="button" @click="openNovoForm('leitoa')" class="inline-flex items-center gap-2 rounded-full border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" data-tour="leitoa">
                                 <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-pink-50 text-pink-600">
                                     <i class="fa-solid fa-piggy-bank"></i>
                                 </span>
                                 Leitoa
                             </button>
-                            <button type="button" @click="openNovoForm('matriz_vazia')" class="inline-flex items-center gap-2 rounded-full border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <button type="button" @click="openNovoForm('matriz_vazia')" class="inline-flex items-center gap-2 rounded-full border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" data-tour="matriz-vazia">
                                 <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-sky-50 text-sky-600">
                                     <i class="fa-solid fa-piggy-bank"></i>
                                 </span>
                                 Matriz vazia
                             </button>
-                            <button type="button" @click="openNovoForm('matriz_gestante')" class="inline-flex items-center gap-2 rounded-full border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                            <button type="button" @click="openNovoForm('matriz_gestante')" class="inline-flex items-center gap-2 rounded-full border border-gray-200 shadow-sm px-4 py-2 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500" data-tour="matriz-gestante">
                                 <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-violet-50 text-violet-600">
                                     <i class="fa-solid fa-piggy-bank"></i>
                                 </span>

@@ -229,21 +229,6 @@
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Terminação
                                 </a>
-                                <div class="my-1 border-t border-amber-100"></div>
-                                <button type="button"
-                                        onclick="(typeof window.toast==='function'?window.toast('🚧 Tour Center (Tutoriais) está em desenvolvimento e será liberado em breve!','info'):alert('Tour Center (Tutoriais) está em desenvolvimento.\nAguarde a próxima versão!'));event&&event.stopPropagation();"
-                                        @click.stop.prevent="open=false"
-                                        class="w-full text-left block px-4 py-2 text-sm font-bold text-slate-700 bg-slate-50/70 hover:bg-slate-100 border-l-4 border-amber-400">
-                                    <div class="flex items-center justify-between gap-2 w-full">
-                                        <span class="flex items-center min-w-0 flex-1">
-                                            <i class="fa-solid fa-flag text-slate-400 mr-2"></i>
-                                            <span class="truncate">Tutoriais (Tour Center)</span>
-                                        </span>
-                                        <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-200 shrink-0">
-                                            <i class="fa-solid fa-person-digging text-[8px]"></i> Em Desenvolvimento
-                                        </span>
-                                    </div>
-                                </button>
                             </div>
                         </div>
 
@@ -437,18 +422,6 @@
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Terminação
                         </a>
-                        <button type="button"
-                                onclick="(typeof window.toast==='function'?window.toast('🚧 Tour Center (Tutoriais) está em desenvolvimento e será liberado em breve!','info'):alert('Tour Center (Tutoriais) está em desenvolvimento.\nAguarde a próxima versão!'));event&&event.stopPropagation();"
-                                @click.stop.prevent="mobileMenuOpen = false"
-                                class="w-full flex flex-col sm:flex-row sm:items-center px-4 py-3 font-bold text-slate-800 bg-slate-50/90 hover:bg-slate-100 rounded-lg border-2 border-dashed border-amber-300 gap-2">
-                            <div class="flex items-center flex-1 min-w-0">
-                                <i class="fa-solid fa-flag mr-3 text-slate-400"></i>
-                                <span class="truncate">Tutoriais (Tour Center)</span>
-                            </div>
-                            <span class="inline-flex self-start sm:self-center items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-200 shrink-0 w-fit">
-                                <i class="fa-solid fa-person-digging text-[8px]"></i> Em Desenvolvimento
-                            </span>
-                        </button>
                     </div>
 
                     <div class="space-y-1">
@@ -719,5 +692,13 @@
     @stack('scripts')
 
     <x-tour-center />
+
+    <a href="https://wa.me/5575999044145?text=Ol%C3%A1%21%20Preciso%20de%20suporte%20no%20MasterPig."
+       target="_blank" rel="noopener noreferrer"
+       title="Suporte via WhatsApp"
+       aria-label="Abrir suporte no WhatsApp"
+       class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[80] flex items-center justify-center w-[52px] h-[52px] rounded-full bg-[#25D366] text-white shadow-[0_10px_25px_-6px_rgba(37,211,102,0.55)] ring-2 ring-white/70 hover:scale-[1.06] active:scale-[0.97] transition-all duration-200">
+        <i class="fa-brands fa-whatsapp text-[26px] leading-none"></i>
+    </a>
 </body>
 </html>
