@@ -422,7 +422,7 @@
                     <!-- Right side items -->
                     <div class="flex items-center space-x-3 sm:space-x-4">
                         <!-- WhatsApp Suporte -->
-                        <a href="https://wa.me/5575999044145?text=Ol%C3%A1%21%20Preciso%20de%20suporte%20no%20MasterPig."
+                        <a href="https://wa.me/5575999044145?text=Ol%C3%A1%21%20Preciso%20de%20suporte%20no%20SuiControl."
                            target="_blank" rel="noopener noreferrer"
                            title="Suporte via WhatsApp"
                            aria-label="Abrir suporte no WhatsApp"

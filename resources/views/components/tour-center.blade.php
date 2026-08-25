@@ -223,81 +223,89 @@ $TOUR_CENTER_LIBERADO = true;
              class="fixed z-[9998] pointer-events-none rounded-2xl ring-[5px] ring-amber-400 ring-offset-0 shadow-[0_0_0_9999px_rgba(2,6,23,0.78)] shadow-amber-400/15 transition-[top,left,width,height,border-radius] duration-250 ease-out"></div>
     </template>
 
-    {{-- ================ TOOLTIP DO PASSO (mobile: 95% width, topo se necessário) ================ --}}
+    {{-- ================ TOOLTIP DO PASSO (mobile: anexado NO TOPO ou NA BASE da tela — NUNCA cobre o spotlight) ================ --}}
     <template x-if="stepIndex >= 0 && tutorialAtivo">
-        <div id="tour-tooltip" class="fixed z-[9999] w-[95vw] sm:w-[400px] max-w-[400px]"
-             :style="tooltipStyle">
-            <div class="relative rounded-3xl bg-white shadow-2xl shadow-slate-900/30 border border-amber-100 overflow-hidden">
-                <div class="px-4 sm:px-5 pt-3.5 pb-3 bg-gradient-to-r from-amber-50 via-amber-50/60 to-white border-b border-amber-100/80 flex items-start justify-between gap-3">
-                    <div class="flex items-center gap-2.5 min-w-0">
-                        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-600 to-amber-800 text-white flex items-center justify-center shrink-0 shadow-sm">
-                            <i :class="(currentStep && currentStep.icon) ? currentStep.icon : 'fa-solid fa-circle-info'"></i>
-                        </div>
-                        <div class="min-w-0">
-                            <div class="text-[10.5px] font-black uppercase tracking-wider text-amber-700 leading-none">
-                                Passo <span x-text="stepIndex + 1"></span>/<span x-text="(tutorialAtivo && tutorialAtivo.steps) ? tutorialAtivo.steps.length : 0"></span>
-                                <span class="font-normal normal-case tracking-normal text-amber-700/70" x-text="(tutorialAtivo && tutorialAtivo.categoriaNome) ? (' · ' + tutorialAtivo.categoriaNome) : ''"></span>
+        <div id="tour-tooltip-container" class="fixed z-[9999] inset-x-0 sm:inset-auto pointer-events-none"
+             :style="containerStyleForTooltip">
+            <div id="tour-tooltip" class="w-full sm:w-[min(92vw,400px)] sm:max-w-[400px] max-w-full mx-auto sm:mx-0 pointer-events-auto
+                        rounded-none sm:rounded-3xl border border-amber-100 sm:border-amber-100 bg-white
+                        shadow-[0_30px_80px_-20px_rgba(2,6,23,0.38)] sm:shadow-2xl sm:shadow-slate-900/30
+                        overflow-hidden pb-[max(0px,env(safe-area-inset-bottom))] flex flex-col
+                        max-h-[var(--tt-max-h,62svh)]
+                        sm:max-h-[min(82svh,620px)]
+                        translate-y-0 translate-x-0 transition-transform duration-200 ease-out">
+                <div class="relative rounded-none sm:rounded-3xl overflow-hidden w-full flex flex-col h-full">
+                    <div class="px-3.5 sm:px-5 pt-3 pb-2.5 sm:py-3 bg-gradient-to-r from-amber-50 via-amber-50/60 to-white border-b border-amber-100/80 flex items-start justify-between gap-3 shrink-0">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-600 to-amber-800 text-white flex items-center justify-center shrink-0 shadow-sm">
+                                <i :class="(currentStep && currentStep.icon) ? currentStep.icon : 'fa-solid fa-circle-info'"></i>
                             </div>
-                            <div class="text-sm font-black text-slate-900 mt-1 leading-snug"
-                                 x-text="currentStep ? currentStep.titulo : ''"></div>
+                            <div class="min-w-0">
+                                <div class="text-[10px] sm:text-[10.5px] font-black uppercase tracking-wider text-amber-700 leading-none mt-0.5">
+                                    Passo <span x-text="stepIndex + 1"></span>/<span x-text="(tutorialAtivo && tutorialAtivo.steps) ? tutorialAtivo.steps.length : 0"></span>
+                                    <span class="font-normal normal-case tracking-normal text-amber-700/70" x-text="(tutorialAtivo && tutorialAtivo.categoriaNome) ? (' · ' + tutorialAtivo.categoriaNome) : ''"></span>
+                                </div>
+                                <div class="text-[15px] sm:text-sm font-black text-slate-900 mt-0.5 leading-snug"
+                                     x-text="currentStep ? currentStep.titulo : ''"></div>
+                            </div>
                         </div>
+                        <button @click="stopTutorial()"
+                                class="shrink-0 w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-100 flex items-center justify-center transition-all" title="Encerrar tour">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
                     </div>
-                    <button @click="stopTutorial()"
-                            class="shrink-0 w-9 h-9 rounded-xl border border-slate-200 bg-white text-slate-500 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-100 flex items-center justify-center transition-all" title="Encerrar tour">
-                        <i class="fa-solid fa-xmark"></i>
-                    </button>
-                </div>
 
-                <div class="px-4 sm:px-5 py-4 space-y-3">
-                    <p class="text-[14px] leading-relaxed text-slate-700"
-                       x-text="currentStep ? currentStep.descricao : ''"></p>
-                    <template x-if="currentStep && currentStep.dica">
-                        <div class="rounded-2xl bg-amber-50 border border-amber-100 p-3 text-[13px] text-amber-900 leading-relaxed flex items-start gap-2.5">
-                            <i class="fa-solid fa-lightbulb text-amber-500 shrink-0 mt-0.5"></i>
-                            <div x-text="currentStep.dica"></div>
-                        </div>
-                    </template>
-                    <template x-if="currentStep && currentStep.actionLabel">
-                        <div class="rounded-2xl bg-primary-50/80 border border-primary-100 p-3 text-[13px] text-primary-900 leading-relaxed flex items-start gap-2.5">
-                            <i class="fa-solid fa-hand-pointer text-primary-600 shrink-0 mt-0.5"></i>
-                            <div>
-                                <strong class="font-black">Faça agora:</strong>
-                                <span x-text="' ' + currentStep.actionLabel"></span>
+                    <div class="px-3.5 sm:px-5 py-3 sm:py-4 space-y-2.5 sm:space-y-3 overflow-y-auto -mr-1 pr-1 min-h-0">
+                        <p class="text-[13.5px] sm:text-[14px] leading-relaxed text-slate-700"
+                           x-text="currentStep ? currentStep.descricao : ''"></p>
+                        <template x-if="currentStep && currentStep.dica">
+                            <div class="rounded-2xl bg-amber-50 border border-amber-100 p-2.5 sm:p-3 text-[12.5px] sm:text-[13px] text-amber-900 leading-relaxed flex items-start gap-2 sm:gap-2.5 shrink-0">
+                                <i class="fa-solid fa-lightbulb text-amber-500 shrink-0 mt-0.5 text-[13px] sm:text-base"></i>
+                                <div x-text="currentStep.dica"></div>
                             </div>
-                        </div>
-                    </template>
-                </div>
-
-                <div class="px-4 sm:px-5 py-3 bg-slate-50/80 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-[max(12px,env(safe-area-inset-bottom))]">
-                    <button type="button" @click="prevStep()"
-                        :disabled="stepIndex === 0"
-                        class="sm:w-auto w-full min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:text-slate-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-slate-600">
-                        <i class="fa-solid fa-arrow-left"></i>
-                        Anterior
-                    </button>
-
-                    <div class="flex items-center justify-center gap-1.5 order-3 sm:order-2">
-                        <template x-for="(_, i) in (tutorialAtivo && tutorialAtivo.steps ? tutorialAtivo.steps : [])" :key="i">
-                            <div class="h-1.5 rounded-full transition-all duration-200 w-4"
-                                 :class="i < stepIndex ? 'bg-emerald-400' : (i === stepIndex ? 'w-6 bg-gradient-to-r from-amber-500 to-amber-600' : 'bg-slate-300')"></div>
+                        </template>
+                        <template x-if="currentStep && currentStep.actionLabel">
+                            <div class="rounded-2xl bg-primary-50/80 border border-primary-100 p-2.5 sm:p-3 text-[12.5px] sm:text-[13px] text-primary-900 leading-relaxed flex items-start gap-2 sm:gap-2.5 shrink-0">
+                                <i class="fa-solid fa-hand-pointer text-primary-600 shrink-0 mt-0.5 text-[13px] sm:text-base"></i>
+                                <div>
+                                    <strong class="font-black">Faça agora:</strong>
+                                    <span x-text="' ' + currentStep.actionLabel"></span>
+                                </div>
+                            </div>
                         </template>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 order-2 sm:order-3 min-w-0 flex-1 sm:flex-none sm:min-w-[160px] sm:justify-end">
-                        <template x-if="tutorialAtivo && tutorialAtivo.steps && stepIndex >= tutorialAtivo.steps.length - 1">
-                            <button type="button" @click="finishTutorial()"
-                                class="sm:w-auto w-full min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold bg-gradient-to-b from-emerald-500 to-emerald-600 text-white border border-emerald-500 shadow-sm shadow-emerald-900/20 active:scale-[0.98] transition-all shrink-0">
-                                <i class="fa-solid fa-check"></i>
-                                Concluir
-                            </button>
-                        </template>
-                        <template x-if="tutorialAtivo && tutorialAtivo.steps && stepIndex < tutorialAtivo.steps.length - 1">
-                            <button type="button" @click="nextStep()"
-                                class="sm:w-auto w-full min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold bg-gradient-to-b from-amber-600 to-amber-700 text-white border border-amber-600 shadow-sm shadow-amber-900/20 active:scale-[0.98] transition-all shrink-0">
-                                Próximo
-                                <i class="fa-solid fa-arrow-right"></i>
-                            </button>
-                        </template>
+                    <div class="px-3.5 sm:px-5 py-2.5 sm:py-3 bg-slate-50/80 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0 pb-[max(10px,env(safe-area-inset-bottom))]">
+                        <button type="button" @click="prevStep()"
+                            :disabled="stepIndex === 0"
+                            class="sm:w-auto w-full min-h-[42px] sm:min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl px-3.5 sm:px-4 py-2 sm:py-2.5 text-[13.5px] sm:text-sm font-bold border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 hover:text-slate-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:text-slate-600">
+                            <i class="fa-solid fa-arrow-left"></i>
+                            Anterior
+                        </button>
+
+                        <div class="flex items-center justify-center gap-1.5 order-3 sm:order-2 w-full sm:w-auto min-w-0">
+                            <template x-for="(_, i) in (tutorialAtivo && tutorialAtivo.steps ? tutorialAtivo.steps : [])" :key="i">
+                                <div class="h-1.5 rounded-full transition-all duration-200 w-3.5 sm:w-4 flex-none"
+                                     :class="i < stepIndex ? 'bg-emerald-400' : (i === stepIndex ? 'w-5 sm:w-6 bg-gradient-to-r from-amber-500 to-amber-600' : 'bg-slate-300')"></div>
+                            </template>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 order-2 sm:order-3 min-w-0 flex-1 sm:flex-none sm:min-w-[150px] sm:justify-end w-full sm:w-auto">
+                            <template x-if="tutorialAtivo && tutorialAtivo.steps && stepIndex >= tutorialAtivo.steps.length - 1">
+                                <button type="button" @click="finishTutorial()"
+                                    class="sm:w-auto w-full min-h-[42px] sm:min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl px-3.5 sm:px-4 py-2 sm:py-2.5 text-[13.5px] sm:text-sm font-bold bg-gradient-to-b from-emerald-500 to-emerald-600 text-white border border-emerald-500 shadow-sm shadow-emerald-900/20 active:scale-[0.98] transition-all shrink-0">
+                                    <i class="fa-solid fa-check"></i>
+                                    Concluir
+                                </button>
+                            </template>
+                            <template x-if="tutorialAtivo && tutorialAtivo.steps && stepIndex < tutorialAtivo.steps.length - 1">
+                                <button type="button" @click="nextStep()"
+                                    class="sm:w-auto w-full min-h-[42px] sm:min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-xl px-3.5 sm:px-4 py-2 sm:py-2.5 text-[13.5px] sm:text-sm font-bold bg-gradient-to-b from-amber-600 to-amber-700 text-white border border-amber-600 shadow-sm shadow-amber-900/20 active:scale-[0.98] transition-all shrink-0">
+                                    Próximo
+                                    <i class="fa-solid fa-arrow-right"></i>
+                                </button>
+                            </template>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -761,6 +769,7 @@ function tourCenter() {
         tutorialAtivo: null,
         stepIndex: -1,
         tooltipStyle: 'opacity:0;visibility:hidden;left:16px;top:16px;',
+        containerStyleForTooltip: 'opacity:0;visibility:hidden;top:0;left:0;width:100%;',
         _updatePositionTimer: null,
         _tourPollTimer: null,
         _mutationObserver: null,
@@ -993,15 +1002,31 @@ function tourCenter() {
         _scrollIntoViewIfNeeded(el) {
             return new Promise((resolve) => {
                 if (!el) { resolve(); return; }
-                const r = el.getBoundingClientRect();
-                const margin = 48;
+                const isMobile = window.innerWidth < 640;
+                let r = el.getBoundingClientRect();
+                let block = 'center';
+                if (isMobile) {
+                    const topHalf = r.top + r.height / 2;
+                    const vh = window.innerHeight;
+                    if (topHalf < vh * 0.5) block = 'start'; else block = 'end';
+                }
+                const margin = isMobile ? 160 : 48;
                 const isOutside = (
                     r.top < margin ||
-                    r.left < margin ||
-                    r.right > window.innerWidth - margin ||
+                    r.left < 16 ||
+                    r.right > window.innerWidth - 16 ||
                     r.bottom > window.innerHeight - margin
                 );
-                if (!isOutside) { resolve(); return; }
+                if (!isOutside && isMobile) {
+                    r = el.getBoundingClientRect();
+                    const topHalf2 = r.top + r.height / 2;
+                    const vh = window.innerHeight;
+                    const reserveTop = Math.max(360, Math.min(480, Math.floor(vh * 0.48)));
+                    const reserveBottom = reserveTop;
+                    if (r.top < reserveTop || (vh - r.bottom) < reserveBottom) {
+                        block = topHalf2 < vh * 0.5 ? 'start' : 'end';
+                    } else { resolve(); return; }
+                } else if (!isOutside) { resolve(); return; }
                 this._isScrolling = true;
                 let resolved = false;
                 const finish = () => {
@@ -1010,15 +1035,33 @@ function tourCenter() {
                     setTimeout(() => {
                         this._isScrolling = false;
                         resolve();
-                    }, 100);
+                    }, 120);
                 };
                 const customContainers = this._getScrollContainers(el);
                 customContainers.forEach(c => {
                     try { c.addEventListener('scroll', this._onScrollChangeCapture, true); } catch(e){}
                 });
                 try {
-                    const opts = { behavior: 'smooth', block: 'center', inline: 'nearest' };
-                    el.scrollIntoView(opts);
+                    const opts = { behavior: 'smooth', block: block, inline: 'nearest' };
+                    if (isMobile && (r.bottom - r.top) < 220) {
+                        try {
+                            const desiredGap = Math.max(380, Math.min(520, Math.floor(window.innerHeight * 0.5)));
+                            const abs = el.getBoundingClientRect();
+                            const elCenter = abs.top + abs.height / 2;
+                            const vh = window.innerHeight;
+                            const goTop = elCenter < vh * 0.5;
+                            if (goTop) {
+                                try { window.scrollBy({ top: Math.max(-800, -Math.max(0, abs.top) - 96), behavior: 'smooth' }); } catch(e){ el.scrollIntoView(opts); }
+                            } else {
+                                try { window.scrollBy({ top: Math.max(800, (vh - abs.bottom) + 96 - (vh - desiredGap)), behavior: 'smooth' }); } catch(e){ el.scrollIntoView(opts); }
+                            }
+                            setTimeout(() => { try { el.scrollIntoView({ behavior: 'smooth', block: (goTop ? 'start' : 'end'), inline: 'nearest' }); } catch(e){} }, 120);
+                        } catch(e) {
+                            el.scrollIntoView(opts);
+                        }
+                    } else {
+                        el.scrollIntoView(opts);
+                    }
                 } catch(e) {
                     finish(); return;
                 }
@@ -1054,7 +1097,7 @@ function tourCenter() {
                         requestAnimationFrame(check);
                     }
                 };
-                setTimeout(check, 60);
+                setTimeout(check, 80);
                 setTimeout(() => {
                     customContainers.forEach(c => {
                         try { c.removeEventListener('scroll', this._onScrollChangeCapture, true); } catch(e){}
@@ -1140,6 +1183,7 @@ function tourCenter() {
             const hl = document.getElementById('tour-highlight');
             if (hl) hl.style.cssText = '';
             this.tooltipStyle = 'opacity:0;visibility:hidden;';
+            this.containerStyleForTooltip = 'opacity:0;visibility:hidden;';
         },
 
         finishTutorial() {
@@ -1462,6 +1506,7 @@ function tourCenter() {
         updateTourPosition() {
             if (this.stepIndex < 0 || !this.tutorialAtivo || !this.currentStep) {
                 this.tooltipStyle = 'opacity:0;visibility:hidden;';
+                this.containerStyleForTooltip = 'opacity:0;visibility:hidden;';
                 const hl = document.getElementById('tour-highlight');
                 if (hl) hl.style.cssText = '';
                 return;
@@ -1542,7 +1587,7 @@ function tourCenter() {
                 hl.style.cssText = hlCss.join(';') + ';';
             }
             const isMobile = window.innerWidth < 640;
-            const TOOLTIP_W = isMobile ? Math.min(vw - 20, 460) : Math.min(vw - 32, 420);
+            const TOOLTIP_W = isMobile ? vw : Math.min(vw - 32, 420);
             let tooltipEl = null;
             try { tooltipEl = document.getElementById('tour-tooltip'); } catch(e){}
             let ttH = null;
@@ -1557,34 +1602,127 @@ function tourCenter() {
                 } catch(e){}
             }
             const SAFE_BOTTOM = isMobile
-                ? Math.max(28, 18 + Math.max(0, window.innerHeight - document.documentElement.clientHeight) + 14)
+                ? Math.max(10, 4 + Math.max(0, window.innerHeight - document.documentElement.clientHeight))
                 : 28;
-            const SAFE_TOP = isMobile ? 10 : 12;
-            const SAFE_LEFT = isMobile ? 10 : 12;
-            const SAFE_RIGHT = isMobile ? 10 : 12;
-            const MARGIN = isMobile ? 18 : 14;
-            if (!ttH) {
+            const SAFE_TOP = isMobile ? Math.max(0, envTopPx() + 0) : 12;
+            function envTopPx() { try { const s = getComputedStyle(document.documentElement).getPropertyValue('--sat') || '0'; return parseInt(s,10)||0; } catch(e) { return 0; } }
+            const SAFE_LEFT = isMobile ? 0 : 12;
+            const SAFE_RIGHT = isMobile ? 0 : 12;
+            const MARGIN = isMobile ? 14 : 14;
+            if (!ttH || ttH < 200) {
                 ttH = isMobile
-                    ? Math.min(560, Math.floor(vh * (vh < 700 ? 0.92 : 0.88)))
+                    ? Math.min(480, Math.floor(vh * (vh < 700 ? 0.62 : 0.58)))
                     : Math.min(560, Math.floor(vh * (vh < 700 ? 0.90 : 0.86)));
             }
+            if (isMobile) ttH = Math.min(ttH, Math.max(320, Math.floor(vh * 0.62)));
             const ttRect = { width: TOOLTIP_W, height: ttH };
+            try {
+                const root = document.documentElement;
+                root.style.setProperty('--tt-max-h', Math.max(300, Math.min(480, Math.floor(vh * (isMobile ? 0.62 : 0.86)))) + 'px');
+            } catch(e){}
             const pos = this.currentStep.posicao || 'auto';
             const s = { t: top, l: left, r: right, b: bottom, w: width, h: height };
-            const fitsBelow = (vh - s.b) >= ttRect.height + MARGIN + SAFE_BOTTOM;
-            const fitsAbove = s.t >= ttRect.height + MARGIN + SAFE_TOP;
-            const fitsLeft = s.l >= ttRect.width + MARGIN + SAFE_LEFT;
-            const fitsRight = (vw - s.r) >= ttRect.width + MARGIN + SAFE_RIGHT;
+            const reservedForTooltip = ttRect.height + MARGIN;
+            const spaceAbove = s.t - SAFE_TOP;
+            const spaceBelow = vh - s.b - SAFE_BOTTOM;
             let ttTop, ttLeft;
             let finalPos = pos;
+            let containerCss = '';
             if (isMobile) {
+                const fitsAbove = spaceAbove >= reservedForTooltip;
+                const fitsBelow = spaceBelow >= reservedForTooltip;
                 if (fitsBelow) finalPos = 'bottom';
                 else if (fitsAbove) finalPos = 'top';
                 else {
-                    const spaceBelow = vh - s.b - SAFE_BOTTOM;
-                    finalPos = spaceBelow >= (vh - s.t - s.h - s.t - SAFE_TOP) ? 'bottom' : 'top';
+                    finalPos = (spaceBelow >= spaceAbove) ? 'bottom' : 'top';
+                    ttH = Math.min(ttH, (finalPos === 'bottom' ? spaceBelow : spaceAbove));
+                    ttRect.height = Math.max(260, ttH);
                 }
+                if (finalPos === 'bottom') {
+                    ttTop = Math.max(s.b + MARGIN, vh - ttRect.height - SAFE_BOTTOM);
+                    ttLeft = 0;
+                    ttRect.width = vw;
+                } else {
+                    ttTop = Math.min(s.t - MARGIN - ttRect.height, SAFE_TOP);
+                    ttLeft = 0;
+                    ttRect.width = vw;
+                }
+                if (finalPos === 'bottom') {
+                    const minGap = 14;
+                    const actualGap = ttTop - s.b;
+                    if (actualGap < minGap) {
+                        const canShrinkTooltipBy = ttRect.height - 280;
+                        const need = (minGap - actualGap);
+                        if (canShrinkTooltipBy >= need) {
+                            ttRect.height -= need;
+                        } else {
+                            ttTop = s.b + minGap;
+                            ttRect.height = Math.max(260, vh - ttTop - SAFE_BOTTOM);
+                        }
+                    }
+                } else if (finalPos === 'top') {
+                    const minGap = 14;
+                    const actualGap = s.t - (ttTop + ttRect.height);
+                    if (actualGap < minGap) {
+                        const canShrinkBy = ttRect.height - 280;
+                        const need = (minGap - actualGap);
+                        if (canShrinkBy >= need) {
+                            ttRect.height -= need;
+                            ttTop += need;
+                        } else {
+                            const newBottom = s.t - minGap;
+                            ttTop = newBottom - ttRect.height;
+                            if (ttTop < SAFE_TOP) { ttTop = SAFE_TOP; ttRect.height = Math.max(260, newBottom - ttTop); }
+                        }
+                    }
+                }
+                const sL = s.l, sR = s.r, sT = s.t, sB = s.b;
+                const tL = ttLeft, tR = ttLeft + ttRect.width, tT = ttTop, tB = ttTop + ttRect.height;
+                const ovH = !(tR < sL || tL > sR);
+                const ovV = !(tB + 6 < sT || tT - 6 > sB);
+                if (ovH && ovV) {
+                    if (finalPos === 'bottom') {
+                        const newTop = sB + 16;
+                        if ((newTop + ttRect.height) > vh - SAFE_BOTTOM) {
+                            ttRect.height = Math.max(260, vh - newTop - SAFE_BOTTOM);
+                        }
+                        ttTop = newTop;
+                    } else {
+                        const newBot = sT - 16;
+                        const newTop = newBot - ttRect.height;
+                        if (newTop < SAFE_TOP) {
+                            ttRect.height = Math.max(260, newBot - SAFE_TOP);
+                            ttTop = SAFE_TOP;
+                        } else {
+                            ttTop = newTop;
+                        }
+                    }
+                }
+                containerCss = [
+                    'top:0',
+                    'left:0',
+                    'width:100%',
+                    'height:100%',
+                    'display:flex',
+                    'flex-direction:column',
+                    'justify-content:' + (finalPos === 'bottom' ? 'flex-end' : 'flex-start'),
+                    'align-items:stretch',
+                    'padding-top:' + Math.round(ttTop) + 'px',
+                    'padding-bottom:' + Math.round(vh - (ttTop + ttRect.height)) + 'px',
+                    'padding-left:0',
+                    'padding-right:0',
+                    'box-sizing:border-box',
+                    'pointer-events:none',
+                    'opacity:1',
+                    'visibility:visible'
+                ].join(';') + ';';
+                this.containerStyleForTooltip = containerCss;
+                this.tooltipStyle = 'width:100%;max-width:100%;';
             } else {
+                const fitsBelow = (vh - s.b) >= ttRect.height + MARGIN + SAFE_BOTTOM;
+                const fitsAbove = s.t >= ttRect.height + MARGIN + SAFE_TOP;
+                const fitsLeft = s.l >= ttRect.width + MARGIN + SAFE_LEFT;
+                const fitsRight = (vw - s.r) >= ttRect.width + MARGIN + SAFE_RIGHT;
                 if (pos !== 'auto') {
                     if (pos === 'top' && !fitsAbove) finalPos = 'bottom';
                     else if (pos === 'bottom' && !fitsBelow) finalPos = 'top';
@@ -1595,16 +1733,15 @@ function tourCenter() {
                     else if (fitsAbove) finalPos = 'top';
                     else if (fitsRight && !isMobile) finalPos = 'right';
                     else if (fitsLeft && !isMobile) finalPos = 'left';
-                    else finalPos = isMobile ? 'bottom' : 'top';
+                    else finalPos = 'top';
                 }
-            }
             const anchorCx = s.l + s.w / 2;
             const anchorCy = s.t + s.h / 2;
             let overlapAvoided = false;
             if (finalPos === 'bottom') {
                 ttTop = s.b + MARGIN;
                 ttLeft = Math.round(anchorCx - ttRect.width / 2);
-                if (isMobile && (ttTop + ttRect.height) > (vh - SAFE_BOTTOM) && fitsAbove) {
+                if (isMobile && (ttTop + ttRect.height) > (vh - SAFE_BOTTOM) && false) {
                     finalPos = 'top';
                     overlapAvoided = true;
                 }
@@ -1612,10 +1749,6 @@ function tourCenter() {
             if (finalPos === 'top' || overlapAvoided) {
                 ttTop = s.t - MARGIN - ttRect.height;
                 ttLeft = Math.round(anchorCx - ttRect.width / 2);
-                if (isMobile && ttTop < SAFE_TOP && fitsBelow) {
-                    finalPos = 'bottom';
-                    ttTop = s.b + MARGIN;
-                }
             } else if (finalPos === 'left') {
                 ttLeft = s.l - MARGIN - ttRect.width;
                 ttTop = Math.round(anchorCy - ttRect.height / 2);
@@ -1627,50 +1760,27 @@ function tourCenter() {
             if (ttTop < SAFE_TOP) ttTop = SAFE_TOP;
             if (ttLeft + ttRect.width > vw - SAFE_RIGHT) ttLeft = Math.max(SAFE_LEFT, vw - ttRect.width - SAFE_RIGHT);
             if (ttTop + ttRect.height > vh - SAFE_BOTTOM) {
-                if (isMobile && finalPos !== 'top' && fitsAbove) {
+                if (finalPos !== 'top' && fitsAbove) {
                     ttTop = s.t - MARGIN - ttRect.height;
                 } else {
                     ttTop = Math.max(SAFE_TOP, vh - ttRect.height - SAFE_BOTTOM);
                 }
-                if (isMobile && finalPos === 'top' && ttTop < SAFE_TOP && (s.b + MARGIN + ttRect.height) <= (vh - SAFE_BOTTOM)) {
-                    ttTop = s.b + MARGIN;
-                }
             }
-            if (isMobile && el) {
-                try {
-                    const sr = el.getBoundingClientRect();
-                    const maxTooltipOverlapH = Math.min(sr.height + 4, 10);
-                    const ttRect2 = { l: ttLeft, t: ttTop, r: ttLeft + ttRect.width, b: ttTop + ttRect.height };
-                    const overlapTop = Math.max(ttRect2.t, sr.top);
-                    const overlapBot = Math.min(ttRect2.b, sr.bottom);
-                    const overlapLeft = Math.max(ttRect2.l, sr.left);
-                    const overlapRight = Math.min(ttRect2.r, sr.right);
-                    const overlapArea = Math.max(0, overlapBot - overlapTop) * Math.max(0, overlapRight - overlapLeft);
-                    if (overlapArea > 20 * 20) {
-                        if ((ttTop + ttRect.height) > sr.top && ttTop < sr.top) {
-                            const newTop = sr.top - MARGIN - ttRect.height;
-                            if (newTop >= SAFE_TOP) ttTop = newTop;
-                            else {
-                                const below = sr.bottom + MARGIN;
-                                if ((below + ttRect.height) <= (vh - SAFE_BOTTOM)) ttTop = below;
-                            }
-                        } else if (ttTop < sr.bottom && (ttTop + ttRect.height) > sr.bottom) {
-                            const below = sr.bottom + MARGIN;
-                            if ((below + ttRect.height) <= (vh - SAFE_BOTTOM)) ttTop = below;
-                            else {
-                                const newTop = sr.top - MARGIN - ttRect.height;
-                                if (newTop >= SAFE_TOP) ttTop = newTop;
-                            }
-                        }
-                    }
-                } catch(e){}
-            }
-            this.tooltipStyle = [
-                `top:${Math.round(ttTop)}px`,
-                `left:${Math.round(ttLeft)}px`,
-                `width:${Math.round(ttRect.width)}px`,
-                `max-width:${Math.round(ttRect.width)}px`
+            this.containerStyleForTooltip = [
+                'top:' + Math.round(ttTop) + 'px',
+                'left:' + Math.round(ttLeft) + 'px',
+                'width:' + Math.round(ttRect.width) + 'px',
+                'opacity:1',
+                'visibility:visible',
+                'pointer-events:none'
             ].join(';') + ';';
+            this.tooltipStyle = [
+                `top:0`,
+                `left:0`,
+                `width:100%`,
+                `max-width:100%`
+            ].join(';') + ';';
+            }
             if (typeof this._remeasureCount === 'undefined') this._remeasureCount = 0;
             if (this._remeasureCount < 3) {
                 this._remeasureCount++;
