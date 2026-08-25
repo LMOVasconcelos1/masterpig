@@ -27,21 +27,32 @@ class PigCycleService
         }
     }
 
-    public static function toPigDay(?\DateTimeInterface $date): ?int
+    public static function toPigDay(mixed $date): ?int
     {
-        if (!$date) return null;
+        if ($date === null || $date === '' || (is_string($date) && trim($date) === '')) return null;
+        if (!($date instanceof \DateTimeInterface)) {
+            try {
+                $date = Carbon::parse($date);
+            } catch (\Throwable $e) {
+                return null;
+            }
+        }
         $date = Carbon::instance($date);
         $base = Carbon::parse(self::PIG_BASE_DATE)->startOfDay();
-        // Dia PIG Absoluto = quantidade de dias desde 31/12/1968
         $absoluteDay = (int) $base->diffInDays($date->startOfDay(), false);
-        
-        // Dia PIG = últimos 3 dígitos do Dia PIG Absoluto
         return $absoluteDay % 1000;
     }
 
-    public static function toPigAbsoluteDay(?\DateTimeInterface $date): ?int
+    public static function toPigAbsoluteDay(mixed $date): ?int
     {
-        if (!$date) return null;
+        if ($date === null || $date === '' || (is_string($date) && trim($date) === '')) return null;
+        if (!($date instanceof \DateTimeInterface)) {
+            try {
+                $date = Carbon::parse($date);
+            } catch (\Throwable $e) {
+                return null;
+            }
+        }
         $date = Carbon::instance($date);
         $base = Carbon::parse(self::PIG_BASE_DATE)->startOfDay();
         return (int) $base->diffInDays($date->startOfDay(), false);
@@ -182,14 +193,22 @@ class PigCycleService
         }
     }
 
-    public static function formatDisplayDate(?\DateTimeInterface $date, ?\DateTimeInterface $unused = null): string
+    public static function formatDisplayDate(mixed $date, mixed $unused = null): string
     {
-        if (!$date) return '-';
+        if ($date === null || $date === '' || (is_string($date) && trim($date) === '')) return '-';
+        if (!($date instanceof \DateTimeInterface)) {
+            try {
+                $date = Carbon::parse($date);
+            } catch (\Throwable $e) {
+                return (is_string($date) ? (string) $date : '-');
+            }
+        }
         $date = Carbon::instance($date);
-        
+
         $type = self::getCalendarType();
         if ($type === self::CALENDAR_1000_DAYS) {
-            return (string) self::toPigDay($date);
+            $pigDay = self::toPigDay($date);
+            return $pigDay === null ? '-' : (string) $pigDay;
         }
 
         return $date->format('d/m/Y');
