@@ -4,25 +4,80 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Sui Control - @yield('title', 'Dashboard')</title>
-
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{{ $title ?? 'Sui Control - MasterPig' }}</title>
     <meta name="description" content="Sistema de gerenciamento de granja suína Sui Control - MasterPig">
-    <meta name="theme-color" content="#f97316" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#78350f" media="(prefers-color-scheme: dark)">
-
-    <link rel="manifest" href="/manifest.json">
-    <link rel="icon" type="image/png" href="/logo.png">
-    <link rel="apple-touch-icon" href="/logoSemPalavra.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="/logoSemPalavra.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/logoSemPalavra.png">
-    <link rel="apple-touch-icon" sizes="167x167" href="/logoSemFundo.png">
-
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#7c2d12" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#7c2d12" media="(prefers-color-scheme: dark)">
+    <meta name="msapplication-navbutton-color" content="#7c2d12">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Sui Control">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="/logoSemFundo.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/logoSemFundo.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/logoSemFundo.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/logoSemFundo.png">
+    <script>
+    (function(){
+        function l(){ try{ document.documentElement.classList.add('splash-hidden'); }catch(e){} }
+        var f = false;
+        function done(){ if(f) return; f = true; l(); }
+        function setStartupImages() {
+            try {
+                if (!window.matchMedia) return;
+                var portraitWidth = Math.min(screen.width, screen.height);
+                var landscapeWidth = Math.max(screen.width, screen.height);
+                var dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+                var sizes = [
+                    { w: portraitWidth * dpr, h: landscapeWidth * dpr, o: 'portrait' },
+                    { w: landscapeWidth * dpr, h: portraitWidth * dpr, o: 'landscape' }
+                ];
+                document.querySelectorAll('link[data-splash-dynamic="1"]').forEach(function(n){ n.remove(); });
+                sizes.forEach(function(sz){
+                    var canvas = document.createElement('canvas');
+                    canvas.width = sz.w; canvas.height = sz.h;
+                    var ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        var grad = ctx.createLinearGradient(0,0,0,sz.h);
+                        grad.addColorStop(0, '#a13c18');
+                        grad.addColorStop(1, '#7c2d12');
+                        ctx.fillStyle = grad; ctx.fillRect(0,0,sz.w,sz.h);
+                        var minSide = Math.min(sz.w, sz.h);
+                        var imgW = Math.floor(minSide * 0.62);
+                        var imgH = imgW;
+                        var img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        img.onload = function(){
+                            try {
+                                ctx.drawImage(img, (sz.w - imgW)/2, (sz.h - imgH)/2, imgW, imgH);
+                                var data = canvas.toDataURL('image/png');
+                                var link = document.createElement('link');
+                                link.rel = 'apple-touch-startup-image';
+                                link.setAttribute('data-splash-dynamic','1');
+                                link.href = data;
+                                if (sz.o === 'portrait') {
+                                    link.media = '(orientation: portrait) and (device-width: ' + (portraitWidth/dpr) + 'px) and (device-height: ' + (landscapeWidth/dpr) + 'px) and (-webkit-device-pixel-ratio: ' + dpr + ')';
+                                } else {
+                                    link.media = '(orientation: landscape) and (device-width: ' + (portraitWidth/dpr) + 'px) and (device-height: ' + (landscapeWidth/dpr) + 'px) and (-webkit-device-pixel-ratio: ' + dpr + ')';
+                                }
+                                document.head.appendChild(link);
+                            } catch(e){}
+                        };
+                        img.onerror = function(){};
+                        img.src = '/logoSemFundo.png';
+                    }
+                });
+            } catch(e){}
+        }
+        try { setStartupImages(); } catch(e){}
+        setTimeout(function(){ try{ setStartupImages(); }catch(e){} }, 200);
+    })();
+    </script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="MasterPig">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
-    <meta name="msapplication-TileColor" content="#f97316">
+    <meta name="msapplication-TileColor" content="#7c2d12">
     <meta name="msapplication-tap-highlight" content="no">
 
     <!-- Safe-area inset CSS variables and 100dvh helper (inline before style to avoid FOUC) -->
@@ -39,6 +94,44 @@
         body { -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; -webkit-overflow-scrolling: touch; }
         .h-screen { min-height: 100vh; min-height: 100dvh; }
         .min-h-screen { min-height: 100vh; min-height: 100dvh; }
+
+        #app-splash {
+            position: fixed; inset: 0; z-index: 2147483647;
+            background: linear-gradient(180deg, #a13c18 0%, #7c2d12 100%);
+            display: flex; align-items: center; justify-content: center;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            opacity: 1; transform: scale(1);
+            pointer-events: auto;
+            transform-origin: 50% 50%;
+        }
+        #app-splash .splash-logo {
+            max-width: min(72vw, 520px);
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            -webkit-user-drag: none;
+            user-select: none;
+            animation: splashPulse 2.2s ease-in-out infinite;
+        }
+        @keyframes splashPulse {
+            0%   { transform: scale(1);    }
+            45%  { transform: scale(1.035); }
+            100% { transform: scale(1);    }
+        }
+        html.splash-hidden #app-splash {
+            animation: splashOut 720ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            pointer-events: none;
+        }
+        @keyframes splashOut {
+            0%   { opacity: 1;    transform: scale(1);        filter: blur(0px); }
+            40%  { opacity: 1;    transform: scale(1.08);       filter: blur(0px); }
+            75%  { opacity: 0.65; transform: scale(1.22);     filter: blur(2px);   }
+            100% { opacity: 0;    transform: scale(1.35);       filter: blur(10px); visibility: hidden; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #app-splash .splash-logo { animation: none; }
+            html.splash-hidden #app-splash { animation: splashOut 260ms ease-out forwards; }
+        }
     </style>
     
     <!-- Fonts -->
@@ -71,6 +164,41 @@
     @stack('styles')
 </head>
 <body class="bg-amber-900 font-sans text-gray-900 antialiased transition-colors duration-200">
+    <div id="app-splash" aria-hidden="true">
+        <img src="/logoSemFundo.png" alt="MasterPig" class="splash-logo" width="512" height="512">
+    </div>
+    <script>
+    (function(){
+        var finished = false;
+        var MIN_MS = 780;
+        var start = Date.now();
+        function finish() {
+            if (finished) return;
+            var elapsed = Date.now() - start;
+            var wait = Math.max(0, MIN_MS - elapsed);
+            setTimeout(function(){
+                finished = true;
+                try { document.documentElement.classList.add('splash-hidden'); } catch(e){}
+                setTimeout(function(){
+                    try {
+                        var s = document.getElementById('app-splash');
+                        if (s && s.parentNode) s.parentNode.removeChild(s);
+                    } catch(e){}
+                }, 900);
+            }, wait);
+        }
+        try {
+            if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                window.addEventListener('load', finish);
+                setTimeout(finish, 140);
+            } else {
+                window.addEventListener('DOMContentLoaded', function(){ setTimeout(finish, 120); });
+                window.addEventListener('load', finish);
+            }
+        } catch(e){ setTimeout(finish, 300); }
+        setTimeout(finish, 4200);
+    })();
+    </script>
     <div class="flex flex-col overflow-hidden" 
          style="height: 100vh; height: 100dvh; padding-top: var(--sat); padding-right: var(--sar); padding-bottom: var(--sab); padding-left: var(--sal);"
          x-data="{ 
@@ -292,9 +420,19 @@
                     </nav>
 
                     <!-- Right side items -->
-                    <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-3 sm:space-x-4">
+                        <!-- WhatsApp Suporte -->
+                        <a href="https://wa.me/5575999044145?text=Ol%C3%A1%21%20Preciso%20de%20suporte%20no%20MasterPig."
+                           target="_blank" rel="noopener noreferrer"
+                           title="Suporte via WhatsApp"
+                           aria-label="Abrir suporte no WhatsApp"
+                           class="shrink-0 relative inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#25D366] text-white shadow-md hover:scale-[1.06] active:scale-[0.96] transition-all duration-180 ring-1 ring-white/20">
+                            <i class="fa-brands fa-whatsapp text-xl leading-none"></i>
+                            <span class="sr-only">WhatsApp</span>
+                        </a>
+
                         <!-- Mobile menu button -->
-                        <button type="button" @click="mobileMenuOpen = !mobileMenuOpen" class="lg:hidden p-2 rounded-lg text-amber-100 hover:bg-amber-700 hover:text-white focus:outline-none">
+                        <button type="button" @click="mobileMenuOpen = !mobileMenuOpen" class="lg:hidden p-2 rounded-lg text-amber-100 hover:bg-amber-700 hover:text-white focus:outline-none shrink-0">
                             <i class="fa-solid fa-bars text-xl"></i>
                         </button>
 
@@ -692,13 +830,5 @@
     @stack('scripts')
 
     <x-tour-center />
-
-    <a href="https://wa.me/5575999044145?text=Ol%C3%A1%21%20Preciso%20de%20suporte%20no%20MasterPig."
-       target="_blank" rel="noopener noreferrer"
-       title="Suporte via WhatsApp"
-       aria-label="Abrir suporte no WhatsApp"
-       class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[80] flex items-center justify-center w-[52px] h-[52px] rounded-full bg-[#25D366] text-white shadow-[0_10px_25px_-6px_rgba(37,211,102,0.55)] ring-2 ring-white/70 hover:scale-[1.06] active:scale-[0.97] transition-all duration-200">
-        <i class="fa-brands fa-whatsapp text-[26px] leading-none"></i>
-    </a>
 </body>
 </html>

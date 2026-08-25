@@ -207,6 +207,16 @@ $TOUR_CENTER_LIBERADO = true;
         </div>
     </template>
 
+    {{-- ================ MÁSCARA DE CLIQUES (BLOQUEIA TUDO FORA DO SPOTLIGHT) ================ --}}
+    <template x-if="stepIndex >= 0 && tutorialAtivo">
+        <div id="tour-mask"
+             class="fixed inset-0 z-[9997] block"
+             @click.capture="onTourMaskClick($event)"
+             @keydown.capture.prevent.stop="_onTourMaskKeydown($event)"
+             role="presentation" aria-hidden="true">
+        </div>
+    </template>
+
     {{-- ================ HIGHLIGHT (SOBREPÕEM DURANTE TUTORIAL) — box-shadow gigante já funciona como overlay fullscreen ================ --}}
     <template x-if="stepIndex >= 0">
         <div id="tour-highlight"
@@ -1189,6 +1199,128 @@ function tourCenter() {
             } catch(e){}
         },
 
+        _flashInvalidClick() {
+            try {
+                const hl = document.getElementById('tour-highlight');
+                if (!hl) return;
+                const origClass = hl.className || '';
+                let cleared = false;
+                const reset = () => {
+                    if (cleared) return; cleared = true;
+                    try { hl.className = origClass; hl.style.transform = ''; hl.style.transition = ''; } catch(e){}
+                };
+                hl.style.transition = 'transform 120ms ease-out, box-shadow 120ms ease-out';
+                hl.style.boxShadow = '0 0 0 9999px rgba(220,38,38,0.52), 0 0 0 8px rgba(239,68,68,0.85)';
+                hl.style.transform = 'translateX(0px)';
+                let i = 0;
+                const shakes = [6, -6, 4, -4, 2, -2, 0];
+                const tick = () => {
+                    try {
+                        hl.style.transform = 'translateX(' + (shakes[i] || 0) + 'px)';
+                    } catch(e){}
+                    i++;
+                    if (i < shakes.length) setTimeout(tick, 50); else setTimeout(reset, 160);
+                };
+                setTimeout(tick, 10);
+                setTimeout(reset, 520);
+            } catch(e){}
+        },
+
+        onTourMaskClick(e) {
+            try {
+                const cx = e.clientX, cy = e.clientY;
+                const tooltipEl = document.getElementById('tour-tooltip');
+                if (tooltipEl && tooltipEl.isConnected) {
+                    const t = tooltipEl.getBoundingClientRect();
+                    if (cx >= t.left && cx <= t.right && cy >= t.top && cy <= t.bottom) return;
+                }
+                const hl = document.getElementById('tour-highlight');
+                let inside = false;
+                if (hl) {
+                    const r = hl.getBoundingClientRect();
+                    inside = (cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom);
+                    if (inside) {
+                        try {
+                            hl.style.pointerEvents = hl.style.pointerEvents;
+                            hl.style.visibility = 'hidden';
+                            const maskEl = document.getElementById('tour-mask');
+                            if (maskEl) maskEl.style.visibility = 'hidden';
+                            const real = document.elementFromPoint(cx, cy);
+                            if (maskEl) maskEl.style.visibility = '';
+                            hl.style.visibility = '';
+                            if (real && !['#tour-mask','tour-tooltip','#tour-highlight'].includes(real.id || '')) {
+                                e.preventDefault();
+                                e.stopImmediatePropagation();
+                                e.stopPropagation();
+                                const origMaskPe = document.body.style.pointerEvents;
+                                try {
+                                    const toDis = [document.getElementById('tour-mask'), hl, tooltipEl].filter(Boolean);
+                                    toDis.forEach(n => { n.style.pointerEvents = 'none'; });
+                                    const under = document.elementFromPoint(cx, cy);
+                                    toDis.forEach(n => { n.style.pointerEvents = ''; });
+                                    if (under) {
+                                        const evOpts = { bubbles: true, cancelable: true, composed: true, view: window, clientX: cx, clientY: cy, button: 0, buttons: 1 };
+                                        try {
+                                            const md = new MouseEvent('mousedown', evOpts); under.dispatchEvent(md);
+                                        } catch(err){}
+                                        try {
+                                            const mu = new MouseEvent('mouseup', evOpts); under.dispatchEvent(mu);
+                                        } catch(err){}
+                                        try {
+                                            const ce = new MouseEvent('click', Object.assign({}, evOpts, { buttons: 0 }));
+                                            under.dispatchEvent(ce);
+                                        } catch(err){}
+                                        try { if (under.click && typeof under.click === 'function') under.click(); } catch(err){}
+                                    }
+                                } finally {
+                                    document.body.style.pointerEvents = origMaskPe;
+                                }
+                                return false;
+                            }
+                        } catch(err){}
+                    }
+                }
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                e.stopPropagation();
+                this._flashInvalidClick();
+                if (window.navigator && window.navigator.vibrate) {
+                    try { window.navigator.vibrate(18); } catch(err){}
+                }
+                return false;
+            } catch(err){
+                try {
+                    e.preventDefault(); e.stopImmediatePropagation(); e.stopPropagation();
+                    this._flashInvalidClick();
+                } catch(ee){}
+                return false;
+            }
+        },
+
+        _onTourMaskKeydown(e) {
+            if (!e) return;
+            try {
+                const k = (e.key || '').toString();
+                if (k === 'Tab' || k === 'Enter' || k === ' ') {
+                    const tooltipEl = document.getElementById('tour-tooltip');
+                    if (tooltipEl && tooltipEl.contains && e.target && tooltipEl.contains(e.target)) return;
+                }
+                const isEsc = (k === 'Escape');
+                const tooltipEl = document.getElementById('tour-tooltip');
+                if (isEsc && tooltipEl) {
+                    const btnX = tooltipEl.querySelector('button[title="Encerrar tour"], .tour-close-btn, [@click="stopTutorial()"]');
+                    if (btnX && btnX.click) try { btnX.click(); return; } catch(err){}
+                }
+                if (k && ['Tab','Enter',' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    e.stopPropagation();
+                    this._flashInvalidClick();
+                    return false;
+                }
+            } catch(e){}
+        },
+
         findTargetForStep(step) {
             if (!step) return null;
             const sel = step.seletores && Array.isArray(step.seletores)
@@ -1410,7 +1542,7 @@ function tourCenter() {
                 hl.style.cssText = hlCss.join(';') + ';';
             }
             const isMobile = window.innerWidth < 640;
-            const TOOLTIP_W = isMobile ? Math.min(vw - 24, 440) : Math.min(vw - 32, 420);
+            const TOOLTIP_W = isMobile ? Math.min(vw - 20, 460) : Math.min(vw - 32, 420);
             let tooltipEl = null;
             try { tooltipEl = document.getElementById('tour-tooltip'); } catch(e){}
             let ttH = null;
@@ -1424,14 +1556,16 @@ function tourCenter() {
                     if (sh > 180) ttH = Math.max(ttH || 0, sh + 12);
                 } catch(e){}
             }
-            const SAFE_BOTTOM = isMobile ? Math.max(28, 20 + Math.max(0, window.innerHeight - document.documentElement.clientHeight) + 16) : 28;
-            const SAFE_TOP = 12;
-            const SAFE_LEFT = 12;
-            const SAFE_RIGHT = 12;
-            const MARGIN = 14;
+            const SAFE_BOTTOM = isMobile
+                ? Math.max(28, 18 + Math.max(0, window.innerHeight - document.documentElement.clientHeight) + 14)
+                : 28;
+            const SAFE_TOP = isMobile ? 10 : 12;
+            const SAFE_LEFT = isMobile ? 10 : 12;
+            const SAFE_RIGHT = isMobile ? 10 : 12;
+            const MARGIN = isMobile ? 18 : 14;
             if (!ttH) {
                 ttH = isMobile
-                    ? Math.min(620, Math.floor(vh * (vh < 700 ? 0.94 : 0.92)))
+                    ? Math.min(560, Math.floor(vh * (vh < 700 ? 0.92 : 0.88)))
                     : Math.min(560, Math.floor(vh * (vh < 700 ? 0.90 : 0.86)));
             }
             const ttRect = { width: TOOLTIP_W, height: ttH };
@@ -1443,45 +1577,93 @@ function tourCenter() {
             const fitsRight = (vw - s.r) >= ttRect.width + MARGIN + SAFE_RIGHT;
             let ttTop, ttLeft;
             let finalPos = pos;
-            if (pos !== 'auto') {
-                if (pos === 'top' && !fitsAbove) finalPos = 'bottom';
-                else if (pos === 'bottom' && !fitsBelow) finalPos = 'top';
-                else if (pos === 'left' && !fitsLeft && !isMobile) finalPos = 'right';
-                else if (pos === 'right' && !fitsRight && !isMobile) finalPos = 'left';
-            } else {
+            if (isMobile) {
                 if (fitsBelow) finalPos = 'bottom';
                 else if (fitsAbove) finalPos = 'top';
-                else if (fitsRight && !isMobile) finalPos = 'right';
-                else if (fitsLeft && !isMobile) finalPos = 'left';
-                else finalPos = isMobile ? 'bottom' : 'top';
+                else {
+                    const spaceBelow = vh - s.b - SAFE_BOTTOM;
+                    finalPos = spaceBelow >= (vh - s.t - s.h - s.t - SAFE_TOP) ? 'bottom' : 'top';
+                }
+            } else {
+                if (pos !== 'auto') {
+                    if (pos === 'top' && !fitsAbove) finalPos = 'bottom';
+                    else if (pos === 'bottom' && !fitsBelow) finalPos = 'top';
+                    else if (pos === 'left' && !fitsLeft && !isMobile) finalPos = 'right';
+                    else if (pos === 'right' && !fitsRight && !isMobile) finalPos = 'left';
+                } else {
+                    if (fitsBelow) finalPos = 'bottom';
+                    else if (fitsAbove) finalPos = 'top';
+                    else if (fitsRight && !isMobile) finalPos = 'right';
+                    else if (fitsLeft && !isMobile) finalPos = 'left';
+                    else finalPos = isMobile ? 'bottom' : 'top';
+                }
             }
             const anchorCx = s.l + s.w / 2;
             const anchorCy = s.t + s.h / 2;
+            let overlapAvoided = false;
             if (finalPos === 'bottom') {
                 ttTop = s.b + MARGIN;
                 ttLeft = Math.round(anchorCx - ttRect.width / 2);
-            } else if (finalPos === 'top') {
+                if (isMobile && (ttTop + ttRect.height) > (vh - SAFE_BOTTOM) && fitsAbove) {
+                    finalPos = 'top';
+                    overlapAvoided = true;
+                }
+            }
+            if (finalPos === 'top' || overlapAvoided) {
                 ttTop = s.t - MARGIN - ttRect.height;
                 ttLeft = Math.round(anchorCx - ttRect.width / 2);
+                if (isMobile && ttTop < SAFE_TOP && fitsBelow) {
+                    finalPos = 'bottom';
+                    ttTop = s.b + MARGIN;
+                }
             } else if (finalPos === 'left') {
                 ttLeft = s.l - MARGIN - ttRect.width;
                 ttTop = Math.round(anchorCy - ttRect.height / 2);
             } else if (finalPos === 'right') {
                 ttLeft = s.r + MARGIN;
                 ttTop = Math.round(anchorCy - ttRect.height / 2);
-            } else {
-                ttTop = s.b + MARGIN;
-                ttLeft = Math.round(anchorCx - ttRect.width / 2);
             }
             if (ttLeft < SAFE_LEFT) ttLeft = SAFE_LEFT;
             if (ttTop < SAFE_TOP) ttTop = SAFE_TOP;
             if (ttLeft + ttRect.width > vw - SAFE_RIGHT) ttLeft = Math.max(SAFE_LEFT, vw - ttRect.width - SAFE_RIGHT);
             if (ttTop + ttRect.height > vh - SAFE_BOTTOM) {
-                if (finalPos === 'top' && fitsBelow) {
-                    ttTop = s.b + MARGIN;
+                if (isMobile && finalPos !== 'top' && fitsAbove) {
+                    ttTop = s.t - MARGIN - ttRect.height;
                 } else {
                     ttTop = Math.max(SAFE_TOP, vh - ttRect.height - SAFE_BOTTOM);
                 }
+                if (isMobile && finalPos === 'top' && ttTop < SAFE_TOP && (s.b + MARGIN + ttRect.height) <= (vh - SAFE_BOTTOM)) {
+                    ttTop = s.b + MARGIN;
+                }
+            }
+            if (isMobile && el) {
+                try {
+                    const sr = el.getBoundingClientRect();
+                    const maxTooltipOverlapH = Math.min(sr.height + 4, 10);
+                    const ttRect2 = { l: ttLeft, t: ttTop, r: ttLeft + ttRect.width, b: ttTop + ttRect.height };
+                    const overlapTop = Math.max(ttRect2.t, sr.top);
+                    const overlapBot = Math.min(ttRect2.b, sr.bottom);
+                    const overlapLeft = Math.max(ttRect2.l, sr.left);
+                    const overlapRight = Math.min(ttRect2.r, sr.right);
+                    const overlapArea = Math.max(0, overlapBot - overlapTop) * Math.max(0, overlapRight - overlapLeft);
+                    if (overlapArea > 20 * 20) {
+                        if ((ttTop + ttRect.height) > sr.top && ttTop < sr.top) {
+                            const newTop = sr.top - MARGIN - ttRect.height;
+                            if (newTop >= SAFE_TOP) ttTop = newTop;
+                            else {
+                                const below = sr.bottom + MARGIN;
+                                if ((below + ttRect.height) <= (vh - SAFE_BOTTOM)) ttTop = below;
+                            }
+                        } else if (ttTop < sr.bottom && (ttTop + ttRect.height) > sr.bottom) {
+                            const below = sr.bottom + MARGIN;
+                            if ((below + ttRect.height) <= (vh - SAFE_BOTTOM)) ttTop = below;
+                            else {
+                                const newTop = sr.top - MARGIN - ttRect.height;
+                                if (newTop >= SAFE_TOP) ttTop = newTop;
+                            }
+                        }
+                    }
+                } catch(e){}
             }
             this.tooltipStyle = [
                 `top:${Math.round(ttTop)}px`,
