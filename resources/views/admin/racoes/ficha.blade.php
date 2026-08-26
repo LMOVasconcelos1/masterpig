@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Ficha da Ração - Sui Control</title>
     <style>
+        @page { size: A4 portrait; margin: 10mm 10mm 12mm 10mm; }
         * { font-family: Helvetica, Arial, sans-serif !important; }
         html, body { font-family: Helvetica, Arial, sans-serif !important; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -15,20 +16,21 @@
             -webkit-font-smoothing: antialiased;
         }
         .page {
-            width: 210mm;
-            min-height: 297mm;
-            margin: 0 auto;
-            padding: 10mm 10mm 16mm 10mm;
-            position: relative;
-            box-sizing: border-box;
+            width: 100% !important;
+            max-width: 190mm !important;
+            min-height: 275mm !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            position: relative !important;
+            box-sizing: border-box !important;
         }
 
         table.doc-header {
-            width: 100%;
+            width: 100% !important;
             border-collapse: collapse;
             border-bottom: 2px solid #0a0a0a;
-            margin-bottom: 14px;
-            padding-bottom: 10px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
         }
         table.doc-header td.brand-col {
             vertical-align: top;
@@ -94,7 +96,7 @@
         }
 
         .doc-title-wrap {
-            width: 100%;
+            width: 100% !important;
             margin-bottom: 18px;
             page-break-inside: avoid;
         }
@@ -114,17 +116,18 @@
         }
 
         .section {
+            width: 100% !important;
             margin-bottom: 14px;
             page-break-inside: avoid;
         }
         .section-title-wrap {
-            width: 100%;
+            width: 100% !important;
             background: #fafafa;
             border-bottom: 1px solid #0a0a0a;
             padding: 6px 10px;
         }
         table.section-title {
-            width: 100%;
+            width: 100% !important;
             border-collapse: collapse;
         }
         table.section-title td.bar {
@@ -147,6 +150,7 @@
             color: #0a0a0a;
         }
         .box {
+            width: 100% !important;
             border: 1px solid #0a0a0a;
             background: #ffffff;
             padding: 0;
@@ -183,12 +187,12 @@
         }
 
         table.doc-footer {
-            width: 100%;
+            width: 100% !important;
             border-collapse: collapse;
-            position: absolute;
-            bottom: 10mm;
-            left: 10mm;
-            right: 10mm;
+            position: absolute !important;
+            bottom: -2mm !important;
+            left: 0 !important;
+            right: 0 !important;
             border-top: 1px solid #0a0a0a;
             padding-top: 6px;
             font-size: 9px;

@@ -5,29 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulário de Cio de Leitoas</title>
     <style>
+        @page { size: A4 portrait; margin: 10mm 10mm 12mm 10mm; }
         * { font-family: Helvetica, Arial, sans-serif !important; }
         html, body { font-family: Helvetica, Arial, sans-serif !important; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
-            font-size: 11px;
-            line-height: 1.4;
+            font-size: 10px !important;
+            line-height: 1.3 !important;
             color: #0a0a0a;
             background: #ffffff;
         }
         .page {
-            width: 210mm;
-            min-height: 297mm;
-            margin: 0 auto;
-            padding: 10mm 10mm 16mm 10mm;
-            position: relative;
-            box-sizing: border-box;
+            width: 100% !important;
+            max-width: 190mm !important;
+            min-height: 275mm !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            position: relative !important;
+            box-sizing: border-box !important;
         }
         table.doc-header {
-            width: 100%;
+            width: 100% !important;
             border-collapse: collapse;
             border-bottom: 2px solid #0a0a0a;
-            margin-bottom: 14px;
-            padding-bottom: 10px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
             page-break-inside: avoid;
         }
         table.doc-header td.brand-col {
@@ -41,7 +43,7 @@
             max-width: 85mm;
             word-wrap: break-word;
             overflow-wrap: break-word;
-            font-size: 8.5px;
+            font-size: 7.5px !important;
             color: #2a2a2a;
             line-height: 1.45;
             padding: 0;
@@ -50,8 +52,8 @@
         .brand-inner img.brand-logo, .brand-inner .brand-logo {
             display: inline-block;
             vertical-align: middle;
-            width: 40px;
-            height: 40px;
+            width: 34px !important;
+            height: 34px !important;
             margin-right: 12px;
             object-fit: contain;
             opacity: 0.95;
@@ -61,7 +63,7 @@
             vertical-align: middle;
         }
         .doc-header .brand-text .brand-name {
-            font-size: 17px;
+            font-size: 15px !important;
             font-weight: 800;
             letter-spacing: 0.06em;
             text-transform: uppercase;
@@ -69,7 +71,7 @@
             line-height: 1.05;
         }
         .doc-header .brand-text .brand-sub {
-            font-size: 9.5px;
+            font-size: 8.5px !important;
             color: #2a2a2a;
             margin-top: 2px;
             letter-spacing: 0.03em;
@@ -79,12 +81,12 @@
             font-weight: 700;
         }
         .doc-title-wrap {
-            width: 100%;
-            margin-bottom: 22px;
+            width: 100% !important;
+            margin-bottom: 10px !important;
             page-break-inside: avoid;
         }
         .doc-title-wrap h1 {
-            font-size: 22px;
+            font-size: 18px !important;
             font-weight: 800;
             letter-spacing: 0.14em;
             text-transform: uppercase;
@@ -92,17 +94,17 @@
             margin-bottom: 4px;
         }
         .doc-title-wrap .doc-subtitle {
-            font-size: 10px;
+            font-size: 8.5px !important;
             color: #2a2a2a;
             letter-spacing: 0.08em;
             text-transform: uppercase;
         }
         table.data-table {
-            width: 100%;
+            width: 100% !important;
             border-collapse: collapse;
             table-layout: fixed;
             border: 1px solid #0a0a0a;
-            font-size: 10px;
+            font-size: 8px !important;
         }
         table.data-table thead th {
             background: #0a0a0a;
@@ -110,20 +112,20 @@
             font-weight: 700;
             letter-spacing: 0.06em;
             text-transform: uppercase;
-            padding: 8px 4px;
+            padding: 4px 2px !important;
             text-align: center;
             border-right: 1px solid #2a2a2a;
             white-space: normal;
             word-break: break-word;
-            font-size: 9px;
+            font-size: 8px !important;
             line-height: 1.15;
         }
         table.data-table thead th:last-child { border-right: none; }
         table.data-table tbody td {
-            padding: 0 3px;
+            padding: 2px 2px !important;
             border-right: 1px solid #0a0a0a;
             border-bottom: 1px solid #0a0a0a;
-            height: {{ $rowHeightMm ?? 7.0 }}mm;
+            height: {{ $rowHeightMm ?? 6.5 }}mm;
             vertical-align: middle;
             text-align: center;
             color: #0a0a0a;
@@ -137,15 +139,15 @@
         .col-data { width: 13%; }
         .col-vacina { width: 15%; }
         table.doc-footer {
-            width: 100%;
+            width: 100% !important;
             border-collapse: collapse;
-            position: absolute;
-            bottom: 10mm;
-            left: 10mm;
-            right: 10mm;
+            position: absolute !important;
+            bottom: -2mm !important;
+            left: 0 !important;
+            right: 0 !important;
             border-top: 1px solid #0a0a0a;
             padding-top: 6px;
-            font-size: 9px;
+            font-size: 8px !important;
             color: #2a2a2a;
         }
         table.doc-footer td.left {

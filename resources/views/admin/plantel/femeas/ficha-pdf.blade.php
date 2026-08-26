@@ -4,22 +4,24 @@
     <meta charset="UTF-8">
     <title>Ficha da Fêmea - Sui Control</title>
     <style>
+        @page { size: A4 portrait; margin: 10mm 10mm 12mm 10mm; }
         * { font-family: Helvetica, Arial, sans-serif !important; }
         html, body { font-family: Helvetica, Arial, sans-serif !important; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             font-family: 'Helvetica', 'Arial', sans-serif !important;
-            font-size: 11.5px !important;
-            line-height: 1.4 !important;
+            font-size: 10px !important;
+            line-height: 1.3 !important;
             color: #0a0a0a !important;
             background: #ffffff !important;
             -webkit-font-smoothing: antialiased !important;
         }
         .page {
-            width: 210mm !important;
-            min-height: 297mm !important;
+            width: 100% !important;
+            max-width: 190mm !important;
+            min-height: 275mm !important;
             margin: 0 auto !important;
-            padding: 10mm 10mm 16mm 10mm !important;
+            padding: 0 !important;
             position: relative !important;
             box-sizing: border-box !important;
         }
@@ -29,8 +31,8 @@
             width: 100% !important;
             border-collapse: collapse !important;
             border-bottom: 2px solid #0a0a0a !important;
-            margin-bottom: 14px !important;
-            padding-bottom: 10px !important;
+            margin-bottom: 12px !important;
+            padding-bottom: 8px !important;
         }
         table.doc-header td {
             vertical-align: top !important;
@@ -40,7 +42,7 @@
             text-align: right !important;
             max-width: 85mm !important;
             word-wrap: break-word !important;
-            font-size: 8.5px !important;
+            font-size: 7.5px !important;
             color: #2a2a2a !important;
             line-height: 1.45 !important;
         }
@@ -64,7 +66,7 @@
             vertical-align: middle !important;
         }
         .brand-name {
-            font-size: 17px !important;
+            font-size: 15px !important;
             font-weight: 800 !important;
             letter-spacing: 0.06em !important;
             text-transform: uppercase !important;
@@ -72,7 +74,7 @@
             line-height: 1.05 !important;
         }
         .brand-sub {
-            font-size: 9.5px !important;
+            font-size: 8.5px !important;
             color: #2a2a2a !important;
             margin-top: 2px !important;
             letter-spacing: 0.03em !important;
@@ -80,8 +82,9 @@
 
         /* ============ TITLE ============ */
         .doc-title {
+            width: 100% !important;
             text-align: center !important;
-            margin-bottom: 14px !important;
+            margin-bottom: 10px !important;
             page-break-inside: avoid !important;
         }
         .doc-title table {
@@ -92,7 +95,7 @@
             text-align: center !important;
         }
         .doc-title h1 {
-            font-size: 22px !important;
+            font-size: 18px !important;
             font-weight: 800 !important;
             letter-spacing: 0.14em !important;
             text-transform: uppercase !important;
@@ -100,7 +103,7 @@
             margin-bottom: 4px !important;
         }
         .doc-title .doc-subtitle {
-            font-size: 10px !important;
+            font-size: 8.5px !important;
             color: #2a2a2a !important;
             letter-spacing: 0.08em !important;
             text-transform: uppercase !important;
@@ -108,13 +111,14 @@
 
         /* ============ SECTIONS ============ */
         .section {
-            margin-bottom: 10px !important;
+            width: 100% !important;
+            margin-bottom: 7px !important;
             page-break-inside: avoid !important;
         }
         .section-title {
             width: 100% !important;
             background: #fafafa !important;
-            padding: 6px 10px !important;
+            padding: 4px 8px !important;
             border-bottom: 1px solid #0a0a0a !important;
         }
         .section-title table {
@@ -130,7 +134,7 @@
             background: #0a0a0a !important;
         }
         .section-title td.text {
-            font-size: 11px !important;
+            font-size: 9.5px !important;
             font-weight: 800 !important;
             letter-spacing: 0.1em !important;
             text-transform: uppercase !important;
@@ -139,6 +143,7 @@
         }
 
         .box {
+            width: 100% !important;
             border: 1px solid #0a0a0a !important;
             background: #ffffff !important;
             padding: 0 !important;
@@ -151,13 +156,13 @@
             border-collapse: collapse !important;
         }
         .grid-info tr td {
-            padding: 4px 5px !important;
+            padding: 3px 4px !important;
             vertical-align: top !important;
             border-bottom: 1px dotted #a0a0a0 !important;
         }
         .grid-info tr:last-child td { border-bottom: none !important; }
         .grid-info .label {
-            font-size: 9.5px !important;
+            font-size: 8.5px !important;
             font-weight: 700 !important;
             color: #2a2a2a !important;
             letter-spacing: 0.06em !important;
@@ -166,7 +171,7 @@
             width: 34% !important;
         }
         .grid-info .value {
-            font-size: 11.5px !important;
+            font-size: 10px !important;
             font-weight: 600 !important;
             color: #0a0a0a !important;
         }
@@ -192,29 +197,29 @@
         .stats-grid, .summary {
             width: 100% !important;
             border-collapse: separate !important;
-            border-spacing: 4px !important;
+            border-spacing: 3px !important;
         }
         .stats-grid td, .summary td {
             border: 1px solid #0a0a0a !important;
             background: #fff !important;
             text-align: center !important;
-            padding: 10px 6px 8px 6px !important;
+            padding: 6px 4px 5px 4px !important;
             vertical-align: top !important;
             width: 25% !important;
         }
         .stats-grid .stat-num, .summary .num {
-            font-size: 20px !important;
+            font-size: 16px !important;
             font-weight: 800 !important;
             color: #0a0a0a !important;
             line-height: 1 !important;
-            min-height: 26px !important;
+            min-height: 20px !important;
         }
         .stats-grid .stat-num.dash {
             color: #4b5563 !important;
             font-weight: 600 !important;
         }
         .stats-grid .stat-lbl, .summary .lbl {
-            font-size: 8.5px !important;
+            font-size: 7.5px !important;
             font-weight: 800 !important;
             letter-spacing: 0.08em !important;
             text-transform: uppercase !important;
@@ -231,7 +236,7 @@
             border-collapse: collapse !important;
             table-layout: fixed !important;
             border: 1px solid #0a0a0a !important;
-            font-size: 8.5px !important;
+            font-size: 7.5px !important;
         }
         table.data-table thead th {
             background: #0a0a0a !important;
@@ -239,22 +244,22 @@
             font-weight: 700 !important;
             letter-spacing: 0.06em !important;
             text-transform: uppercase !important;
-            padding: 5px 3px !important;
-            font-size: 8px !important;
+            padding: 4px 2px !important;
+            font-size: 7px !important;
             text-align: center !important;
             border-right: 1px solid #2a2a2a !important;
             white-space: nowrap !important;
         }
         table.data-table thead th:last-child { border-right: none !important; }
         table.data-table tbody td {
-            padding: 4px 3px !important;
+            padding: 3px 2px !important;
             border-right: 1px solid #0a0a0a !important;
             border-bottom: 1px solid #0a0a0a !important;
             text-align: center !important;
             vertical-align: middle !important;
             color: #0a0a0a !important;
             white-space: nowrap !important;
-            font-size: 8.5px !important;
+            font-size: 7.5px !important;
         }
         table.data-table tbody td:last-child { border-right: none !important; }
         table.data-table tbody tr:last-child td { border-bottom: none !important; }
@@ -285,12 +290,12 @@
         /* ============ FOOTER ============ */
         .doc-footer {
             position: absolute !important;
-            bottom: 10mm !important;
-            left: 10mm !important;
-            right: 10mm !important;
+            bottom: -2mm !important;
+            left: 0 !important;
+            right: 0 !important;
             padding-top: 6px !important;
             border-top: 1px solid #0a0a0a !important;
-            font-size: 9px !important;
+            font-size: 8px !important;
             color: #2a2a2a !important;
             letter-spacing: 0.03em !important;
         }

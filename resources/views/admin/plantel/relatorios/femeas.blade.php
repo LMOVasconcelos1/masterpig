@@ -11,7 +11,7 @@
         * { font-family: Helvetica, Arial, sans-serif !important; }
         html, body { font-family: Helvetica, Arial, sans-serif !important; }
         @if (!empty($isPdf))
-            @page { size: A4 landscape; margin: 10mm 8mm 12mm 8mm; }
+            @page { size: A4 landscape; margin: 8mm 10mm 10mm 10mm; }
             * { margin: 0; padding: 0; box-sizing: border-box; }
             html, body {
                 font-family: 'Helvetica', 'Arial', sans-serif;
@@ -21,19 +21,20 @@
                 background: #ffffff;
             }
             .page {
-                width: 297mm;
-                min-height: 210mm;
-                margin: 0 auto;
-                padding: 8mm 8mm 14mm 8mm;
-                position: relative;
-                box-sizing: border-box;
+                width: 100% !important;
+                max-width: 277mm !important;
+                min-height: 192mm !important;
+                margin: 0 auto !important;
+                padding: 0 !important;
+                position: relative !important;
+                box-sizing: border-box !important;
             }
             table.doc-header {
-                width: 100%;
+                width: 100% !important;
                 border-collapse: collapse;
                 border-bottom: 2px solid #0a0a0a;
-                margin-bottom: 14px;
-                padding-bottom: 10px;
+                margin-bottom: 12px;
+                padding-bottom: 8px;
                 page-break-inside: avoid;
             }
             table.doc-header td.brand-col {
@@ -85,7 +86,7 @@
                 font-weight: 700;
             }
             .doc-title-wrap {
-                width: 100%;
+                width: 100% !important;
                 margin-bottom: 16px;
                 page-break-inside: avoid;
             }
@@ -104,7 +105,7 @@
                 text-transform: uppercase;
             }
             .stats-grid, .summary {
-                width: 100%;
+                width: 100% !important;
                 border-collapse: separate;
                 border-spacing: 8px;
                 margin-bottom: 14px;
@@ -136,7 +137,7 @@
             }
             .stat-card { border: none; padding: 0; }
             table.data-table {
-                width: 100%;
+                width: 100% !important;
                 border-collapse: collapse;
                 table-layout: fixed;
                 border: 1px solid #0a0a0a;
@@ -218,12 +219,12 @@
             .empty .ico { font-size: 22px; color: #2a2a2a; margin-bottom: 2mm; }
             .empty strong { display: block; color: #0a0a0a; font-size: 11px; margin-bottom: 1mm; }
             table.doc-footer {
-                width: 100%;
+                width: 100% !important;
                 border-collapse: collapse;
-                position: absolute;
-                bottom: 10mm;
-                left: 8mm;
-                right: 8mm;
+                position: absolute !important;
+                bottom: -2mm !important;
+                left: 0 !important;
+                right: 0 !important;
                 border-top: 1px solid #0a0a0a;
                 padding-top: 6px;
                 font-size: 8.5px;

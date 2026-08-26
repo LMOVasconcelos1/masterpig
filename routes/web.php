@@ -176,13 +176,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
   <style>
     * { font-family: Helvetica, Arial, sans-serif !important; }
     html, body { font-family: Helvetica, Arial, sans-serif !important; }
-    @page { margin: 26mm 18mm 22mm 18mm; }
+    @page { size: A4 portrait; margin: 10mm 10mm 12mm 10mm; }
     body { font-family: Helvetica, Arial, sans-serif; font-size: 11.5px; line-height: 1.45; color: #111827; }
     h1 { font-size: 22px; margin: 0 0 8px 0; }
     h2 { font-size: 16px; margin: 18px 0 8px 0; padding-bottom: 6px; border-bottom: 1px solid #0a0a0a; }
     h3 { font-size: 13px; margin: 14px 0 6px 0; }
     .muted { color: #6b7280; }
-    table.doc-header { width: 100%; border-collapse: collapse; margin-bottom: 14px; border-bottom: 2px solid #0a0a0a; padding-bottom: 10px; }
+    table.doc-header { width: 100% !important; border-collapse: collapse; margin-bottom: 12px; border-bottom: 2px solid #0a0a0a; padding-bottom: 8px; }
     table.doc-header td { vertical-align: top; padding: 0; }
     table.doc-header td.brand-col { width: 60%; }
     table.doc-header td.meta { text-align: right; width: 40%; }
@@ -196,14 +196,14 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     table.doc-header td.meta .meta-line strong { color: #0a0a0a; font-weight: 700; }
     .cover { text-align: center; margin-top: 28mm; }
     .cover .subtitle { font-size: 12px; margin-top: 10px; }
-    .kv { margin: 10px auto 0 auto; width: 100%; max-width: 520px; }
+    .kv { margin: 10px auto 0 auto; width: 100% !important; max-width: 520px; }
     .kv td { padding: 4px 0; vertical-align: top; }
     .kv td:first-child { width: 140px; color: #6b7280; }
     ul { margin: 6px 0 10px 18px; padding: 0; }
     li { margin: 2px 0; }
     .page-break { page-break-before: always; }
     .mono { font-family: Helvetica, Arial, sans-serif; font-size: 10.5px; }
-    .box { border: 1px solid #0a0a0a; padding: 0; overflow: hidden; }
+    .box { width: 100% !important; border: 1px solid #0a0a0a; padding: 0; overflow: hidden; }
   </style>
 </head>
 <body>

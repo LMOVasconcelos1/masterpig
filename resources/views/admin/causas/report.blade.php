@@ -6,7 +6,7 @@
     <style>
         * { font-family: Helvetica, Arial, sans-serif !important; }
         html, body { font-family: Helvetica, Arial, sans-serif !important; }
-        @page { size: A4 landscape; margin: 10mm 8mm 12mm 8mm; }
+        @page { size: A4 landscape; margin: 8mm 10mm 10mm 10mm; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             font-size: 11px;
@@ -15,20 +15,21 @@
             background: #ffffff;
         }
         .page {
-            width: 297mm;
-            min-height: 210mm;
-            margin: 0 auto;
-            padding: 8mm 8mm 14mm 8mm;
-            position: relative;
-            box-sizing: border-box;
+            width: 100% !important;
+            max-width: 277mm !important;
+            min-height: 192mm !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            position: relative !important;
+            box-sizing: border-box !important;
         }
 
         table.doc-header {
-            width: 100%;
+            width: 100% !important;
             border-collapse: collapse;
             border-bottom: 2px solid #0a0a0a;
-            margin-bottom: 14px;
-            padding-bottom: 10px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
         }
         table.doc-header td.brand-col {
             vertical-align: top;
@@ -93,7 +94,7 @@
         }
 
         .doc-title-wrap {
-            width: 100%;
+            width: 100% !important;
             margin-bottom: 14px;
         }
         .doc-title-wrap h1 {
@@ -111,13 +112,13 @@
             text-transform: uppercase;
         }
 
-        .summary { width: 100%; border-collapse: separate; border-spacing: 8px; margin-bottom: 12px; }
+        .summary { width: 100% !important; border-collapse: separate; border-spacing: 8px; margin-bottom: 12px; }
         .summary td { border: 1px solid #0a0a0a; background: #fff; text-align: center; padding: 10px 6px 8px 6px; vertical-align: top; width: 25%; }
         .summary .num { font-size: 22px; font-weight: 800; color: #0a0a0a; line-height: 1; min-height: 26px; }
         .summary .lbl { font-size: 8.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #2a2a2a; margin-top: 5px; border-top: 1px solid #0a0a0a; padding-top: 5px; }
 
         table.data-table {
-            width: 100%;
+            width: 100% !important;
             border-collapse: collapse;
             border: 1px solid #0a0a0a;
             font-size: 9.5px;
@@ -157,12 +158,12 @@
         }
 
         table.doc-footer {
-            width: 100%;
+            width: 100% !important;
             border-collapse: collapse;
-            position: absolute;
-            bottom: 10mm;
-            left: 8mm;
-            right: 8mm;
+            position: absolute !important;
+            bottom: -2mm !important;
+            left: 0 !important;
+            right: 0 !important;
             border-top: 1px solid #0a0a0a;
             padding-top: 6px;
             font-size: 9px;

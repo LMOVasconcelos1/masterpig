@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulário de Cobertura</title>
     <style>
+        @page { size: A4 landscape; margin: 8mm 10mm 10mm 10mm; }
         * { font-family: Helvetica, Arial, sans-serif !important; }
         html, body { font-family: Helvetica, Arial, sans-serif !important; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -16,19 +17,20 @@
             -webkit-font-smoothing: antialiased;
         }
         .page {
-            width: 297mm;
-            min-height: 210mm;
-            margin: 0 auto;
-            padding: 8mm 8mm 14mm 8mm;
-            position: relative;
-            box-sizing: border-box;
+            width: 100% !important;
+            max-width: 277mm !important;
+            min-height: 192mm !important;
+            margin: 0 auto !important;
+            padding: 0 !important;
+            position: relative !important;
+            box-sizing: border-box !important;
         }
         table.doc-header {
-            width: 100%;
+            width: 100% !important;
             border-collapse: collapse;
             border-bottom: 2px solid #0a0a0a;
-            margin-bottom: 14px;
-            padding-bottom: 10px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
             page-break-inside: avoid;
         }
         table.doc-header td.brand-col {
@@ -80,7 +82,7 @@
             font-weight: 700;
         }
         .doc-title-wrap {
-            width: 100%;
+            width: 100% !important;
             margin-bottom: 18px;
             page-break-inside: avoid;
         }
@@ -99,17 +101,18 @@
             text-transform: uppercase;
         }
         .section {
+            width: 100% !important;
             margin-bottom: 14px;
             page-break-inside: avoid;
         }
         .section-title-wrap {
-            width: 100%;
+            width: 100% !important;
             background: #fafafa;
             border-bottom: 1px solid #0a0a0a;
             padding: 6px 10px;
         }
         table.section-title {
-            width: 100%;
+            width: 100% !important;
             border-collapse: collapse;
         }
         table.section-title td.bar {
@@ -132,6 +135,7 @@
             color: #0a0a0a;
         }
         .box {
+            width: 100% !important;
             border: 1px solid #0a0a0a;
             background: #ffffff;
             padding: 0;
@@ -162,7 +166,7 @@
             color: #0a0a0a;
         }
         table.data-table {
-            width: 100%;
+            width: 100% !important;
             border-collapse: collapse;
             border: 1px solid #0a0a0a;
             font-size: 10px;
@@ -202,7 +206,7 @@
             background: #fafafa;
         }
         table.signature-area {
-            width: 100%;
+            width: 100% !important;
             border-collapse: collapse;
             margin-top: 40px;
         }
@@ -224,12 +228,12 @@
             letter-spacing: 0.04em;
         }
         table.doc-footer {
-            width: 100%;
+            width: 100% !important;
             border-collapse: collapse;
-            position: absolute;
-            bottom: 10mm;
-            left: 8mm;
-            right: 8mm;
+            position: absolute !important;
+            bottom: -2mm !important;
+            left: 0 !important;
+            right: 0 !important;
             border-top: 1px solid #0a0a0a;
             padding-top: 6px;
             font-size: 9px;
@@ -249,43 +253,9 @@
             color: #0a0a0a;
             font-weight: 700;
         }
-        .no-print {
-            display: none;
-        }
         @media screen {
             body { padding: 16px; background: #f3f4f6; }
             .page { max-width: 1400px; margin: 0 auto; background: #fff; padding: 16px; border: 1px solid #e5e7eb; min-height: auto; width: 100%; position: relative; }
-            .no-print {
-                display: flex;
-                position: fixed;
-                top: 10px;
-                right: 10px;
-                z-index: 1000;
-                gap: 8px;
-            }
-            .no-print button {
-                padding: 8px 16px;
-                border: 1px solid #0a0a0a;
-                background: #0a0a0a;
-                color: #ffffff;
-                font-size: 12px;
-                font-weight: 600;
-                cursor: pointer;
-                letter-spacing: 0.03em;
-            }
-            .no-print button:hover {
-                background: #2a2a2a;
-            }
-            .no-print button.secondary {
-                background: #ffffff;
-                color: #0a0a0a;
-            }
-            .no-print button.secondary:hover {
-                background: #fafafa;
-            }
-        }
-        @media print {
-            .no-print { display: none !important; }
         }
     </style>
 </head>
@@ -430,26 +400,6 @@
         </table>
     </div>
 
-    <div class="no-print">
-        <button onclick="window.print()">
-            <span>Imprimir</span>
-        </button>
-        <button onclick="window.close()" class="secondary">
-            <span>Fechar</span>
-        </button>
-    </div>
 
-    <script>
-        window.onload = function() {
-            setTimeout(function() {
-                window.print();
-            }, 500);
-        };
-        window.onafterprint = function() {
-            setTimeout(function() {
-                window.close();
-            }, 1000);
-        };
-    </script>
 </body>
 </html>
