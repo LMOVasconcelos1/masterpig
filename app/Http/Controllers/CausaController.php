@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\PdfLogoHelper;
 use App\Models\Causa;
 use App\Models\GrupoCausa;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -117,12 +118,22 @@ class CausaController extends Controller
 
         $causas = $query->get();
 
+        $logoData = PdfLogoHelper::buildLogoData();
+        $logoDataUri = $logoData['logoDataUri'];
+
         $data = [
             'causas' => $causas,
-            'data_emissao' => now()->format('d/m/Y H:i'),
+            'emitidoEm' => $logoData['emitidoEm'],
+            'logoDataUri' => $logoDataUri,
         ];
 
-        $pdf = Pdf::loadView('admin.causas.report', $data);
+        $pdf = Pdf::loadView('admin.causas.report', $data)
+            ->setPaper('a4', 'landscape')
+            ->setOptions([
+                'defaultFont' => 'Helvetica',
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
 
         return $pdf->stream('relatorio-causas-'.now()->format('Y-m-d').'.pdf');
     }

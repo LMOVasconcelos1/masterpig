@@ -5,209 +5,446 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulário de Cobertura</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
+        * { font-family: Helvetica, Arial, sans-serif !important; }
+        html, body { font-family: Helvetica, Arial, sans-serif !important; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            font-size: 11px;
+            line-height: 1.4;
+            color: #0a0a0a;
+            background: #ffffff;
+            -webkit-font-smoothing: antialiased;
+        }
+        .page {
+            width: 297mm;
+            min-height: 210mm;
+            margin: 0 auto;
+            padding: 8mm 8mm 14mm 8mm;
+            position: relative;
             box-sizing: border-box;
         }
-        
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
-            color: #333;
-            background: white;
-        }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #3b82f6;
-            padding-bottom: 10px;
-        }
-        
-        .header h1 {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .header p {
-            font-size: 14px;
-            color: #666;
-        }
-        
-        .form-info {
-            margin-bottom: 15px;
-            padding: 8px;
-            background: #f5f5f5;
-            border-radius: 4px;
-            font-size: 11px;
-        }
-        
-        .form-table {
+        table.doc-header {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            border-bottom: 2px solid #0a0a0a;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            page-break-inside: avoid;
         }
-        
-        .form-table th {
-            background: #f0f0f0;
-            padding: 8px;
-            text-align: center;
-            border: 1px solid #ddd;
-            font-weight: bold;
-            font-size: 11px;
+        table.doc-header td.brand-col {
+            vertical-align: top;
+            width: 60%;
+            padding: 0;
         }
-        
-        .form-table td {
-            padding: 6px;
-            border: 1px solid #ddd;
-            text-align: center;
-            font-size: 11px;
+        table.doc-header td.meta {
+            vertical-align: top;
+            text-align: right;
+            max-width: 85mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-size: 8.5px;
+            color: #2a2a2a;
+            line-height: 1.45;
+            padding: 0;
         }
-        
-        .form-table .number-col {
-            width: 50px;
-            background: #f9f9f9;
+        .brand-inner { line-height: 0; }
+        .brand-inner img.brand-logo, .brand-inner .brand-logo {
+            display: inline-block;
+            vertical-align: middle;
+            width: 40px;
+            height: 40px;
+            margin-right: 12px;
+            object-fit: contain;
+            opacity: 0.95;
         }
-        
-        .form-table .matriz-col {
-            width: 80px;
+        .brand-text {
+            display: inline-block;
+            vertical-align: middle;
         }
-        
-        .form-table .data-col {
-            width: 120px;
+        .doc-header .brand-text .brand-name {
+            font-size: 17px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #0a0a0a;
+            line-height: 1.05;
         }
-        
-        .form-table .macho-col {
-            width: 100px;
+        .doc-header .brand-text .brand-sub {
+            font-size: 9.5px;
+            color: #2a2a2a;
+            margin-top: 2px;
+            letter-spacing: 0.03em;
         }
-        
-        .form-table .obs-col {
-            width: 150px;
+        .doc-header .doc-meta strong {
+            color: #0a0a0a;
+            font-weight: 700;
         }
-        
-        .footer {
-            margin-top: 30px;
-            padding-top: 15px;
-            border-top: 1px solid #ddd;
-            text-align: center;
+        .doc-title-wrap {
+            width: 100%;
+            margin-bottom: 18px;
+            page-break-inside: avoid;
+        }
+        .doc-title-wrap h1 {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #0a0a0a;
+            margin-bottom: 4px;
+        }
+        .doc-title-wrap .doc-subtitle {
             font-size: 10px;
-            color: #666;
+            color: #2a2a2a;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
         }
-        
-        .signature-area {
-            margin-top: 40px;
-            display: flex;
-            justify-content: space-between;
+        .section {
+            margin-bottom: 14px;
+            page-break-inside: avoid;
         }
-        
-        .signature-box {
-            width: 200px;
+        .section-title-wrap {
+            width: 100%;
+            background: #fafafa;
+            border-bottom: 1px solid #0a0a0a;
+            padding: 6px 10px;
+        }
+        table.section-title {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table.section-title td.bar {
+            width: 14px;
+            padding: 0;
+            vertical-align: middle;
+        }
+        table.section-title td.bar div {
+            width: 3px;
+            height: 11px;
+            background: #0a0a0a;
+        }
+        table.section-title td.text {
+            padding: 0 0 0 8px;
+            vertical-align: middle;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #0a0a0a;
+        }
+        .box {
+            border: 1px solid #0a0a0a;
+            background: #ffffff;
+            padding: 0;
+            overflow: hidden;
+        }
+        .grid-info {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .grid-info tr td {
+            padding: 5px 6px;
+            vertical-align: top;
+            border-bottom: 1px dotted #a0a0a0;
+        }
+        .grid-info tr:last-child td { border-bottom: none; }
+        .grid-info .label {
+            font-size: 9.5px;
+            font-weight: 700;
+            color: #2a2a2a;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            width: 25%;
+        }
+        .grid-info .value {
+            font-size: 11px;
+            font-weight: 600;
+            color: #0a0a0a;
+        }
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #0a0a0a;
+            font-size: 10px;
+        }
+        table.data-table thead th {
+            background: #0a0a0a;
+            color: #ffffff;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 7px 4px;
             text-align: center;
+            border-right: 1px solid #2a2a2a;
+            white-space: nowrap;
+            font-size: 9px;
         }
-        
+        table.data-table thead th:last-child { border-right: none; }
+        table.data-table tbody td {
+            padding: 6px 4px;
+            border-right: 1px solid #0a0a0a;
+            border-bottom: 1px solid #0a0a0a;
+            text-align: center;
+            vertical-align: middle;
+            color: #0a0a0a;
+            white-space: nowrap;
+            height: 26px;
+        }
+        table.data-table tbody td:last-child { border-right: none; }
+        table.data-table tbody tr:last-child td { border-bottom: none; }
+        table.data-table tbody td.col-label {
+            text-align: left;
+            font-weight: 700;
+            padding-left: 8px;
+            background: #fafafa;
+        }
+        table.data-table tbody tr:nth-child(even) td {
+            background: #fafafa;
+        }
+        table.signature-area {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 40px;
+        }
+        table.signature-area td.sign-box {
+            width: 33.3%;
+            text-align: center;
+            padding: 0 10px;
+            vertical-align: top;
+        }
         .signature-line {
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #0a0a0a;
             margin-bottom: 5px;
             height: 30px;
         }
-        
         .signature-label {
             font-size: 10px;
-            color: #666;
+            color: #2a2a2a;
+            font-weight: 600;
+            letter-spacing: 0.04em;
         }
-        
-        @media print {
-            body {
-                margin: 10px;
-            }
-            
+        table.doc-footer {
+            width: 100%;
+            border-collapse: collapse;
+            position: absolute;
+            bottom: 10mm;
+            left: 8mm;
+            right: 8mm;
+            border-top: 1px solid #0a0a0a;
+            padding-top: 6px;
+            font-size: 9px;
+            color: #2a2a2a;
+        }
+        table.doc-footer td.left {
+            text-align: left;
+            padding: 6px 0 0 0;
+            letter-spacing: 0.03em;
+        }
+        table.doc-footer td.right {
+            text-align: right;
+            padding: 6px 0 0 0;
+            letter-spacing: 0.03em;
+        }
+        table.doc-footer strong {
+            color: #0a0a0a;
+            font-weight: 700;
+        }
+        .no-print {
+            display: none;
+        }
+        @media screen {
+            body { padding: 16px; background: #f3f4f6; }
+            .page { max-width: 1400px; margin: 0 auto; background: #fff; padding: 16px; border: 1px solid #e5e7eb; min-height: auto; width: 100%; position: relative; }
             .no-print {
-                display: none;
+                display: flex;
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                z-index: 1000;
+                gap: 8px;
             }
+            .no-print button {
+                padding: 8px 16px;
+                border: 1px solid #0a0a0a;
+                background: #0a0a0a;
+                color: #ffffff;
+                font-size: 12px;
+                font-weight: 600;
+                cursor: pointer;
+                letter-spacing: 0.03em;
+            }
+            .no-print button:hover {
+                background: #2a2a2a;
+            }
+            .no-print button.secondary {
+                background: #ffffff;
+                color: #0a0a0a;
+            }
+            .no-print button.secondary:hover {
+                background: #fafafa;
+            }
+        }
+        @media print {
+            .no-print { display: none !important; }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>FORMULÁRIO DE COBERTURA</h1>
-        <p>{{ \App\Models\Configuracao::getGranjaAtual() }} - Sui Control</p>
-    </div>
-    
-    <div class="form-info">
-        <strong>Data:</strong> {{ date('d/m/Y') }} | 
-        <strong>Tipo:</strong> {{ $tipo ?? 'Em branco' }} | 
-        <strong>Ordenar por:</strong> {{ ucfirst($ordenar ?? 'Matriz') }} | 
-        <strong>Quantidade:</strong> {{ $quantidade ?? 10 }} linhas
-    </div>
-    
-    <table class="form-table">
-        <thead>
+    <div class="page">
+        <table class="doc-header" cellspacing="0" cellpadding="0">
             <tr>
-                <th class="number-col">Nº</th>
-                <th class="matriz-col">Matriz</th>
-                <th class="data-col">Data</th>
-                <th class="macho-col">Macho</th>
-                <th class="obs-col">Observações</th>
+                <td class="brand-col">
+                    <div class="brand-inner">
+                        @if(!empty($logoDataUri))
+                            <img class="brand-logo" src="{{ $logoDataUri }}" alt="Sui Control">
+                        @else
+                            <div class="brand-logo" style="display:inline-block;vertical-align:middle;width:40px;height:40px;border:1.5px solid #0a0a0a;font-weight:800;font-size:15px;letter-spacing:0.05em;color:#0a0a0a;background:#ffffff;text-align:center;line-height:37px;margin-right:12px;">SC</div>
+                        @endif
+                        <div class="brand-text">
+                            <div class="brand-name">Sui Control</div>
+                            <div class="brand-sub">Sistema de Gestão de Suinocultura</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="meta">
+                    <div><strong>Documento:</strong> Formulário</div>
+                    <div style="margin-top:3px;"><strong>Área:</strong> Gestação / Cobertura</div>
+                    <div style="margin-top:3px;"><strong>Data:</strong> {{ $emitidoEm ?? now()->format('d/m/Y H:i') }}</div>
+                </td>
             </tr>
-        </thead>
-        <tbody>
-            @for($i = 1; $i <= ($quantidade ?? 10); $i++)
+        </table>
+
+        <table class="doc-title-wrap" width="100%" align="center" cellspacing="0" cellpadding="0">
             <tr>
-                <td class="number-col">{{ $i }}</td>
-                <td class="matriz-col"></td>
-                <td class="data-col"></td>
-                <td class="macho-col"></td>
-                <td class="obs-col"></td>
+                <td align="center">
+                    <h1>Formulário de Cobertura</h1>
+                    <div class="doc-subtitle">Controle de Coberturas — Matrizes e Leitoas</div>
+                </td>
             </tr>
-            @endfor
-        </tbody>
-    </table>
-    
-    <div class="signature-area">
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <div class="signature-label">Responsável Técnico</div>
+        </table>
+
+        <div class="section">
+            <div class="box">
+                <div class="section-title-wrap">
+                    <table class="section-title" cellspacing="0" cellpadding="0">
+                        <tr>
+                            <td class="bar"><div></div></td>
+                            <td class="text">Filtros Aplicados</td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="padding: 10px 12px;">
+                    <table class="grid-info">
+                        <tr>
+                            <td><div class="label">Tipo</div></td>
+                            <td><div class="value">{{ $tipo ?? 'Todos' }}</div></td>
+                            <td><div class="label">Ordenar por</div></td>
+                            <td><div class="value">{{ ucfirst($ordenar ?? 'Matriz') }}</div></td>
+                        </tr>
+                        <tr>
+                            <td><div class="label">Matriz</div></td>
+                            <td><div class="value">{{ $matriz ?? 'Todas' }}</div></td>
+                            <td><div class="label">Leitoa</div></td>
+                            <td><div class="value">{{ $leitoa ?? 'Todas' }}</div></td>
+                        </tr>
+                        <tr>
+                            <td><div class="label">Dias Vazias (Início)</div></td>
+                            <td><div class="value">{{ $dias_vazias_inicio ?? '-' }}</div></td>
+                            <td><div class="label">Dias Vazias (Fim)</div></td>
+                            <td><div class="value">{{ $dias_vazias_fim ?? '-' }}</div></td>
+                        </tr>
+                        <tr>
+                            <td><div class="label">Idade (Início)</div></td>
+                            <td><div class="value">{{ $idade_inicio ?? '-' }}</div></td>
+                            <td><div class="label">Idade (Fim)</div></td>
+                            <td><div class="value">{{ $idade_fim ?? '-' }}</div></td>
+                        </tr>
+                        <tr>
+                            <td><div class="label">Quantidade de Linhas</div></td>
+                            <td><div class="value">{{ $quantidade ?? 10 }}</div></td>
+                            <td><div class="label">Granja</div></td>
+                            <td><div class="value">{{ \App\Models\Configuracao::getGranjaAtual() }}</div></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
         </div>
-        
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <div class="signature-label">Data: ____/____/______</div>
+
+        <div class="section">
+            <div class="box">
+                <div class="section-title-wrap">
+                    <table class="section-title" cellspacing="0" cellpadding="0">
+                        <tr>
+                            <td class="bar"><div></div></td>
+                            <td class="text">Registro de Coberturas</td>
+                        </tr>
+                    </table>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 8%;">Nº</th>
+                            <th style="width: 14%;">Matriz</th>
+                            <th style="width: 18%;">Data</th>
+                            <th style="width: 16%;">Macho</th>
+                            <th>Observações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for($i = 1; $i <= ($quantidade ?? 10); $i++)
+                        <tr>
+                            <td class="col-label" style="text-align:center;">{{ $i }}</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        @endfor
+                    </tbody>
+                </table>
+            </div>
         </div>
-        
-        <div class="signature-box">
-            <div class="signature-line"></div>
-            <div class="signature-label">Assinatura</div>
-        </div>
+
+        <table class="signature-area" cellspacing="0" cellpadding="0">
+            <tr>
+                <td class="sign-box">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Responsável Técnico</div>
+                </td>
+                <td class="sign-box">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Data: ____/____/______</div>
+                </td>
+                <td class="sign-box">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Assinatura</div>
+                </td>
+            </tr>
+        </table>
+
+        <table class="doc-footer" cellspacing="0" cellpadding="0">
+            <tr>
+                <td class="left">© {{ date('Y') }} <strong>Sui Control</strong> — MasterPig · Gestão Suinocultura</td>
+                <td class="right">Formulário gerado em {{ date('d/m/Y H:i') }}</td>
+            </tr>
+        </table>
     </div>
-    
-    <div class="footer">
-        <p>© {{ date('Y') }} {{ \App\Models\Configuracao::getGranjaAtual() }} - Sistema de Gestão de Suinocultura</p>
-        <p>Formulário gerado em {{ date('d/m/Y H:i') }}</p>
-    </div>
-    
-    <div class="no-print" style="position: fixed; top: 10px; right: 10px; z-index: 1000;">
-        <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2">
-            <i class="fa-solid fa-print"></i>
+
+    <div class="no-print">
+        <button onclick="window.print()">
             <span>Imprimir</span>
         </button>
-        <button onclick="window.close()" class="ml-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200 flex items-center space-x-2">
-            <i class="fa-solid fa-times"></i>
+        <button onclick="window.close()" class="secondary">
             <span>Fechar</span>
         </button>
     </div>
-    
+
     <script>
-        // Auto-imprimir quando carregar
         window.onload = function() {
             setTimeout(function() {
                 window.print();
             }, 500);
         };
-        
-        // Fechar janela após impressão
         window.onafterprint = function() {
             setTimeout(function() {
                 window.close();

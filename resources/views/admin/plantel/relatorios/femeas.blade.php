@@ -8,156 +8,241 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     @endif
     <style>
+        * { font-family: Helvetica, Arial, sans-serif !important; }
+        html, body { font-family: Helvetica, Arial, sans-serif !important; }
         @if (!empty($isPdf))
-            /* =========================================================
-               CSS ESPECÍFICO PARA PDF (A4 Landscape, DomPDF safe)
-               - Nenhum flex/grid, tudo tabela ou bloco
-               - Larguras fixas em mm
-               - Fontes padrão (helvetica)
-               ========================================================= */
-            @page { size: A4 landscape; margin: 10mm 8mm 10mm 8mm; }
-            * { box-sizing: border-box; }
+            @page { size: A4 landscape; margin: 10mm 8mm 12mm 8mm; }
+            * { margin: 0; padding: 0; box-sizing: border-box; }
             html, body {
-                margin: 0;
-                padding: 0;
-                font-family: helvetica, arial, sans-serif;
-                color: #0f172a;
+                font-family: 'Helvetica', 'Arial', sans-serif;
                 font-size: 10px;
+                line-height: 1.4;
+                color: #0a0a0a;
                 background: #ffffff;
+            }
+            .page {
+                width: 297mm;
+                min-height: 210mm;
+                margin: 0 auto;
+                padding: 8mm 8mm 14mm 8mm;
+                position: relative;
+                box-sizing: border-box;
+            }
+            table.doc-header {
                 width: 100%;
+                border-collapse: collapse;
+                border-bottom: 2px solid #0a0a0a;
+                margin-bottom: 14px;
+                padding-bottom: 10px;
+                page-break-inside: avoid;
             }
-            .pdf-header {
-                width: 100%;
-                margin-bottom: 6mm;
-                padding-bottom: 3mm;
-                border-bottom: 1.2px solid #cbd5e1;
-            }
-            .pdf-header table { width: 100%; border-collapse: collapse; }
-            .pdf-header td { vertical-align: middle; }
-            .pdf-header .brand {
-                font-size: 16px;
-                font-weight: 700;
-                color: #7c2d12;
-                letter-spacing: -0.3px;
-            }
-            .pdf-header .brand small {
-                display: block;
-                margin-top: 1mm;
-                font-size: 9px;
-                color: #475569;
-                font-weight: normal;
-                letter-spacing: 0;
-            }
-            .pdf-header .meta-right { text-align: right; font-size: 9px; color: #334155; }
-            .pdf-header .meta-right .pill {
-                display: inline-block;
-                margin-bottom: 1mm;
-                padding: 1.2mm 3mm;
-                background: #7c2d12;
-                color: #ffffff;
-                font-size: 8px;
-                font-weight: 700;
-                letter-spacing: 0.4px;
-                text-transform: uppercase;
-                border-radius: 3mm;
-            }
-
-            .pdf-summary { width: 100%; border-collapse: separate; border-spacing: 2mm; margin-bottom: 5mm; }
-            .pdf-summary td {
-                width: 25%;
-                padding: 3mm;
-                background: #f8fafc;
-                border: 1px solid #e2e8f0;
-                border-left: 1.5mm solid #c2ffce;
-                border-radius: 2mm;
+            table.doc-header td.brand-col {
                 vertical-align: top;
+                width: 60%;
+                padding: 0;
             }
-            .pdf-summary td.c1 { border-left-color: #78350f; }
-            .pdf-summary td.c2 { border-left-color: #16a34a; }
-            .pdf-summary td.c3 { border-left-color: #dc2626; }
-            .pdf-summary td.c4 { border-left-color: #ca8a04; }
-            .pdf-summary .lbl { font-size: 7.5px; text-transform: uppercase; color: #64748b; letter-spacing: 0.3px; font-weight: 700; }
-            .pdf-summary .val { font-size: 15px; font-weight: 800; color: #0f172a; margin-top: 0.6mm; }
-
-            table.data {
+            table.doc-header td.meta {
+                vertical-align: top;
+                text-align: right;
+                max-width: 85mm;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                font-size: 8.5px;
+                color: #2a2a2a;
+                line-height: 1.45;
+                padding: 0;
+            }
+            .brand-inner { line-height: 0; }
+            .brand-inner img.brand-logo, .brand-inner .brand-logo {
+                display: inline-block;
+                vertical-align: middle;
+                width: 40px;
+                height: 40px;
+                margin-right: 12px;
+                object-fit: contain;
+                opacity: 0.95;
+            }
+            .brand-text {
+                display: inline-block;
+                vertical-align: middle;
+            }
+            .doc-header .brand-text .brand-name {
+                font-size: 17px;
+                font-weight: 800;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: #0a0a0a;
+                line-height: 1.05;
+            }
+            .doc-header .brand-text .brand-sub {
+                font-size: 9.5px;
+                color: #2a2a2a;
+                margin-top: 2px;
+                letter-spacing: 0.03em;
+            }
+            .doc-header .doc-meta strong {
+                color: #0a0a0a;
+                font-weight: 700;
+            }
+            .doc-title-wrap {
+                width: 100%;
+                margin-bottom: 16px;
+                page-break-inside: avoid;
+            }
+            .doc-title-wrap h1 {
+                font-size: 20px;
+                font-weight: 800;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: #0a0a0a;
+                margin-bottom: 4px;
+            }
+            .doc-title-wrap .doc-subtitle {
+                font-size: 9.5px;
+                color: #2a2a2a;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+            }
+            .stats-grid, .summary {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 8px;
+                margin-bottom: 14px;
+            }
+            .stats-grid td, .summary td {
+                border: 1px solid #0a0a0a;
+                background: #fff;
+                text-align: center;
+                padding: 10px 6px 8px 6px;
+                vertical-align: top;
+                width: 25%;
+            }
+            .stats-grid .stat-num, .summary .num {
+                font-size: 20px;
+                font-weight: 800;
+                color: #0a0a0a;
+                line-height: 1;
+                min-height: 24px;
+            }
+            .stats-grid .stat-lbl, .summary .lbl {
+                font-size: 8px;
+                font-weight: 800;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: #2a2a2a;
+                margin-top: 5px;
+                border-top: 1px solid #0a0a0a;
+                padding-top: 5px;
+            }
+            .stat-card { border: none; padding: 0; }
+            table.data-table {
                 width: 100%;
                 border-collapse: collapse;
                 table-layout: fixed;
-                font-size: 8.8px;
+                border: 1px solid #0a0a0a;
+                font-size: 8.5px;
             }
-            table.data thead th {
-                background: #78350f !important;
-                color: #ffffff !important;
+            table.data-table thead th {
+                background: #0a0a0a;
+                color: #ffffff;
                 font-weight: 700;
-                text-align: left;
-                padding: 2mm 1.5mm;
-                font-size: 8px;
+                letter-spacing: 0.06em;
                 text-transform: uppercase;
-                letter-spacing: 0.15px;
-                border: 1px solid #78350f;
-                word-wrap: break-word;
-                overflow-wrap: break-word;
-                hyphens: auto;
+                padding: 5px 3px;
+                text-align: center;
+                border-right: 1px solid #2a2a2a;
+                white-space: nowrap;
+                font-size: 7.5px;
             }
-            table.data tbody td {
-                padding: 1.8mm 1.5mm;
-                border-bottom: 1px solid #f1f5f9;
-                border-left: 1px solid #f8fafc;
-                border-right: 1px solid #f8fafc;
+            table.data-table thead th:last-child { border-right: none; }
+            table.data-table tbody td {
+                padding: 4px 3px;
+                border-right: 1px solid #0a0a0a;
+                border-bottom: 1px solid #0a0a0a;
                 vertical-align: middle;
-                color: #1e293b;
+                color: #0a0a0a;
                 word-wrap: break-word;
                 overflow-wrap: break-word;
             }
-            table.data tbody tr:nth-child(even) td { background: #fafafa; }
-            table.data tbody tr:last-child td { border-bottom: 1px solid #e2e8f0; }
-
-            td.c-id { width: 5.5%; font-weight: 700; }
-            td.c-id2 { width: 5.5%; color: #475569; }
-            td.c-tipo { width: 5.5%; text-transform: capitalize; font-weight: 600; }
-            td.c-raca { width: 8%; }
-            td.c-local { width: 8%; color: #475569; }
+            table.data-table tbody td:last-child { border-right: none; }
+            table.data-table tbody tr:last-child td { border-bottom: none; }
+            table.data-table tbody tr:nth-child(even) td {
+                background: #fafafa;
+            }
+            td.c-id { width: 5.5%; font-weight: 700; text-align: left; }
+            td.c-id2 { width: 5.5%; color: #2a2a2a; text-align: left; }
+            td.c-tipo { width: 5.5%; text-transform: capitalize; font-weight: 600; text-align: left; }
+            td.c-raca { width: 8%; text-align: left; }
+            td.c-local { width: 8%; color: #2a2a2a; text-align: left; }
             td.c-baia { width: 4.5%; text-align: center; font-weight: 700; }
-            td.c-ciclo { width: 4.5%; text-align: center; font-weight: 800; color: #7c2d12; }
-            td.c-estado { width: 10%; font-size: 8px; font-weight: 600; }
+            td.c-ciclo { width: 4.5%; text-align: center; font-weight: 800; color: #0a0a0a; }
+            td.c-estado { width: 10%; font-size: 7.5px; font-weight: 600; text-align: left; }
             td.c-peso { width: 6%; text-align: right; font-weight: 700; }
-            td.c-idade { width: 5%; text-align: right; color: #475569; }
-            td.c-data { width: 7%; color: #475569; }
-            td.c-ultop { width: 14%; font-size: 7.8px; color: #334155; }
-            td.c-status { width: 6.5%; }
-
-            th.c-baia, th.c-ciclo, th.c-peso, th.c-idade { text-align: center; }
-            th.c-peso, th.c-idade { text-align: right; }
-
+            td.c-idade { width: 5%; text-align: right; color: #2a2a2a; }
+            td.c-data { width: 7%; color: #2a2a2a; text-align: left; }
+            td.c-ultop { width: 14%; font-size: 7.3px; color: #2a2a2a; text-align: left; }
+            td.c-status { width: 6.5%; text-align: center; }
+            th.c-id, th.c-id2, th.c-tipo, th.c-raca, th.c-local, th.c-estado, th.c-data, th.c-ultop { text-align: left !important; }
+            th.c-baia, th.c-ciclo { text-align: center !important; }
+            th.c-peso, th.c-idade { text-align: right !important; }
             .chip {
                 display: inline;
-                padding: 0.6mm 2mm;
-                border-radius: 2mm;
-                font-size: 7.2px;
+                padding: 1px 5px;
+                border-radius: 2px;
+                font-size: 7px;
                 font-weight: 700;
-                border: 1px solid transparent;
-                line-height: 1.4;
+                border: 1px solid #0a0a0a;
+                line-height: 1.3;
+                background: #ffffff;
+                color: #0a0a0a;
             }
-            .chip-gest { background: #fef3c7; color: #92400e; border-color: #fde68a; }
-            .chip-lact { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
-            .chip-vazia { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
-            .badge-ok { display: inline; padding: 0.6mm 2mm; border-radius: 2mm; background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; font-size: 7.2px; font-weight: 700; }
-            .badge-bad { display: inline; padding: 0.6mm 2mm; border-radius: 2mm; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; font-size: 7.2px; font-weight: 700; }
-
-            .empty { width: 100%; text-align: center; padding: 14mm 4mm; color: #64748b; }
-            .empty .ico { font-size: 24px; color: #cbd5e1; margin-bottom: 2mm; }
-            .empty strong { display: block; color: #334155; font-size: 11px; margin-bottom: 1mm; }
-
-            .pdf-footer {
+            .badge-ok, .badge-bad {
+                display: inline;
+                padding: 1px 5px;
+                border-radius: 2px;
+                font-size: 7px;
+                font-weight: 700;
+                border: 1px solid #0a0a0a;
+                background: #ffffff;
+                color: #0a0a0a;
+            }
+            .badge-bad { font-style: italic; }
+            .empty {
                 width: 100%;
-                margin-top: 5mm;
-                padding-top: 2mm;
-                border-top: 1px solid #e2e8f0;
-                color: #94a3b8;
-                font-size: 8px;
+                text-align: center;
+                padding: 14mm 4mm;
+                color: #2a2a2a;
+                border: 1px solid #0a0a0a;
+                background: #fafafa;
             }
-            .pdf-footer td { vertical-align: middle; }
-            .pdf-footer .right { text-align: right; color: #64748b; font-weight: 700; }
+            .empty .ico { font-size: 22px; color: #2a2a2a; margin-bottom: 2mm; }
+            .empty strong { display: block; color: #0a0a0a; font-size: 11px; margin-bottom: 1mm; }
+            table.doc-footer {
+                width: 100%;
+                border-collapse: collapse;
+                position: absolute;
+                bottom: 10mm;
+                left: 8mm;
+                right: 8mm;
+                border-top: 1px solid #0a0a0a;
+                padding-top: 6px;
+                font-size: 8.5px;
+                color: #2a2a2a;
+            }
+            table.doc-footer td.left {
+                text-align: left;
+                padding: 6px 0 0 0;
+                letter-spacing: 0.03em;
+            }
+            table.doc-footer td.right {
+                text-align: right;
+                padding: 6px 0 0 0;
+                letter-spacing: 0.03em;
+            }
+            table.doc-footer strong {
+                color: #0a0a0a;
+                font-weight: 700;
+            }
         @else
             /* =========================================================
                CSS PARA HTML (browser)
@@ -276,115 +361,136 @@
 </head>
 <body>
 @if (!empty($isPdf))
-    {{-- =============== LAYOUT EXCLUSIVO PARA PDF =============== --}}
-    <table class="pdf-header" cellpadding="0" cellspacing="0">
-        <tr>
-            <td>
-                <div class="brand">
-                    <i class="fa-solid fa-venus"></i>&nbsp; Relatório de Plantel — Fêmeas
-                    <small>Emitido em <strong>{{ $data_emissao }}</strong></small>
-                </div>
-            </td>
-            <td class="meta-right">
-                <span class="pill">Sui Control</span><br>
-                MasterPig — Gestão de Suinocultura
-            </td>
-        </tr>
-    </table>
-
-    @php
-        $total = $items->count();
-        $ativas = $items->filter(fn($r) => !str_contains(strtolower($r['status'] ?? ''), 'inativo'))->count();
-        $inativas = $total - $ativas;
-        $gestantes = $items->filter(fn($r) => str_starts_with(mb_strtolower($r['estado'] ?? ''), 'gest'))->count();
-    @endphp
-
-    <table class="pdf-summary" cellpadding="0" cellspacing="0">
-        <tr>
-            <td class="c1"><div class="lbl">Total de Fêmeas</div><div class="val">{{ $total }}</div></td>
-            <td class="c2"><div class="lbl">Ativas</div><div class="val" style="color:#166534;">{{ $ativas }}</div></td>
-            <td class="c3"><div class="lbl">Inativas</div><div class="val" style="color:#991b1b;">{{ $inativas }}</div></td>
-            <td class="c4"><div class="lbl">Gestantes</div><div class="val" style="color:#92400e;">{{ $gestantes }}</div></td>
-        </tr>
-    </table>
-
-    <table class="data" cellpadding="0" cellspacing="0">
-        <colgroup>
-            <col style="width:5.5%">
-            <col style="width:5.5%">
-            <col style="width:5.5%">
-            <col style="width:8%">
-            <col style="width:8%">
-            <col style="width:4.5%">
-            <col style="width:4.5%">
-            <col style="width:10%">
-            <col style="width:6%">
-            <col style="width:5%">
-            <col style="width:7%">
-            <col style="width:14%">
-            <col style="width:6.5%">
-        </colgroup>
-        <thead>
+    {{-- =============== LAYOUT EXCLUSIVO PARA PDF (PADRÃO P&B) =============== --}}
+    <div class="page">
+        <table class="doc-header" cellspacing="0" cellpadding="0">
             <tr>
-                <th class="c-id">ID</th>
-                <th class="c-id2">ID 2</th>
-                <th class="c-tipo">Tipo</th>
-                <th class="c-raca">Raça</th>
-                <th class="c-local">Local</th>
-                <th class="c-baia">Baia</th>
-                <th class="c-ciclo">Cic</th>
-                <th class="c-estado">Estado</th>
-                <th class="c-peso">Peso</th>
-                <th class="c-idade">Idade</th>
-                <th class="c-data">Compra</th>
-                <th class="c-ultop">Última Operação</th>
-                <th class="c-status">Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($items as $row)
-            @php
-                $estadoLower = mb_strtolower($row['estado'] ?? '');
-                if (str_starts_with($estadoLower, 'gest')) { $chip = 'chip-gest'; }
-                elseif (str_starts_with($estadoLower, 'lact')) { $chip = 'chip-lact'; }
-                else { $chip = 'chip-vazia'; }
-                $badge = str_contains(strtolower($row['status'] ?? ''), 'inativo') ? 'badge-bad' : 'badge-ok';
-            @endphp
-            <tr>
-                <td class="c-id">{{ $row['id_primaria'] }}</td>
-                <td class="c-id2">{{ $row['id_secundaria'] ?? '-' }}</td>
-                <td class="c-tipo">{{ $row['tipo'] ?? '-' }}</td>
-                <td class="c-raca">{{ $row['raca'] ?? '-' }}</td>
-                <td class="c-local">{{ $row['localizacao'] ?? '-' }}</td>
-                <td class="c-baia">{{ $row['baia'] ?? '-' }}</td>
-                <td class="c-ciclo">{{ $row['ciclo'] }}</td>
-                <td class="c-estado"><span class="chip {{ $chip }}">{{ $row['estado'] }}</span></td>
-                <td class="c-peso">{{ $row['peso'] }}</td>
-                <td class="c-idade">{{ $row['idade'] }}</td>
-                <td class="c-data">{{ $row['data_compra'] ?? '-' }}</td>
-                <td class="c-ultop">{{ $row['ultima_operacao'] ?? '-' }}</td>
-                <td class="c-status"><span class="{{ $badge }}">{{ $row['status'] ?? '-' }}</span></td>
-            </tr>
-            @empty
-            <tr>
-                <td colspan="13">
-                    <div class="empty">
-                        <div class="ico"><i class="fa-regular fa-folder-open"></i></div>
-                        <strong>Nenhum registro encontrado</strong>
-                        Tente ajustar os filtros utilizados para visualizar mais resultados.
+                <td class="brand-col">
+                    <div class="brand-inner">
+                        @if(!empty($logoDataUri))
+                            <img class="brand-logo" src="{{ $logoDataUri }}" alt="Sui Control">
+                        @else
+                            <div class="brand-logo" style="display:inline-block;vertical-align:middle;width:40px;height:40px;border:1.5px solid #0a0a0a;font-weight:800;font-size:15px;letter-spacing:0.05em;color:#0a0a0a;background:#ffffff;text-align:center;line-height:37px;margin-right:12px;">SC</div>
+                        @endif
+                        <div class="brand-text">
+                            <div class="brand-name">Sui Control</div>
+                            <div class="brand-sub">Sistema de Gestão de Suinocultura</div>
+                        </div>
                     </div>
                 </td>
+                <td class="meta">
+                    <div><strong>Emitido em:</strong> {{ $emitidoEm ?? now()->format('d/m/Y H:i') }}</div>
+                    <div style="margin-top:3px;"><strong>Documento:</strong> Relatório de Plantel</div>
+                    <div style="margin-top:3px;"><strong>Segmento:</strong> Fêmeas</div>
+                </td>
             </tr>
-            @endforelse
-        </tbody>
-    </table>
+        </table>
 
-    <table class="pdf-footer" cellpadding="0" cellspacing="0">
-        <tr>
-            <td>© {{ date('Y') }} Sui Control — MasterPig. Processado em {{ $data_emissao }}.</td>
-            <td class="right">Página 1</td>
-        </tr>
-    </table>
+        <table class="doc-title-wrap" width="100%" align="center" cellspacing="0" cellpadding="0">
+            <tr>
+                <td align="center">
+                    <h1>Relatório de Plantel — Fêmeas</h1>
+                    <div class="doc-subtitle">Controle Geral de Matrizes e Leitoas</div>
+                </td>
+            </tr>
+        </table>
+
+        @php
+            $total = $items->count();
+            $ativas = $items->filter(fn($r) => !str_contains(strtolower($r['status'] ?? ''), 'inativo'))->count();
+            $inativas = $total - $ativas;
+            $gestantes = $items->filter(fn($r) => str_starts_with(mb_strtolower($r['estado'] ?? ''), 'gest'))->count();
+        @endphp
+
+        <table class="stats-grid" cellspacing="8">
+            <tbody>
+                <tr>
+                    <td><div class="stat-num">{{ $total }}</div><div class="stat-lbl">Total de Fêmeas</div></td>
+                    <td><div class="stat-num">{{ $ativas }}</div><div class="stat-lbl">Ativas</div></td>
+                    <td><div class="stat-num">{{ $inativas }}</div><div class="stat-lbl">Inativas</div></td>
+                    <td><div class="stat-num">{{ $gestantes }}</div><div class="stat-lbl">Gestantes</div></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <table class="data-table" cellpadding="0" cellspacing="0">
+            <colgroup>
+                <col style="width:5.5%">
+                <col style="width:5.5%">
+                <col style="width:5.5%">
+                <col style="width:8%">
+                <col style="width:8%">
+                <col style="width:4.5%">
+                <col style="width:4.5%">
+                <col style="width:10%">
+                <col style="width:6%">
+                <col style="width:5%">
+                <col style="width:7%">
+                <col style="width:14%">
+                <col style="width:6.5%">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th class="c-id">ID</th>
+                    <th class="c-id2">ID 2</th>
+                    <th class="c-tipo">Tipo</th>
+                    <th class="c-raca">Raça</th>
+                    <th class="c-local">Local</th>
+                    <th class="c-baia">Baia</th>
+                    <th class="c-ciclo">Cic</th>
+                    <th class="c-estado">Estado</th>
+                    <th class="c-peso">Peso</th>
+                    <th class="c-idade">Idade</th>
+                    <th class="c-data">Compra</th>
+                    <th class="c-ultop">Última Operação</th>
+                    <th class="c-status">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($items as $row)
+                @php
+                    $estadoLower = mb_strtolower($row['estado'] ?? '');
+                    if (str_starts_with($estadoLower, 'gest')) { $chip = 'chip-gest'; }
+                    elseif (str_starts_with($estadoLower, 'lact')) { $chip = 'chip-lact'; }
+                    else { $chip = 'chip-vazia'; }
+                    $badge = str_contains(strtolower($row['status'] ?? ''), 'inativo') ? 'badge-bad' : 'badge-ok';
+                @endphp
+                <tr>
+                    <td class="c-id">{{ $row['id_primaria'] }}</td>
+                    <td class="c-id2">{{ $row['id_secundaria'] ?? '-' }}</td>
+                    <td class="c-tipo">{{ $row['tipo'] ?? '-' }}</td>
+                    <td class="c-raca">{{ $row['raca'] ?? '-' }}</td>
+                    <td class="c-local">{{ $row['localizacao'] ?? '-' }}</td>
+                    <td class="c-baia">{{ $row['baia'] ?? '-' }}</td>
+                    <td class="c-ciclo">{{ $row['ciclo'] }}</td>
+                    <td class="c-estado"><span class="chip {{ $chip }}">{{ $row['estado'] }}</span></td>
+                    <td class="c-peso">{{ $row['peso'] }}</td>
+                    <td class="c-idade">{{ $row['idade'] }}</td>
+                    <td class="c-data">{{ $row['data_compra'] ?? '-' }}</td>
+                    <td class="c-ultop">{{ $row['ultima_operacao'] ?? '-' }}</td>
+                    <td class="c-status"><span class="{{ $badge }}">{{ $row['status'] ?? '-' }}</span></td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="13">
+                        <div class="empty">
+                            <div class="ico"><i class="fa-regular fa-folder-open"></i></div>
+                            <strong>Nenhum registro encontrado</strong>
+                            Tente ajustar os filtros utilizados para visualizar mais resultados.
+                        </div>
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+
+        <table class="doc-footer" cellspacing="0" cellpadding="0">
+            <tr>
+                <td class="left">© {{ date('Y') }} <strong>Sui Control</strong> — MasterPig · Gestão Suinocultura</td>
+                <td class="right">Página 1 / 1</td>
+            </tr>
+        </table>
+    </div>
 @else
     {{-- =============== LAYOUT PARA NAVEGADOR / IMPRESSÃO DIRETA =============== --}}
     <div class="page">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\PdfLogoHelper;
 use App\Models\Racao;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -97,12 +98,22 @@ class RacaoController extends Controller
 
         $racoes = $query->orderBy('codigo')->get();
 
+        $logoData = PdfLogoHelper::buildLogoData();
+        $logoDataUri = $logoData['logoDataUri'];
+
         $data = [
             'racoes' => $racoes,
-            'data_emissao' => now()->format('d/m/Y H:i'),
+            'emitidoEm' => $logoData['emitidoEm'],
+            'logoDataUri' => $logoDataUri,
         ];
 
-        $pdf = Pdf::loadView('admin.racoes.report', $data);
+        $pdf = Pdf::loadView('admin.racoes.report', $data)
+            ->setPaper('a4', 'landscape')
+            ->setOptions([
+                'defaultFont' => 'Helvetica',
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
 
         return $pdf->stream('relatorio-racoes-'.now()->format('Y-m-d').'.pdf');
     }
@@ -111,12 +122,22 @@ class RacaoController extends Controller
     {
         $racao->load(['fornecedor', 'tipoRacao']);
 
+        $logoData = PdfLogoHelper::buildLogoData();
+        $logoDataUri = $logoData['logoDataUri'];
+
         $data = [
             'racao' => $racao,
-            'data_emissao' => now()->format('d/m/Y H:i'),
+            'emitidoEm' => $logoData['emitidoEm'],
+            'logoDataUri' => $logoDataUri,
         ];
 
-        $pdf = Pdf::loadView('admin.racoes.ficha', $data);
+        $pdf = Pdf::loadView('admin.racoes.ficha', $data)
+            ->setPaper('a4', 'portrait')
+            ->setOptions([
+                'defaultFont' => 'Helvetica',
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
 
         return $pdf->stream('ficha-racao-'.$racao->codigo.'.pdf');
     }

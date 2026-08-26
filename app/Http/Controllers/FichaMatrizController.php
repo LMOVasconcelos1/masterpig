@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\PdfLogoHelper;
 use App\Services\PigCycleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -268,7 +269,9 @@ class FichaMatrizController extends Controller
             }
         }
 
-        // Preparar dados para a view
+        $logoData = PdfLogoHelper::buildLogoData();
+        $logoDataUri = $logoData['logoDataUri'];
+
         $data = [
             'femea' => $femea,
             'status' => $status,
@@ -280,14 +283,15 @@ class FichaMatrizController extends Controller
             'total_desmamados' => $totalDesmamados,
             'total_mortalidade' => $totalMortalidade,
             'ciclos' => $ciclos,
-            'data_geracao' => now()->format('d/m/Y H:i'),
+            'emitidoEm' => $logoData['emitidoEm'],
+            'logoDataUri' => $logoDataUri,
         ];
 
         // Gerar PDF
         $pdf = Pdf::loadView('admin.plantel.femeas.ficha-pdf', $data)
             ->setPaper('A4', 'portrait')
             ->setOptions([
-                'defaultFont' => 'Arial',
+                'defaultFont' => 'Helvetica',
                 'isHtml5ParserEnabled' => true,
                 'isRemoteEnabled' => true,
             ]);

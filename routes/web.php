@@ -55,6 +55,10 @@ Route::get('/plantel/analises/formularios/cio-leitoa/pdf', function () {
     if ($linhas < 10) $linhas = 10;
     if ($linhas > 50) $linhas = 50;
 
+    $logoData = \App\Helpers\PdfLogoHelper::buildLogoData();
+    $logoDataUri = $logoData['logoDataUri'];
+    $emitidoEm = $logoData['emitidoEm'];
+
     $pageHeightMm = 297;
     $marginTopMm = 10;
     $marginBottomMm = 12;
@@ -69,8 +73,13 @@ Route::get('/plantel/analises/formularios/cio-leitoa/pdf', function () {
     if ($rowHeightMm > 10.0) $rowHeightMm = 10.0;
     $filename = 'formulario-cio-leitoa-'.now()->format('Ymd-Hi').'.pdf';
 
-    $response = \Barryvdh\DomPDF\Facade\Pdf::loadView('plantel.analises.formularios.cio-leitoa', compact('linhas', 'rowHeightMm'))
+    $response = \Barryvdh\DomPDF\Facade\Pdf::loadView('plantel.analises.formularios.cio-leitoa', compact('linhas', 'rowHeightMm', 'logoDataUri', 'emitidoEm'))
         ->setPaper('a4', 'portrait')
+        ->setOptions([
+            'defaultFont' => 'Helvetica',
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true,
+        ])
         ->stream($filename);
 
     return $response
@@ -80,7 +89,13 @@ Route::get('/plantel/analises/formularios/cio-leitoa/pdf', function () {
 })->middleware(['auth'])->name('plantel.analises.formularios.cio-leitoa.pdf');
 Route::get('/gestacao', GestacaoController::class)->middleware(['auth'])->name('gestacao');
 Route::get('/gestacao/formulario-cobertura/pdf', function() {
-    return response()->view('gestacao.formulario-cobertura', [
+    $logoData = \App\Helpers\PdfLogoHelper::buildLogoData();
+    $logoDataUri = $logoData['logoDataUri'];
+    $emitidoEm = $logoData['emitidoEm'];
+
+    $filename = 'formulario-cobertura-'.now()->format('Ymd-Hi').'.pdf';
+
+    $response = \Barryvdh\DomPDF\Facade\Pdf::loadView('gestacao.formulario-cobertura', [
         'tipo' => request('tipo', 'em_branco'),
         'matriz' => request('matriz', 'todas'),
         'leitoa' => request('leitoa', 'todas'),
@@ -89,8 +104,21 @@ Route::get('/gestacao/formulario-cobertura/pdf', function() {
         'dias_vazias_inicio' => request('dias_vazias_inicio'),
         'dias_vazias_fim' => request('dias_vazias_fim'),
         'idade_inicio' => request('idade_inicio'),
-        'idade_fim' => request('idade_fim')
-    ])->header('Content-Type', 'text/html; charset=utf-8');
+        'idade_fim' => request('idade_fim'),
+        'logoDataUri' => $logoDataUri,
+        'emitidoEm' => $emitidoEm
+    ])->setPaper('a4', 'landscape')
+      ->setOptions([
+          'defaultFont' => 'Helvetica',
+          'isHtml5ParserEnabled' => true,
+          'isRemoteEnabled' => true,
+      ])
+      ->stream($filename);
+
+    return $response
+        ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        ->header('Pragma', 'no-cache')
+        ->header('Expires', '0');
 })->middleware(['auth'])->name('gestacao.formulario.pdf');
 Route::get('/maternidade', [MaternidadeController::class, 'index'])->middleware(['auth'])->name('maternidade');
 Route::get('/creche', [CrecheController::class, 'index'])->middleware(['auth'])->name('creche');
@@ -127,8 +155,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     })->name('index');
 
     Route::get('/documentacao/pdf', function () {
-        $generatedAt = now()->format('d/m/Y H:i');
         $projectRoot = base_path();
+
+        $logoData = \App\Helpers\PdfLogoHelper::buildLogoData();
+        $emitidoEm = $logoData['emitidoEm'];
+        $logoDataUri = $logoData['logoDataUri'];
+        if (!empty($logoDataUri)) {
+            $logoImgTag = '<img src="' . $logoDataUri . '" alt="Logo">';
+        } else {
+            $logoImgTag = 'SC';
+        }
 
         $html = <<<HTML
 <!doctype html>
@@ -138,12 +174,26 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MasterPig — Documentação</title>
   <style>
+    * { font-family: Helvetica, Arial, sans-serif !important; }
+    html, body { font-family: Helvetica, Arial, sans-serif !important; }
     @page { margin: 26mm 18mm 22mm 18mm; }
-    body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 11.5px; line-height: 1.45; color: #111827; }
+    body { font-family: Helvetica, Arial, sans-serif; font-size: 11.5px; line-height: 1.45; color: #111827; }
     h1 { font-size: 22px; margin: 0 0 8px 0; }
-    h2 { font-size: 16px; margin: 18px 0 8px 0; padding-bottom: 6px; border-bottom: 1px solid #e5e7eb; }
+    h2 { font-size: 16px; margin: 18px 0 8px 0; padding-bottom: 6px; border-bottom: 1px solid #0a0a0a; }
     h3 { font-size: 13px; margin: 14px 0 6px 0; }
     .muted { color: #6b7280; }
+    table.doc-header { width: 100%; border-collapse: collapse; margin-bottom: 14px; border-bottom: 2px solid #0a0a0a; padding-bottom: 10px; }
+    table.doc-header td { vertical-align: top; padding: 0; }
+    table.doc-header td.brand-col { width: 60%; }
+    table.doc-header td.meta { text-align: right; width: 40%; }
+    .brand-inner { line-height: 0; }
+    .brand-inner .logo-box { display: inline-block; vertical-align: middle; width: 40px; height: 40px; margin-right: 12px; text-align: center; line-height: 40px; border: 1.5px solid #0a0a0a; font-weight: 800; font-size: 15px; color: #0a0a0a; background: #fff; }
+    .brand-inner .logo-box img { width: 100%; height: 100%; object-fit: contain; border: none; display: block; }
+    .brand-text { display: inline-block; vertical-align: middle; line-height: 1.1; }
+    .brand-text .title { font-size: 17px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #0a0a0a; }
+    .brand-text .sub { font-size: 9.5px; color: #2a2a2a; margin-top: 2px; letter-spacing: 0.03em; }
+    table.doc-header td.meta .meta-line { font-size: 8.5px; line-height: 1.45; color: #2a2a2a; word-wrap: break-word; overflow-wrap: break-word; }
+    table.doc-header td.meta .meta-line strong { color: #0a0a0a; font-weight: 700; }
     .cover { text-align: center; margin-top: 28mm; }
     .cover .subtitle { font-size: 12px; margin-top: 10px; }
     .kv { margin: 10px auto 0 auto; width: 100%; max-width: 520px; }
@@ -152,17 +202,37 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     ul { margin: 6px 0 10px 18px; padding: 0; }
     li { margin: 2px 0; }
     .page-break { page-break-before: always; }
-    .mono { font-family: DejaVu Sans Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 10.5px; }
-    .box { border: 1px solid #e5e7eb; padding: 10px 12px; border-radius: 6px; background: #fafafa; }
+    .mono { font-family: Helvetica, Arial, sans-serif; font-size: 10.5px; }
+    .box { border: 1px solid #0a0a0a; padding: 0; overflow: hidden; }
   </style>
 </head>
 <body>
 
+  <table class="doc-header" cellspacing="0" cellpadding="0">
+    <tr>
+      <td class="brand-col">
+        <div class="brand-inner">
+          <div class="logo-box">
+            {$logoImgTag}
+          </div>
+          <div class="brand-text">
+            <div class="title">SUI CONTROL</div>
+            <div class="sub">Sistema de Gestão de Suinocultura</div>
+          </div>
+        </div>
+      </td>
+      <td class="meta">
+        <div class="meta-line"><strong>Emitido em:</strong> {$emitidoEm}</div>
+        <div class="meta-line" style="margin-top:3px;"><strong>Documento:</strong> Documentação Técnica</div>
+      </td>
+    </tr>
+  </table>
+
   <div class="cover">
-    <h1>MasterPig</h1>
+    <h1>DOCUMENTAÇÃO DO SISTEMA</h1>
     <div class="subtitle muted">Documentação do projeto (estado atual)</div>
     <table class="kv" cellspacing="0" cellpadding="0">
-      <tr><td>Gerado em</td><td>{$generatedAt}</td></tr>
+      <tr><td>Gerado em</td><td>{$emitidoEm}</td></tr>
       <tr><td>Projeto</td><td>MasterPig (manejo suinícola)</td></tr>
       <tr><td>Stack</td><td>PHP 8.2 + Laravel 12 + MySQL/MariaDB (multi-tenant) + Blade + Alpine.js + Tailwind + Vite</td></tr>
       <tr><td>Raiz do projeto</td><td class="mono">{$projectRoot}</td></tr>
@@ -253,7 +323,13 @@ HTML;
 
         $filename = 'masterpig-documentacao-'.now()->format('Ymd-Hi').'.pdf';
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->setPaper('a4', 'portrait');
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)
+            ->setPaper('a4', 'portrait')
+            ->setOptions([
+                'defaultFont' => 'Helvetica',
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+            ]);
 
         return $pdf->stream($filename)
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')

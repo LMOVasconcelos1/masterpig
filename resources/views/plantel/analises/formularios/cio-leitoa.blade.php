@@ -3,109 +3,247 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cio de leitoa</title>
+    <title>Formulário de Cio de Leitoas</title>
     <style>
+        * { font-family: Helvetica, Arial, sans-serif !important; }
+        html, body { font-family: Helvetica, Arial, sans-serif !important; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        @page { margin: 10mm 12mm 12mm 12mm; }
-
-        body { font-family: Arial, Helvetica, sans-serif; font-size: 10px; line-height: 1.25; color: #111; background: #fff; }
-        .page { width: 95%; margin: 0 auto; padding: 0; }
-
-        .header { margin-bottom: 5mm; }
-        .header-table { width: 100%; border-collapse: collapse; }
-        .header-table td { vertical-align: bottom; }
-        .header-left { text-align: left; font-size: 13px; font-weight: 800; }
-        .header-right { text-align: right; font-size: 10px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; }
-        .rule { border-top: 1px solid #555; margin-top: 6px; }
-
-        .table-wrap { width: 100%; }
-        table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 1px solid #555; }
-
-        thead th {
-            background: #d9d9d9;
-            color: #111;
-            font-weight: 800;
-            text-align: center;
-            padding: 6px 4px;
-            font-size: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.2px;
-            border: 1px solid #555;
-            white-space: normal;
-            word-break: break-word;
-            line-height: 1.15;
+        html, body {
+            font-size: 11px;
+            line-height: 1.4;
+            color: #0a0a0a;
+            background: #ffffff;
         }
-
-        tbody td {
-            border: 1px solid #555;
-            padding: 0 3px;
-            font-size: 9px;
-            height: {{ $rowHeightMm ?? 7.0 }}mm;
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 10mm 10mm 16mm 10mm;
+            position: relative;
+            box-sizing: border-box;
+        }
+        table.doc-header {
+            width: 100%;
+            border-collapse: collapse;
+            border-bottom: 2px solid #0a0a0a;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            page-break-inside: avoid;
+        }
+        table.doc-header td.brand-col {
+            vertical-align: top;
+            width: 60%;
+            padding: 0;
+        }
+        table.doc-header td.meta {
+            vertical-align: top;
+            text-align: right;
+            max-width: 85mm;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-size: 8.5px;
+            color: #2a2a2a;
+            line-height: 1.45;
+            padding: 0;
+        }
+        .brand-inner { line-height: 0; }
+        .brand-inner img.brand-logo, .brand-inner .brand-logo {
+            display: inline-block;
+            vertical-align: middle;
+            width: 40px;
+            height: 40px;
+            margin-right: 12px;
+            object-fit: contain;
+            opacity: 0.95;
+        }
+        .brand-text {
+            display: inline-block;
             vertical-align: middle;
         }
-
+        .doc-header .brand-text .brand-name {
+            font-size: 17px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #0a0a0a;
+            line-height: 1.05;
+        }
+        .doc-header .brand-text .brand-sub {
+            font-size: 9.5px;
+            color: #2a2a2a;
+            margin-top: 2px;
+            letter-spacing: 0.03em;
+        }
+        .doc-header .doc-meta strong {
+            color: #0a0a0a;
+            font-weight: 700;
+        }
+        .doc-title-wrap {
+            width: 100%;
+            margin-bottom: 22px;
+            page-break-inside: avoid;
+        }
+        .doc-title-wrap h1 {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #0a0a0a;
+            margin-bottom: 4px;
+        }
+        .doc-title-wrap .doc-subtitle {
+            font-size: 10px;
+            color: #2a2a2a;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            border: 1px solid #0a0a0a;
+            font-size: 10px;
+        }
+        table.data-table thead th {
+            background: #0a0a0a;
+            color: #ffffff;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 8px 4px;
+            text-align: center;
+            border-right: 1px solid #2a2a2a;
+            white-space: normal;
+            word-break: break-word;
+            font-size: 9px;
+            line-height: 1.15;
+        }
+        table.data-table thead th:last-child { border-right: none; }
+        table.data-table tbody td {
+            padding: 0 3px;
+            border-right: 1px solid #0a0a0a;
+            border-bottom: 1px solid #0a0a0a;
+            height: {{ $rowHeightMm ?? 7.0 }}mm;
+            vertical-align: middle;
+            text-align: center;
+            color: #0a0a0a;
+        }
+        table.data-table tbody td:last-child { border-right: none; }
+        table.data-table tbody tr:last-child td { border-bottom: none; }
+        table.data-table tbody tr:nth-child(even) td {
+            background: #fafafa;
+        }
         .col-leitoa { width: 18%; }
         .col-data { width: 13%; }
         .col-vacina { width: 15%; }
-
-        .footer { position: fixed; bottom: 0; left: 0; right: 0; padding: 0 12mm 2mm; text-align: right; font-size: 10px; color: #111; }
+        table.doc-footer {
+            width: 100%;
+            border-collapse: collapse;
+            position: absolute;
+            bottom: 10mm;
+            left: 10mm;
+            right: 10mm;
+            border-top: 1px solid #0a0a0a;
+            padding-top: 6px;
+            font-size: 9px;
+            color: #2a2a2a;
+        }
+        table.doc-footer td.left {
+            text-align: left;
+            padding: 6px 0 0 0;
+            letter-spacing: 0.03em;
+        }
+        table.doc-footer td.right {
+            text-align: right;
+            padding: 6px 0 0 0;
+            letter-spacing: 0.03em;
+        }
+        table.doc-footer strong {
+            color: #0a0a0a;
+            font-weight: 700;
+        }
         @media screen {
             body { padding: 16px; background: #f3f4f6; }
-            .page { max-width: 980px; margin: 0 auto; background: #fff; padding: 16px; border: 1px solid #e5e7eb; }
+            .page { max-width: 980px; margin: 0 auto; background: #fff; padding: 16px; border: 1px solid #e5e7eb; min-height: auto; width: 100%; }
         }
     </style>
 </head>
 <body>
     <div class="page">
-        <div class="header">
-            <table class="header-table">
+        <table class="doc-header" cellspacing="0" cellpadding="0">
+            <tr>
+                <td class="brand-col">
+                    <div class="brand-inner">
+                        @if(!empty($logoDataUri))
+                            <img class="brand-logo" src="{{ $logoDataUri }}" alt="Sui Control">
+                        @else
+                            <div class="brand-logo" style="display:inline-block;vertical-align:middle;width:40px;height:40px;border:1.5px solid #0a0a0a;font-weight:800;font-size:15px;letter-spacing:0.05em;color:#0a0a0a;background:#ffffff;text-align:center;line-height:37px;margin-right:12px;">SC</div>
+                        @endif
+                        <div class="brand-text">
+                            <div class="brand-name">Sui Control</div>
+                            <div class="brand-sub">Sistema de Gestão de Suinocultura</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="meta">
+                    <div><strong>Documento:</strong> Formulário</div>
+                    <div style="margin-top:3px;"><strong>Área:</strong> Plantel / Análises</div>
+                    <div style="margin-top:3px;"><strong>Data:</strong> {{ $emitidoEm ?? now()->format('d/m/Y H:i') }}</div>
+                </td>
+            </tr>
+        </table>
+
+        <table class="doc-title-wrap" width="100%" align="center" cellspacing="0" cellpadding="0">
+            <tr>
+                <td align="center">
+                    <h1>Formulário de Cio de Leitoas</h1>
+                    <div class="doc-subtitle">Controle de Cios e Vacinação</div>
+                </td>
+            </tr>
+        </table>
+
+        <table class="data-table" cellpadding="0" cellspacing="0">
+            <colgroup>
+                <col style="width: 18%;">
+                <col style="width: 13%;">
+                <col style="width: 13%;">
+                <col style="width: 13%;">
+                <col style="width: 13%;">
+                <col style="width: 15%;">
+                <col style="width: 15%;">
+            </colgroup>
+            <thead>
                 <tr>
-                    <td class="header-left">Cio de leitoa</td>
-                    <td class="header-right">SuiControl</td>
+                    <th class="col-leitoa">Leitoa</th>
+                    <th class="col-data">Data 1º cio</th>
+                    <th class="col-data">Data 2º cio</th>
+                    <th class="col-data">Data 3º cio</th>
+                    <th class="col-data">Data 4º cio</th>
+                    <th class="col-vacina">1ª Dose Vacina</th>
+                    <th class="col-vacina">2ª Dose Vacina</th>
                 </tr>
-            </table>
-            <div class="rule"></div>
-        </div>
-
-        <div class="table-wrap">
-            <table>
-                <colgroup>
-                    <col style="width: 18%;">
-                    <col style="width: 13%;">
-                    <col style="width: 13%;">
-                    <col style="width: 13%;">
-                    <col style="width: 13%;">
-                    <col style="width: 15%;">
-                    <col style="width: 15%;">
-                </colgroup>
-                <thead>
+            </thead>
+            <tbody>
+                @for ($i = 0; $i < ($linhas ?? 24); $i++)
                     <tr>
-                        <th class="col-leitoa">Leitoa</th>
-                        <th class="col-data">Data 1º cio</th>
-                        <th class="col-data">Data 2º cio</th>
-                        <th class="col-data">Data 3º cio</th>
-                        <th class="col-data">Data 4º cio</th>
-                        <th class="col-vacina">1ª Dose Vacina</th>
-                        <th class="col-vacina">2ª Dose Vacina</th>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
                     </tr>
-                </thead>
-                <tbody>
-                    @for ($i = 0; $i < ($linhas ?? 24); $i++)
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-                    @endfor
-                </tbody>
-            </table>
-        </div>
-    </div>
+                @endfor
+            </tbody>
+        </table>
 
-    <div class="footer">suicontrol</div>
+        <table class="doc-footer" cellspacing="0" cellpadding="0">
+            <tr>
+                <td class="left">© {{ date('Y') }} <strong>Sui Control</strong> — MasterPig · Gestão Suinocultura</td>
+                <td class="right">Página 1 / 1</td>
+            </tr>
+        </table>
+    </div>
 </body>
 </html>

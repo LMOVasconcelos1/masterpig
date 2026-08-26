@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\PdfLogoHelper;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\PigCycleService;
 use Illuminate\Http\Request;
@@ -50,8 +51,17 @@ class PlantelRelatorioController extends Controller
         if ($format === 'pdf') {
             $isPdf = true;
 
-            return Pdf::loadView('admin.plantel.relatorios.femeas', compact('items', 'data_emissao', 'isPdf'))
+            $logoData = PdfLogoHelper::buildLogoData();
+            $logoDataUri = $logoData['logoDataUri'];
+            $emitidoEm = $logoData['emitidoEm'];
+
+            return Pdf::loadView('admin.plantel.relatorios.femeas', compact('items', 'emitidoEm', 'isPdf', 'logoDataUri'))
                 ->setPaper('a4', 'landscape')
+                ->setOptions([
+                    'defaultFont' => 'Helvetica',
+                    'isHtml5ParserEnabled' => true,
+                    'isRemoteEnabled' => true,
+                ])
                 ->download($baseFile.'.pdf');
         }
 
@@ -88,8 +98,17 @@ class PlantelRelatorioController extends Controller
         if ($format === 'pdf') {
             $isPdf = true;
 
-            return Pdf::loadView('admin.plantel.relatorios.machos', compact('items', 'data_emissao', 'isPdf'))
+            $logoData = PdfLogoHelper::buildLogoData();
+            $logoDataUri = $logoData['logoDataUri'];
+            $emitidoEm = $logoData['emitidoEm'];
+
+            return Pdf::loadView('admin.plantel.relatorios.machos', compact('items', 'emitidoEm', 'isPdf', 'logoDataUri'))
                 ->setPaper('a4', 'landscape')
+                ->setOptions([
+                    'defaultFont' => 'Helvetica',
+                    'isHtml5ParserEnabled' => true,
+                    'isRemoteEnabled' => true,
+                ])
                 ->download($baseFile.'.pdf');
         }
 
