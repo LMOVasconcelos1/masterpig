@@ -12,7 +12,7 @@
     <meta name="msapplication-navbutton-color" content="#7c2d12">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="/manifest.json">
-    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/guia.png" type="image/png">
     <link rel="apple-touch-icon" href="/logoSemFundo.png">
     <link rel="apple-touch-icon" sizes="152x152" href="/logoSemFundo.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/logoSemFundo.png">
@@ -427,6 +427,10 @@
                                 <i class="fa-solid fa-chevron-down ml-2 text-xs"></i>
                             </button>
                             <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-amber-200">
+                                <button type="button" @click="open = false; window.abrirTourCenter('restore')" class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900">
+                                    <i class="fa-solid fa-flag text-[10px] mr-2"></i>
+                                    Tutoriais
+                                </button>
                                 <a {!! $__a($__menuCanUsuarios, route('admin.usuarios.index', [], false), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->routeIs('admin.usuarios.index')) !!}>
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Usuários
@@ -644,6 +648,10 @@
 
                     <div class="space-y-1">
                         <div class="px-3 py-2 text-xs font-semibold text-amber-200 uppercase tracking-wider">Utilitários</div>
+                        <button type="button" @click="mobileMenuOpen = false; window.abrirTourCenter('restore')" class="w-full text-left flex items-center px-4 py-3 text-white hover:bg-amber-700">
+                            <i class="fa-solid fa-flag text-[10px] mr-3"></i>
+                            Tutoriais
+                        </button>
                         <a {!! $__m($__menuCanUsuarios, route('admin.usuarios.index', [], false), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->routeIs('admin.usuarios.index')) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Usuários

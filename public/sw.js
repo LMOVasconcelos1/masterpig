@@ -7,7 +7,7 @@
  * - Cache versionado por data; trocar SW_VERSION para invalidar caches antigos.
  */
 
-const SW_VERSION = '2026-08-13-01';
+const SW_VERSION = '2026-11-13-01';
 const CACHE_PREFIX = 'sui-control';
 const STATIC_CACHE = `${CACHE_PREFIX}-static-${SW_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}-runtime-${SW_VERSION}`;
@@ -20,6 +20,7 @@ const PRECACHE_URLS = [
     '/logo.png',
     '/logoSemFundo.png',
     '/logoSemPalavra.png',
+    '/guia.png',
     '/login.png',
     '/favicon.ico',
     '/robots.txt',

@@ -69,8 +69,8 @@
             }
         </script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        @if (file_exists(public_path('logo.png')))
-            <link rel="icon" href="/logo.png" type="image/png">
+        @if (file_exists(public_path('guia.png')))
+            <link rel="icon" href="/guia.png" type="image/png">
         @else
             <link rel="icon" href="/favicon.ico" type="image/x-icon">
         @endif

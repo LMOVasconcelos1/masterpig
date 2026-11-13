@@ -12,7 +12,7 @@
         <meta name="theme-color" content="#78350f" media="(prefers-color-scheme: dark)">
 
         <link rel="manifest" href="/manifest.json">
-        <link rel="icon" type="image/png" href="/logo.png">
+        <link rel="icon" type="image/png" href="/guia.png">
         <link rel="apple-touch-icon" href="/logoSemPalavra.png">
         <link rel="apple-touch-icon" sizes="152x152" href="/logoSemPalavra.png">
         <link rel="apple-touch-icon" sizes="180x180" href="/logoSemPalavra.png">

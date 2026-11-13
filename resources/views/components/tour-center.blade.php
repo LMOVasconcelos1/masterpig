@@ -25,18 +25,36 @@ $TOUR_CENTER_LIBERADO = true;
     [x-cloak] { display: none !important; }
 </style>
 
-<div x-data="tourCenter()" x-init="init()" x-cloak class="fixed z-[9998] left-0 bottom-[96px] sm:left-4 sm:bottom-24 w-full sm:w-auto">
+<div x-data="tourCenter()" x-init="init()" x-cloak x-show="!fabDismissed"
+    class="fixed z-[9998] w-12 h-12"
+    :style="floatingFabStyle"
+    @pointerdown="beginFabDrag($event)"
+    @pointermove.window="moveFabDrag($event)"
+    @pointerup.window="endFabDrag($event)"
+    @pointercancel.window="cancelFabDrag($event)">
 
-    {{-- ================ BOTÃO FLUTUANTE MINI (FALLBACK - acesso secundário; principal é o MENU) ================ --}}
-    <div class="p-3 pb-[max(12px,calc(env(safe-area-inset-bottom)+8px))] sm:p-0 flex justify-start sm:justify-start">
-        <button type="button" @click="togglePanel()"
-            title="Tour Center (Tutoriais)"
-            class="relative group inline-flex items-center justify-center w-12 h-12 sm:w-11 sm:h-11 rounded-2xl text-white shadow-xl shadow-amber-900/40 transition-all duration-300 active:scale-[0.97] bg-gradient-to-br from-amber-500 via-amber-600 to-amber-800 border border-amber-400/40 focus:outline-none focus:ring-4 focus:ring-amber-300/50">
-            <span class="absolute -top-1 -right-1 flex h-4 w-4">
+    {{-- Botão flutuante arrastável, com posição e visibilidade salvas neste dispositivo. --}}
+    <div class="relative w-12 h-12">
+        <button type="button" @click="handleFabClick()"
+            data-fab-drag-handle
+            title="Tutoriais: arraste para mover"
+            aria-label="Abrir tutoriais. Arraste para mover o botão."
+            :class="isFabDragging ? 'cursor-grabbing' : 'cursor-grab'"
+            class="relative group inline-flex items-center justify-center w-12 h-12 rounded-2xl text-white shadow-xl shadow-amber-900/40 transition-all duration-300 active:scale-[0.97] bg-gradient-to-br from-amber-500 via-amber-600 to-amber-800 border border-amber-400/40 focus:outline-none focus:ring-4 focus:ring-amber-300/50">
+            <span class="absolute -top-1 -left-1 flex h-4 w-4">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/60 opacity-75"></span>
                 <span class="relative inline-flex rounded-full h-4 w-4 bg-white items-center justify-center text-[9px] font-black text-amber-700" x-text="categoriasVisiveis.length"></span>
             </span>
             <i class="fa-solid fa-flag text-base sm:text-sm"></i>
+        </button>
+
+        <button type="button" @pointerdown.stop @pointermove.stop @pointerup.stop @click.stop="dismissFab()"
+            title="Ocultar botão de tutoriais"
+            aria-label="Ocultar botão de tutoriais"
+            class="absolute -top-3 -right-3 z-10 inline-flex w-11 h-11 items-center justify-center rounded-full text-slate-700 focus:outline-none focus:ring-2 focus:ring-white">
+            <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-md ring-1 ring-slate-300">
+                <i class="fa-solid fa-xmark text-[11px]"></i>
+            </span>
         </button>
     </div>
 
@@ -49,6 +67,7 @@ $TOUR_CENTER_LIBERADO = true;
             x-transition:leave="transition ease-in duration-200"
             x-transition:leave-start="opacity-100 translate-y-0"
             x-transition:leave-end="opacity-0 translate-y-[100%]"
+            :style="fabPanelStyle"
             class="fixed inset-x-0 bottom-[84px] sm:static sm:mt-3 left-0 w-full sm:absolute sm:bottom-[78px] sm:left-0 sm:w-[440px] max-h-[82vh] sm:max-h-[78vh] rounded-t-[28px] sm:rounded-3xl border-t sm:border border-amber-100 bg-white/98 backdrop-blur-xl shadow-[0_-12px_50px_-20px_rgba(0,0,0,0.25)] sm:shadow-2xl sm:shadow-slate-900/20 ring-1 ring-black/5 overflow-hidden flex flex-col">
 
             <div class="sm:hidden h-1.5 w-12 rounded-full bg-slate-200 mx-auto mt-3 mb-1"></div>
@@ -355,6 +374,7 @@ $TOUR_CENTER_LIBERADO = true;
                     if (action === 'toggle') data.togglePanel();
                     else if (action === 'open') { if (!data.panelOpen) data.panelOpen = true; }
                     else if (action === 'close') { if (data.panelOpen) data.panelOpen = false; }
+                    else if (action === 'restore') data.restoreFab();
                 } catch (e) {}
             }
             retryCount = 0;
@@ -382,6 +402,7 @@ $TOUR_CENTER_LIBERADO = true;
                 if (action === 'toggle') data.togglePanel();
                 else if (action === 'open') { if (!data.panelOpen) data.panelOpen = true; }
                 else if (action === 'close') { if (data.panelOpen) data.panelOpen = false; }
+                else if (action === 'restore') data.restoreFab();
                 return true;
             } catch(e){}
         }
@@ -732,6 +753,7 @@ function tourCenter() {
     ];
 
     const LS_KEY = 'flagsmith.tourcenter.v1';
+    const FAB_UI_KEY = 'flagsmith.tourcenter.fab.v1';
 
     function loadStorage() {
         try { const raw = localStorage.getItem(LS_KEY); return raw ? JSON.parse(raw) : null; }
@@ -739,6 +761,17 @@ function tourCenter() {
     }
     function saveStorage(state) {
         try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e){}
+    }
+    function loadFabUiState() {
+        try {
+            const raw = localStorage.getItem(FAB_UI_KEY);
+            return raw ? JSON.parse(raw) : {};
+        } catch (e) {
+            return {};
+        }
+    }
+    function saveFabUiState(state) {
+        try { localStorage.setItem(FAB_UI_KEY, JSON.stringify(state)); } catch (e) {}
     }
     function mergeComDefaults(stored) {
         if (!stored) return { tutoriais: JSON.parse(JSON.stringify(DEFAULT_TUTORIAIS)), categoriasAbertas: ['plantel'] };
@@ -764,6 +797,13 @@ function tourCenter() {
 
     return {
         panelOpen: false,
+        fabDismissed: false,
+        fabPosition: null,
+        isFabDragging: false,
+        _fabPointerId: null,
+        _fabDragStart: null,
+        _fabHasMoved: false,
+        _suppressFabClick: false,
         categoriasAbertas: ['plantel'],
         tutoriais: [],
         tutorialAtivo: null,
@@ -787,6 +827,11 @@ function tourCenter() {
 
         init() {
             this._manejoInfo = detectarManejoAtual();
+            const fabUi = loadFabUiState();
+            this.fabDismissed = !!fabUi.dismissed;
+            if (Number.isFinite(fabUi.left) && Number.isFinite(fabUi.top)) {
+                this.fabPosition = this.clampFabPosition(fabUi.left, fabUi.top);
+            }
             const loaded = mergeComDefaults(loadStorage());
             this.tutoriais = loaded.tutoriais;
             this.categoriasAbertas = loaded.categoriasAbertas && loaded.categoriasAbertas.length
@@ -801,6 +846,12 @@ function tourCenter() {
             this._throttledUpdateTourPosition = this._throttle(() => { this.updateTourPosition(); }, 40);
 
             window.addEventListener('resize', () => this._onWindowResize());
+            window.addEventListener('resize', () => {
+                if (this.fabPosition) {
+                    this.fabPosition = this.clampFabPosition(this.fabPosition.left, this.fabPosition.top);
+                    this.saveFabUiState();
+                }
+            });
             window.addEventListener('orientationchange', () => this._onWindowResize());
             window.addEventListener('scroll', () => this._onScrollChangeCapture(), true);
             window.addEventListener('hashchange', () => { this._manejoInfo = detectarManejoAtual(); });
@@ -814,6 +865,94 @@ function tourCenter() {
             window.addEventListener('tourcenter:close', () => {
                 this.$nextTick(() => { if (this.panelOpen) this.panelOpen = false; });
             });
+        },
+
+        get floatingFabStyle() {
+            if (this.fabPosition) {
+                return `left:${this.fabPosition.left}px;top:${this.fabPosition.top}px;right:auto;bottom:auto;touch-action:none;`;
+            }
+            return 'left:max(12px,env(safe-area-inset-left));bottom:calc(96px + env(safe-area-inset-bottom));touch-action:none;';
+        },
+        get fabPanelStyle() {
+            return window.innerWidth >= 640 && this.fabPosition && this.fabPosition.left > window.innerWidth / 2
+                ? 'left:auto;right:0;'
+                : '';
+        },
+        clampFabPosition(left, top) {
+            return {
+                left: Math.max(8, Math.min(Number(left) || 0, Math.max(8, window.innerWidth - 88))),
+                top: Math.max(20, Math.min(Number(top) || 20, Math.max(20, window.innerHeight - 56))),
+            };
+        },
+        saveFabUiState() {
+            const state = { dismissed: this.fabDismissed };
+            if (this.fabPosition) {
+                state.left = this.fabPosition.left;
+                state.top = this.fabPosition.top;
+            }
+            saveFabUiState(state);
+        },
+        beginFabDrag(event) {
+            if (!event.target.closest('[data-fab-drag-handle]')) return;
+            if (event.button !== undefined && event.button !== 0) return;
+            const rect = this.$el.getBoundingClientRect();
+            this._fabPointerId = event.pointerId;
+            this._fabDragStart = {
+                pointerX: event.clientX,
+                pointerY: event.clientY,
+                left: rect.left,
+                top: rect.top,
+            };
+            this._fabHasMoved = false;
+        },
+        moveFabDrag(event) {
+            if (!this._fabDragStart || event.pointerId !== this._fabPointerId) return;
+            const dx = event.clientX - this._fabDragStart.pointerX;
+            const dy = event.clientY - this._fabDragStart.pointerY;
+            if (!this._fabHasMoved && Math.hypot(dx, dy) < 6) return;
+            this._fabHasMoved = true;
+            this.isFabDragging = true;
+            this.fabPosition = this.clampFabPosition(
+                this._fabDragStart.left + dx,
+                this._fabDragStart.top + dy
+            );
+        },
+        endFabDrag(event) {
+            if (!this._fabDragStart || event.pointerId !== this._fabPointerId) return;
+            if (this._fabHasMoved) {
+                this.saveFabUiState();
+                this._suppressFabClick = true;
+                setTimeout(() => { this._suppressFabClick = false; }, 0);
+            }
+            this._fabDragStart = null;
+            this._fabPointerId = null;
+            this._fabHasMoved = false;
+            this.isFabDragging = false;
+        },
+        cancelFabDrag(event) {
+            if (!this._fabDragStart || event.pointerId !== this._fabPointerId) return;
+            if (this._fabHasMoved) this.saveFabUiState();
+            this._fabDragStart = null;
+            this._fabPointerId = null;
+            this._fabHasMoved = false;
+            this.isFabDragging = false;
+        },
+        handleFabClick() {
+            if (this._suppressFabClick) {
+                this._suppressFabClick = false;
+                return;
+            }
+            this.togglePanel();
+        },
+        dismissFab() {
+            this.fabDismissed = true;
+            this.panelOpen = false;
+            this.saveFabUiState();
+        },
+        restoreFab() {
+            this.fabDismissed = false;
+            this.saveFabUiState();
+            this.panelOpen = true;
         },
 
         _throttle(fn, wait) {
