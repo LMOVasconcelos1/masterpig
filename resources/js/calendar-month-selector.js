@@ -4,6 +4,29 @@ const fallbackMonths = [
 ];
 
 const monthExpression = /(?:calendarMonths\s*\[\s*calendarMonth\s*\]|monthNames\s*\[\s*currentMonth\s*\])/;
+const yearExpression = /\b(?:calendarYear|currentYear)\b/;
+
+function makeMonthSelectorTrigger(element, addIcon = false) {
+    if (element.dataset.monthSelectorReady) return;
+
+    element.dataset.monthSelectorReady = 'true';
+    element.tabIndex = 0;
+    element.setAttribute('role', 'button');
+    element.setAttribute('aria-haspopup', 'dialog');
+    element.setAttribute('aria-label', 'Selecionar mês e ano');
+    element.title = 'Selecionar mês e ano';
+    element.style.cursor = 'pointer';
+    element.style.textDecoration = 'underline dotted';
+    element.style.textUnderlineOffset = '3px';
+
+    if (addIcon) {
+        const icon = document.createElement('i');
+        icon.className = 'fa-solid fa-chevron-down';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.style.cssText = 'font-size:0.65em;margin-left:0.4rem;opacity:0.65;pointer-events:none;';
+        element.after(icon);
+    }
+}
 
 function registerMonthHeaders(root) {
     if (!(root instanceof Element)) return;
@@ -13,52 +36,45 @@ function registerMonthHeaders(root) {
     candidates.push(...root.querySelectorAll('[x-text]'));
 
     candidates.forEach((element) => {
-        if (!monthExpression.test(element.getAttribute('x-text') || '') || element.dataset.monthSelectorReady) return;
+        if (!monthExpression.test(element.getAttribute('x-text') || '')) return;
 
-        element.dataset.monthSelectorReady = 'true';
-        element.tabIndex = 0;
-        element.setAttribute('role', 'button');
-        element.setAttribute('aria-haspopup', 'dialog');
-        element.setAttribute('aria-label', 'Selecionar mês e ano');
-        element.title = 'Selecionar mês e ano';
-        element.style.cursor = 'pointer';
-        element.style.textDecoration = 'underline dotted';
-        element.style.textUnderlineOffset = '3px';
-
-        const icon = document.createElement('i');
-        icon.className = 'fa-solid fa-chevron-down';
-        icon.setAttribute('aria-hidden', 'true');
-        icon.style.cssText = 'font-size:0.65em;margin-left:0.4rem;opacity:0.65;pointer-events:none;';
-        element.after(icon);
+        makeMonthSelectorTrigger(element, true);
+        element.parentElement?.querySelectorAll('[x-text]').forEach((sibling) => {
+            if (yearExpression.test(sibling.getAttribute('x-text') || '')) {
+                makeMonthSelectorTrigger(sibling);
+            }
+        });
     });
 }
 
 function getCalendarState(trigger) {
     if (!window.Alpine?.$data) return null;
 
-    const component = trigger.closest('[x-data]');
-    if (!component) return null;
+    let component = trigger.closest('[x-data]');
+    while (component) {
+        try {
+            const state = window.Alpine.$data(component);
+            if ('calendarMonth' in state && 'calendarYear' in state) {
+                return {
+                    state,
+                    monthKey: 'calendarMonth',
+                    yearKey: 'calendarYear',
+                    months: state.calendarMonths || fallbackMonths,
+                };
+            }
+            if ('currentMonth' in state && 'currentYear' in state) {
+                return {
+                    state,
+                    monthKey: 'currentMonth',
+                    yearKey: 'currentYear',
+                    months: state.monthNames || fallbackMonths,
+                };
+            }
+        } catch {
+            // Try the parent Alpine component when a nested scope is unavailable.
+        }
 
-    try {
-        const state = window.Alpine.$data(component);
-        if ('calendarMonth' in state && 'calendarYear' in state) {
-            return {
-                state,
-                monthKey: 'calendarMonth',
-                yearKey: 'calendarYear',
-                months: state.calendarMonths || fallbackMonths,
-            };
-        }
-        if ('currentMonth' in state && 'currentYear' in state) {
-            return {
-                state,
-                monthKey: 'currentMonth',
-                yearKey: 'currentYear',
-                months: state.monthNames || fallbackMonths,
-            };
-        }
-    } catch (error) {
-        return null;
+        component = component.parentElement?.closest('[x-data]') || null;
     }
 
     return null;

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -14,6 +15,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if (! app()->environment('local')) {
+            Vite::useHotFile(storage_path('framework/vite-hot'));
+        }
+
         $explicitAppUrl = env('MASTERPIG_APP_URL');
         $shouldForceAppUrl = ! app()->environment('local')
             || (is_string($explicitAppUrl) && trim($explicitAppUrl) !== '');
