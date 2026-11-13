@@ -93,11 +93,12 @@ class Femea extends Model
      */
     public static function getLimiteAtivas(): ?int
     {
-        if (! Schema::hasTable('meta')) {
+        if (Schema::hasTable('configuracoes') && Schema::hasColumn('configuracoes', 'limite_femeas')) {
+            $raw = DB::table('configuracoes')->orderBy('id')->value('limite_femeas');
+        } else {
             return null;
         }
 
-        $raw = DB::table('meta')->where('chave', 'limite_femeas_ativas')->value('valor');
         if ($raw === null || trim((string) $raw) === '') {
             return null;
         }
@@ -108,16 +109,22 @@ class Femea extends Model
     }
 
     /**
-     * Valida se é permitido adicionar $quantidadeNovas fêmeas sem ultrapassar
-     * o limite de ativas. Retorna array com chaves:
+     * Valida se é permitido adicionar novas fêmeas sem ultrapassar o limite ativo.
+     * Retorna array com chaves:
      *   'permitido' => bool
      *   'limite' => int|null
      *   'ativas_atuais' => int
      *   'ativas_apos' => int
      *   'mensagem' => string|null
      */
-    public static function validarLimiteAtivas(int $quantidadeNovas = 1): array
+    public static function validarLimiteAtivas(int $quantidadeNovas = 1, bool $bloquearConfiguracao = false): array
     {
+        if ($bloquearConfiguracao
+            && Schema::hasTable('configuracoes')
+            && Schema::hasColumn('configuracoes', 'limite_femeas')) {
+            DB::table('configuracoes')->orderBy('id')->lockForUpdate()->first();
+        }
+
         $limite = self::getLimiteAtivas();
         $ativas = self::countAtivas();
 

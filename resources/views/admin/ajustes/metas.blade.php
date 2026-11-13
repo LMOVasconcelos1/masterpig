@@ -20,6 +20,12 @@
         femeas_limite: null,
         femeas_ocupacao_pct: null,
     },
+    limiteFemeasAutorizado: false,
+    autorizandoLimiteFemeas: false,
+    salvandoLimiteFemeas: false,
+    senhaLimiteFemeas: '',
+    erroLimiteFemeas: '',
+    temporizadorLimiteFemeas: null,
 
     get ocupacaoFemeasCor() {
         const p = this.plantel.femeas_ocupacao_pct;
@@ -257,6 +263,78 @@
         })
         .finally(() => { this.saving = false; });
     },
+    autorizarLimiteFemeas() {
+        this.erroLimiteFemeas = '';
+        this.autorizandoLimiteFemeas = true;
+
+        fetch('{{ route('admin.metas.limite-femeas.autorizar', [], false) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+            },
+            body: JSON.stringify({ password: this.senhaLimiteFemeas })
+        })
+        .then(async response => {
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.message || 'Não foi possível autorizar a edição.');
+            return data;
+        })
+        .then(data => {
+            this.limiteFemeasAutorizado = true;
+            this.senhaLimiteFemeas = '';
+            clearTimeout(this.temporizadorLimiteFemeas);
+            this.temporizadorLimiteFemeas = setTimeout(() => {
+                this.limiteFemeasAutorizado = false;
+                this.erroLimiteFemeas = 'Autorização expirada. Informe a senha novamente para editar.';
+                this.temporizadorLimiteFemeas = null;
+            }, 10 * 60 * 1000);
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message, type: 'success' } }));
+        })
+        .catch(error => {
+            this.erroLimiteFemeas = error.message || 'Senha inválida.';
+        })
+        .finally(() => { this.autorizandoLimiteFemeas = false; });
+    },
+    salvarLimiteFemeas() {
+        this.erroLimiteFemeas = '';
+        const raw = String(this.plantel.femeas_limite ?? '').trim();
+        const limite = raw === '' ? null : Number(raw);
+
+        if (limite !== null && (!Number.isInteger(limite) || limite < 0 || limite > 2147483647)) {
+            this.erroLimiteFemeas = 'Informe um número inteiro válido ou deixe vazio para remover o limite.';
+            return;
+        }
+
+        this.salvandoLimiteFemeas = true;
+        fetch('{{ route('admin.metas.limite-femeas.update', [], false) }}', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+            },
+            body: JSON.stringify({ limite_femeas: limite })
+        })
+        .then(async response => {
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.message || 'Não foi possível salvar o limite.');
+            return data;
+        })
+        .then(data => {
+            this.limiteFemeasAutorizado = false;
+            clearTimeout(this.temporizadorLimiteFemeas);
+            this.temporizadorLimiteFemeas = null;
+            this.plantel.femeas_limite = data.limite_femeas;
+            window.dispatchEvent(new CustomEvent('toast', { detail: { message: data.message, type: 'success' } }));
+            this.loadData();
+        })
+        .catch(error => {
+            this.erroLimiteFemeas = error.message || 'Erro ao salvar o limite.';
+        })
+        .finally(() => { this.salvandoLimiteFemeas = false; });
+    },
 }" x-init="loadData()" class="space-y-6 max-w-7xl mx-auto pb-12">
 
     <!-- Header Section -->
@@ -315,9 +393,39 @@
                             <div class="flex items-start gap-3">
                                 <div class="mt-1 w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-bold shrink-0">🔒</div>
                                 <div class="space-y-4 flex-1">
-                                    <div>
-                                        <label class="block text-[11px] font-bold text-amber-700 dark:text-amber-300 uppercase mb-1">Limite de Fêmeas Ativas <span class="ml-2 px-2 py-0.5 text-[10px] uppercase bg-amber-200/60 dark:bg-amber-800/40 text-amber-800 dark:text-amber-200 rounded-full">Bloqueado</span></label>
-                                        <input type="number" min="0" step="1" disabled x-model="metas.limite_femeas_ativas" class="w-full border-amber-200 dark:border-amber-800 rounded-xl text-lg font-bold text-amber-800 dark:text-amber-200 bg-amber-50/60 dark:bg-amber-900/20 cursor-not-allowed opacity-90" placeholder="0 = sem limite">
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between gap-3">
+                                            <label for="limite-femeas" class="block text-[11px] font-bold text-amber-700 dark:text-amber-300 uppercase">Limite de Fêmeas Ativas</label>
+                                            <span class="px-2 py-0.5 text-[10px] uppercase bg-amber-200/60 dark:bg-amber-800/40 text-amber-800 dark:text-amber-200 rounded-full"
+                                                  x-text="limiteFemeasAutorizado ? 'Editável por 10 min' : 'Protegido'"></span>
+                                        </div>
+                                        <div class="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-2">
+                                            <input id="limite-femeas" type="number" inputmode="numeric" min="0" max="2147483647" step="1"
+                                                   :disabled="!limiteFemeasAutorizado"
+                                                   x-model="plantel.femeas_limite"
+                                                   class="w-full min-h-11 text-base border-amber-200 dark:border-amber-800 rounded-xl font-bold text-amber-800 dark:text-amber-200 bg-white dark:bg-gray-900 disabled:bg-amber-50/60 dark:disabled:bg-amber-900/20 disabled:cursor-not-allowed disabled:opacity-90"
+                                                   placeholder="Vazio ou 0 = sem limite">
+                                            <button type="button" x-show="limiteFemeasAutorizado" @click="salvarLimiteFemeas()"
+                                                    :disabled="salvandoLimiteFemeas"
+                                                    class="min-h-11 px-5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-sm font-bold disabled:opacity-60">
+                                                <span x-text="salvandoLimiteFemeas ? 'Salvando...' : 'Salvar limite'"></span>
+                                            </button>
+                                        </div>
+                                        <div x-show="!limiteFemeasAutorizado" class="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-2">
+                                            <input type="password" autocomplete="current-password" x-model="senhaLimiteFemeas"
+                                                   @keydown.enter.prevent="autorizarLimiteFemeas()"
+                                                   class="w-full min-h-11 text-base border-amber-200 dark:border-amber-800 rounded-xl"
+                                                   placeholder="Senha da conta Master Administrator">
+                                            <button type="button" @click="autorizarLimiteFemeas()"
+                                                    :disabled="autorizandoLimiteFemeas || !senhaLimiteFemeas"
+                                                    class="min-h-11 px-5 rounded-xl border border-amber-300 text-amber-800 dark:text-amber-200 text-sm font-bold hover:bg-amber-100 dark:hover:bg-amber-900/40 disabled:opacity-50">
+                                                <span x-text="autorizandoLimiteFemeas ? 'Verificando...' : 'Desbloquear'"></span>
+                                            </button>
+                                        </div>
+                                        <p x-show="erroLimiteFemeas" x-text="erroLimiteFemeas" class="text-sm font-semibold text-red-600 dark:text-red-400"></p>
+                                        <p class="text-[11px] text-amber-700/80 dark:text-amber-300/80">
+                                            A edição exige a senha da conta administradora <b>{{ config('masterpig.license_admin_email') }}</b>. Deixe vazio ou informe 0 para não limitar.
+                                        </p>
                                     </div>
 
                                     <div class="p-4 rounded-xl bg-white/70 dark:bg-gray-900/40 border border-amber-100 dark:border-amber-800/40 shadow-sm">
@@ -356,7 +464,7 @@
                                                  :style="{ width: (plantel.femeas_ocupacao_pct !== null ? plantel.femeas_ocupacao_pct : 0) + '%' }"></div>
                                         </div>
                                         <p class="mt-3 text-[11px] text-amber-700/80 dark:text-amber-300/80 leading-snug">
-                                            Contagem atualizada em tempo real, considerando apenas fêmeas cuja última movimentação <b>não</b> seja de <b>morte, venda ou descarte</b>. Ajustes no limite devem ser solicitados diretamente à equipe <b>MasterPig / Sui Control</b>.
+                                            Contagem atualizada em tempo real, considerando apenas fêmeas cuja última movimentação <b>não</b> seja de <b>morte, venda ou descarte</b>. Novos cadastros são bloqueados no servidor ao atingir o limite.
                                         </p>
                                     </div>
                                 </div>

@@ -13,9 +13,11 @@ class Configuracao extends Model
 
     protected $fillable = [
         'granja',
+        'limite_femeas',
     ];
 
     protected $casts = [
+        'limite_femeas' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

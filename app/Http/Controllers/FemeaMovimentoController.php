@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Femea;
 use App\Services\PigCycleService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -32,21 +33,64 @@ class FemeaMovimentoController extends Controller
             ], 422);
         }
 
-        $row = DB::table('femea_movimento')->where('id', $id)->select(['id', 'acao'])->first();
-        if (! $row) {
-            return response()->json([
-                'message' => 'Lançamento não encontrado.',
-            ], 404);
-        }
+        $resultado = DB::transaction(function () use ($id) {
+            if (Schema::hasTable('configuracoes') && Schema::hasColumn('configuracoes', 'limite_femeas')) {
+                DB::table('configuracoes')->orderBy('id')->lockForUpdate()->first();
+            }
 
-        $acao = (string) ($row->acao ?? '');
-        if (! in_array($acao, ['morte', 'descarte', 'venda'], true)) {
-            return response()->json([
-                'message' => 'Este tipo de lançamento não pode ser excluído.',
-            ], 422);
-        }
+            $row = DB::table('femea_movimento')
+                ->where('id', $id)
+                ->lockForUpdate()
+                ->first(['id', 'femea_id', 'acao']);
+            if (! $row) {
+                return ['status' => 'not_found'];
+            }
 
-        DB::table('femea_movimento')->where('id', $id)->delete();
+            $acao = (string) ($row->acao ?? '');
+            if (! in_array($acao, Femea::INATIVIDADES, true)) {
+                return ['status' => 'not_deletable'];
+            }
+
+            $ultimoMovimentoId = DB::table('femea_movimento')
+                ->where('femea_id', $row->femea_id)
+                ->orderByDesc('id')
+                ->value('id');
+            $reativaFemea = (int) $ultimoMovimentoId === (int) $row->id;
+
+            if ($reativaFemea) {
+                $acaoAnterior = DB::table('femea_movimento')
+                    ->where('femea_id', $row->femea_id)
+                    ->where('id', '<>', $row->id)
+                    ->orderByDesc('id')
+                    ->value('acao');
+                $reativaFemea = $acaoAnterior === null || ! in_array((string) $acaoAnterior, Femea::INATIVIDADES, true);
+            }
+
+            if ($reativaFemea) {
+                $limite = Femea::getLimiteAtivas();
+                $ativas = Femea::countAtivas();
+                if ($limite !== null && $ativas + 1 > $limite) {
+                    return [
+                        'status' => 'limit_reached',
+                        'message' => "A exclusão reativaria esta fêmea e ultrapassaria o limite de {$limite} fêmeas ativas.",
+                    ];
+                }
+            }
+
+            DB::table('femea_movimento')->where('id', $row->id)->delete();
+
+            return ['status' => 'deleted'];
+        });
+
+        if ($resultado['status'] === 'not_found') {
+            return response()->json(['message' => 'Lançamento não encontrado.'], 404);
+        }
+        if ($resultado['status'] === 'not_deletable') {
+            return response()->json(['message' => 'Este tipo de lançamento não pode ser excluído.'], 422);
+        }
+        if ($resultado['status'] === 'limit_reached') {
+            return response()->json(['message' => $resultado['message']], 422);
+        }
 
         return response()->json([
             'message' => 'Lançamento excluído com sucesso!',

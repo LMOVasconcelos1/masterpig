@@ -426,6 +426,10 @@ HTML;
     Route::get('/relatorios/plantel/machos', [PlantelRelatorioController::class, 'machos'])->name('relatorios.plantel.machos');
     Route::get('/metas', [MetasController::class, 'page'])->name('metas.index');
     Route::post('/metas', [MetasController::class, 'store'])->name('metas.store');
+    Route::post('/metas/limite-femeas/autorizar', [MetasController::class, 'authorizeFemeasLimit'])
+        ->middleware('throttle:5,1')
+        ->name('metas.limite-femeas.autorizar');
+    Route::patch('/metas/limite-femeas', [MetasController::class, 'updateFemeasLimit'])->name('metas.limite-femeas.update');
     Route::get('/criterios', function() { return redirect()->route('admin.metas.index'); })->name('criterios.index');
     Route::post('/criterios', [MetasController::class, 'store'])->name('criterios.store');
     Route::get('/criterios/logs', [CriteriosLogsController::class, 'page'])->name('criterios.logs');

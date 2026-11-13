@@ -198,14 +198,6 @@ class FemeaCompraController extends Controller
             'baia' => ['nullable', 'string', 'max:60'],
         ]);
 
-        $validacaoLimite = Femea::validarLimiteAtivas(1);
-        if (! $validacaoLimite['permitido']) {
-            return response()->json([
-                'message' => $validacaoLimite['mensagem'],
-                'limite' => $validacaoLimite,
-            ], 422);
-        }
-
         $dataCompra = Carbon::parse($validated['data_compra'])->startOfDay();
         $dataNasc = empty($validated['data_nascimento']) ? null : Carbon::parse($validated['data_nascimento'])->startOfDay();
         $dataCob = empty($validated['data_cobertura']) ? null : Carbon::parse($validated['data_cobertura'])->startOfDay();
@@ -299,7 +291,13 @@ class FemeaCompraController extends Controller
         }
 
         try {
-            $result = DB::transaction(function () use ($validated) {
+            $validacaoLimite = null;
+            $result = DB::transaction(function () use ($validated, &$validacaoLimite) {
+                $validacaoLimite = Femea::validarLimiteAtivas(1, true);
+                if (! $validacaoLimite['permitido']) {
+                    return null;
+                }
+
                 // Se informou peso_compra, define peso_atual igual ao peso_compra
                 if (isset($validated['peso_compra']) && $validated['peso_compra'] !== null) {
                     $validated['peso_atual'] = $validated['peso_compra'];
@@ -359,6 +357,13 @@ class FemeaCompraController extends Controller
                 ], 422);
             }
             throw $e;
+        }
+
+        if ($validacaoLimite !== null && ! $validacaoLimite['permitido']) {
+            return response()->json([
+                'message' => $validacaoLimite['mensagem'],
+                'limite' => $validacaoLimite,
+            ], 422);
         }
 
         return response()->json([
