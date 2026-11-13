@@ -557,8 +557,6 @@ class GestacaoCoberturaController extends Controller
         $warnings = array_values(array_merge($warnings, $this->criteriosWarnings($payload)));
 
         $coberturaId = null;
-        $sqlEnum = "ALTER TABLE `femea_movimento` MODIFY COLUMN `acao` ENUM('compra', 'morte', 'descarte', 'venda', 'cio', 'salta_cio', 'cobertura', 'parto', 'desmame', 'morte_leitao') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
-        $sqlEnumMacho = "ALTER TABLE `macho_movimento` MODIFY COLUMN `acao` ENUM('compra', 'morte', 'descarte', 'venda', 'cobertura') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
 
         try {
             DB::transaction(function () use ($payload, $warnings, $semens, $montas, &$coberturaId, $femeaRow) {
@@ -706,8 +704,7 @@ class GestacaoCoberturaController extends Controller
             $msg = $e->getMessage();
             if (str_contains($msg, 'Data truncated') && str_contains($msg, 'acao')) {
                 return response()->json([
-                    'message' => "Para registrar o histórico no plantel, é necessário atualizar os ENUMs de movimentos para incluir as novas ações.",
-                    'sql' => [$sqlEnum, $sqlEnumMacho],
+                    'message' => 'O banco precisa aplicar a atualização 0.19. Saia e entre novamente para atualizar o esquema e tente salvar a cobertura outra vez.',
                 ], 422);
             }
             throw $e;
@@ -1070,8 +1067,6 @@ class GestacaoCoberturaController extends Controller
         $warnings = array_values($this->criteriosWarnings($payload));
         $oldFemeaId = (int) $existing->femea_id;
         $newFemeaId = (int) $payload['femea_id'];
-        $sqlEnum = "ALTER TABLE `femea_movimento` MODIFY COLUMN `acao` ENUM('compra', 'morte', 'descarte', 'venda', 'cio', 'salta_cio', 'cobertura', 'parto', 'desmame', 'morte_leitao') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
-        $sqlEnumMacho = "ALTER TABLE `macho_movimento` MODIFY COLUMN `acao` ENUM('compra', 'morte', 'descarte', 'venda', 'cobertura') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
 
         try {
             DB::transaction(function () use ($id, $payload, $warnings, $semens, $montas, $oldFemeaId, $newFemeaId) {
@@ -1277,8 +1272,7 @@ class GestacaoCoberturaController extends Controller
             $msg = $e->getMessage();
             if (str_contains($msg, 'Data truncated') && str_contains($msg, 'acao')) {
                 return response()->json([
-                    'message' => "Para registrar o histórico no plantel, é necessário atualizar os ENUMs de movimentos para incluir as novas ações.",
-                    'sql' => [$sqlEnum, $sqlEnumMacho],
+                    'message' => 'O banco precisa aplicar a atualização 0.19. Saia e entre novamente para atualizar o esquema e tente salvar a cobertura outra vez.',
                 ], 422);
             }
             throw $e;
