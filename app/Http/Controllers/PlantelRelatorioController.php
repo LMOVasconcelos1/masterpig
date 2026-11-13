@@ -156,6 +156,13 @@ class PlantelRelatorioController extends Controller
             ])
             ->orderBy('f.id_primaria');
 
+        // Data de cobertura gravada no próprio cadastro da matriz (compra como matriz_gestante
+        // ou edição da fêmea). Nesses fluxos NÃO é gerado movimento em femea_movimento,
+        // por isso precisa ser considerada como fonte de cobertura.
+        if (Schema::hasColumn('femea', 'data_cobertura')) {
+            $query->addSelect('f.data_cobertura as data_cobertura_cadastro');
+        }
+
         // JOINs para estados reprodutivos e situações
         if (Schema::hasTable('gestacao_cobertura')) {
             $lastCob = DB::table('gestacao_cobertura')
@@ -250,6 +257,9 @@ class PlantelRelatorioController extends Controller
         $items = $query->limit(20000)->get()->map(function ($row) {
             $now = Carbon::today();
             $lastCob = $row->last_cobertura ? Carbon::parse($row->last_cobertura) : null;
+            if (! $lastCob && ! empty($row->data_cobertura_cadastro)) {
+                $lastCob = Carbon::parse($row->data_cobertura_cadastro);
+            }
             $lastParto = $row->last_parto ? Carbon::parse($row->last_parto) : null;
             $lastDesmame = $row->last_desmame ? Carbon::parse($row->last_desmame) : null;
 
@@ -306,14 +316,29 @@ class PlantelRelatorioController extends Controller
             $ultimaOperacao = '-';
             $status = 'Ativo';
 
-            if (! empty($row->ultima_acao)) {
-                $ultimaOperacao = $row->ultima_acao;
-                if (! empty($row->ultima_data)) {
-                    $ultimaOperacao .= ' - '.PigCycleService::formatDisplayDate(Carbon::parse($row->ultima_data));
+            $ultimaAcao = empty($row->ultima_acao) ? null : (string) $row->ultima_acao;
+            $ultimaData = empty($row->ultima_data) ? null : Carbon::parse($row->ultima_data);
+
+            // A cobertura pode estar registrada apenas no cadastro da matriz
+            // (compra como "matriz_gestante" ou edição da fêmea), sem gerar movimento
+            // em femea_movimento. Nesse caso ela deve ser considerada como a última operação,
+            // substituindo a "compra" de entrada do animal.
+            if (! empty($row->data_cobertura_cadastro) && ! in_array($ultimaAcao, ['morte', 'descarte', 'venda'], true)) {
+                $cobCadastro = Carbon::parse($row->data_cobertura_cadastro);
+                if ($ultimaAcao === null || $ultimaAcao === 'compra' || $ultimaData === null || $cobCadastro->gte($ultimaData)) {
+                    $ultimaAcao = 'cobertura';
+                    $ultimaData = $cobCadastro;
+                }
+            }
+
+            if ($ultimaAcao !== null) {
+                $ultimaOperacao = $ultimaAcao;
+                if ($ultimaData !== null) {
+                    $ultimaOperacao .= ' - '.PigCycleService::formatDisplayDate($ultimaData);
                 }
 
-                if (in_array($row->ultima_acao, ['morte', 'descarte', 'venda'], true)) {
-                    $status = 'Inativo ('.$row->ultima_acao.')';
+                if (in_array($ultimaAcao, ['morte', 'descarte', 'venda'], true)) {
+                    $status = 'Inativo ('.$ultimaAcao.')';
                 }
             }
 
