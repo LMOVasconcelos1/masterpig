@@ -330,6 +330,7 @@ class PlantelApiController extends Controller
             $limit = request()->integer('limit', 50);
             $page = request()->integer('page', 1);
             $search = request()->input('search');
+            $idPrimaria = trim((string) request()->input('id_primaria', ''));
             $localizacao = request()->input('localizacao');
             $baia = request()->input('baia');
             $dataInicInput = request()->input('data_inicial');
@@ -370,6 +371,10 @@ class PlantelApiController extends Controller
                     $q->where('macho.id_primaria', 'like', "%{$search}%")
                         ->orWhere('macho.id_secundaria', 'like', "%{$search}%");
                 });
+            }
+
+            if ($idPrimaria !== '') {
+                $query->whereRaw('LOWER(macho.id_primaria) = ?', [strtolower($idPrimaria)]);
             }
 
             if (!empty($localizacao)) {

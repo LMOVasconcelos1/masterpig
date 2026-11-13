@@ -5,13 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Femea;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 
 class MetasController extends Controller
 {
-    private const FEMEAS_LIMIT_AUTHORIZATION_KEY = 'masterpig.femeas_limit_authorization';
-
     public function page()
     {
         return view('admin.ajustes.metas');
@@ -51,106 +48,6 @@ class MetasController extends Controller
         }
 
         return response()->json($response);
-    }
-
-    public function authorizeFemeasLimit(Request $request)
-    {
-        $validated = $request->validate([
-            'password' => ['required', 'string', 'max:255'],
-        ]);
-        $user = $request->user();
-        $authorizedEmail = strtolower(trim((string) config('masterpig.license_admin_email', 'masterpig@mastersui.com.br')));
-
-        if (! $user
-            || strtolower(trim((string) $user->email)) !== $authorizedEmail
-            || ! Hash::check($validated['password'], (string) $user->getAuthPassword())) {
-            return response()->json([
-                'message' => 'Senha de autorização inválida ou usuário não autorizado.',
-            ], 403);
-        }
-
-        $request->session()->put(self::FEMEAS_LIMIT_AUTHORIZATION_KEY, [
-            'user_id' => (int) $user->getAuthIdentifier(),
-            'expires_at' => now()->addMinutes(10)->timestamp,
-        ]);
-
-        return response()->json([
-            'message' => 'Edição do limite autorizada por 10 minutos.',
-        ]);
-    }
-
-    public function updateFemeasLimit(Request $request)
-    {
-        if (! $this->hasFemeasLimitAuthorization($request)) {
-            return response()->json([
-                'message' => 'Autorize a edição com a conta administradora MasterPig antes de salvar.',
-            ], 403);
-        }
-
-        if (! Schema::hasTable('configuracoes') || ! Schema::hasColumn('configuracoes', 'limite_femeas')) {
-            return response()->json([
-                'message' => 'A coluna configuracoes.limite_femeas ainda não está disponível. Atualize o banco de dados.',
-            ], 422);
-        }
-
-        $validated = $request->validate([
-            'limite_femeas' => ['present', 'nullable', 'integer', 'min:0', 'max:2147483647'],
-        ]);
-        $limite = isset($validated['limite_femeas']) && (int) $validated['limite_femeas'] > 0
-            ? (int) $validated['limite_femeas']
-            : null;
-
-        $resultado = DB::transaction(function () use ($limite) {
-            $configuracao = DB::table('configuracoes')->orderBy('id')->lockForUpdate()->first();
-            $ativas = Femea::countAtivas();
-
-            if ($limite !== null && $limite < $ativas) {
-                return ['salvo' => false, 'ativas' => $ativas];
-            }
-
-            $now = now();
-            if ($configuracao) {
-                DB::table('configuracoes')
-                    ->where('id', $configuracao->id)
-                    ->update(['limite_femeas' => $limite, 'updated_at' => $now]);
-            } else {
-                DB::table('configuracoes')->insert([
-                    'granja' => 'Sem nome',
-                    'limite_femeas' => $limite,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ]);
-            }
-
-            return ['salvo' => true, 'ativas' => $ativas];
-        });
-
-        if (! $resultado['salvo']) {
-            return response()->json([
-                'message' => "O limite não pode ser menor que as {$resultado['ativas']} fêmeas ativas atuais.",
-            ], 422);
-        }
-
-        $request->session()->forget(self::FEMEAS_LIMIT_AUTHORIZATION_KEY);
-
-        return response()->json([
-            'message' => $limite === null
-                ? 'Limite removido. A granja ficou sem limite de fêmeas.'
-                : "Limite de {$limite} fêmeas salvo.",
-            'limite_femeas' => $limite,
-        ]);
-    }
-
-    private function hasFemeasLimitAuthorization(Request $request): bool
-    {
-        $authorization = $request->session()->get(self::FEMEAS_LIMIT_AUTHORIZATION_KEY, []);
-        $user = $request->user();
-        $authorizedEmail = strtolower(trim((string) config('masterpig.license_admin_email', 'masterpig@mastersui.com.br')));
-
-        return $user
-            && strtolower(trim((string) $user->email)) === $authorizedEmail
-            && (int) ($authorization['user_id'] ?? 0) === (int) $user->getAuthIdentifier()
-            && (int) ($authorization['expires_at'] ?? 0) >= now()->timestamp;
     }
 
     public function store(Request $request)

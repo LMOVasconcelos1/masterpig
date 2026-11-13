@@ -28,6 +28,7 @@ class SemenController extends Controller
         $limit = max(1, min(5000, (int) $request->query('limit', 200)));
         $page = max(1, (int) $request->query('page', 1));
         $search = $request->query('search', '');
+        $idPrimaria = trim((string) $request->query('id_primaria', ''));
         $racaId = $request->query('raca_id', '');
         $fornecedorId = $request->query('fornecedor_id', '');
         $dataInicial = $request->query('data_inicial', '');
@@ -70,6 +71,10 @@ class SemenController extends Controller
                   ->orWhere('r.nome', 'like', "%{$search}%")
                   ->orWhere('f.nome', 'like', "%{$search}%");
             });
+        }
+
+        if ($idPrimaria !== '') {
+            $query->whereRaw('LOWER(s.id_primaria) = ?', [strtolower($idPrimaria)]);
         }
 
         if ($racaId) {

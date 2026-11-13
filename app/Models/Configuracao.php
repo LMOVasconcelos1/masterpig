@@ -13,7 +13,6 @@ class Configuracao extends Model
 
     protected $fillable = [
         'granja',
-        'limite_femeas',
     ];
 
     protected $casts = [

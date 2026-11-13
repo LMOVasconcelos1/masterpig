@@ -11,6 +11,7 @@
         openCobertura: false,
         openPerda: false,
         saving: false,
+        resolvingMontas: false,
         error: '',
 
         matrizes: [],
@@ -272,7 +273,7 @@
                     this.matrizes = items.filter(f => ['leitoa', 'matriz_vazia'].includes(String(f.tipo || '')));
                 });
 
-            fetch('/api/plantel/machos?all=1')
+            fetch('/api/plantel/machos?all=1&limit=500')
                 .then(r => r.json())
                 .then(data => {
                     this.machos = Array.isArray(data?.items) ? data.items : [];
@@ -352,49 +353,84 @@
             if (/^(macho:|semen:)/i.test(v)) return v.toLowerCase().startsWith('macho:') ? `M-${v.split(':')[1]}` : `S-${v.split(':')[1]}`;
             return v;
         },
-        applyMontaRef(idx) {
+        async applyMontaRef(idx) {
             const row = this.cobertura.montas[idx];
-            if (!row) return;
+            if (!row) return false;
             const raw = this.normalizeMontaRef(row.ref || '');
             row.ref = raw;
+            if (!raw) return false;
+            if (row._resolvedRef === raw && row.tipo) return true;
+            if (row._resolveRef === raw && row._resolvePromise) return row._resolvePromise;
+
+            const m = raw.match(/^M-(.+)$/i);
+            const s = raw.match(/^S-(.+)$/i);
+            if (!m && !s) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe M-<ID do macho> ou S-<ID do sêmen>.', type: 'error' } }));
+                return false;
+            }
+
             row.tipo = '';
             row.macho_id = '';
             row.semen = '';
+            row._resolvedRef = '';
+            row.resolvingRef = true;
 
-            const m = raw.match(/^M-(.+)$/i);
-            if (m) {
-                const idPrimaria = String(m[1] || '').trim();
-                const macho = this.machos.find((x) => String(x?.id_primaria || '').trim() === idPrimaria);
-                if (!macho) {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Macho não encontrado.', type: 'error' } }));
-                    return;
+            const idPrimaria = String((m || s)[1] || '').trim();
+            const lookupUrl = m
+                ? `/api/plantel/machos?all=1&id_primaria=${encodeURIComponent(idPrimaria)}`
+                : `/api/semen?limit=1&id_primaria=${encodeURIComponent(idPrimaria)}`;
+
+            const pending = (async () => {
+                try {
+                    const response = await fetch(lookupUrl, { headers: { 'Accept': 'application/json' } });
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) throw new Error(data?.message || 'Não foi possível consultar o cadastro.');
+                    if (String(row.ref || '').trim() !== raw) return false;
+
+                    const items = Array.isArray(data?.items) ? data.items : [];
+                    const record = items.find((item) => String(item?.id_primaria || '').trim().toLowerCase() === idPrimaria.toLowerCase());
+                    if (!record) {
+                        window.dispatchEvent(new CustomEvent('toast', {
+                            detail: { message: m ? 'Macho não encontrado no cadastro.' : 'Sêmen não encontrado no cadastro.', type: 'error' },
+                        }));
+                        return false;
+                    }
+
+                    if (m) {
+                        row.tipo = 'macho';
+                        row.macho_id = String(record.id);
+                    } else {
+                        row.tipo = 'semen';
+                        row.semen = String(record.id_primaria);
+                    }
+                    row._resolvedRef = raw;
+
+                    if (idx === 0) {
+                        this.cobertura.usuarioId = String(row.usuario_id || '');
+                        this.cobertura.data = String(row.data || '');
+                        this.cobertura.hora = String(row.hora || '');
+                    }
+
+                    return true;
+                } catch (error) {
+                    if (String(row.ref || '').trim() === raw) {
+                        window.dispatchEvent(new CustomEvent('toast', {
+                            detail: { message: error.message || 'Não foi possível consultar o cadastro.', type: 'error' },
+                        }));
+                    }
+                    return false;
+                } finally {
+                    if (row._resolvePromise === pending) {
+                        row.resolvingRef = false;
+                        row._resolveRef = '';
+                        row._resolvePromise = null;
+                    }
                 }
-                row.tipo = 'macho';
-                row.macho_id = String(macho.id);
-            }
+            })();
 
-            const s = raw.match(/^S-(.+)$/i);
-            if (s) {
-                const idPrimaria = String(s[1] || '').trim();
-                const semen = this.semens.find((x) => String(x?.id_primaria || '').trim() === idPrimaria);
-                if (!semen) {
-                    window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Sêmen não encontrado.', type: 'error' } }));
-                    return;
-                }
-                row.tipo = 'semen';
-                row.semen = String(semen.id_primaria);
-            }
-
-            if (!row.tipo) {
-                window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Informe M-<ID do macho> ou S-<ID do sêmen>.', type: 'error' } }));
-                return;
-            }
-
-            if (idx === 0) {
-                this.cobertura.usuarioId = String(row.usuario_id || '');
-                this.cobertura.data = String(row.data || '');
-                this.cobertura.hora = String(row.hora || '');
-            }
+            row._resolveRef = raw;
+            row._resolvePromise = pending;
+            return pending;
         },
         addMonta() {
             this.cobertura.montas.push({ tipo: '', macho_id: '', semen: '', data: this.cobertura.data, hora: this.cobertura.hora, usuario_id: this.cobertura.usuarioId, ref: '' });
@@ -618,7 +654,9 @@
             this.saltaCio.femeaId = '';
         },
 
-        saveCobertura() {
+        async saveCobertura() {
+            if (this.saving || this.resolvingMontas) return;
+
             if (!this.cobertura.femeaId) {
                 window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Selecione a matriz', type: 'error' } }));
                 return;
@@ -643,7 +681,16 @@
                 return;
             }
 
-            montasFilledIdx.forEach(({ i }) => this.applyMontaRef(i));
+            this.resolvingMontas = true;
+            let referenciasResolvidas;
+            try {
+                referenciasResolvidas = await Promise.all(
+                    montasFilledIdx.map(({ i }) => this.applyMontaRef(i))
+                );
+            } finally {
+                this.resolvingMontas = false;
+            }
+            if (referenciasResolvidas.some((resolved) => !resolved)) return;
 
             const montasPayload = montasFilledIdx.map(({ r, i }) => {
                 const dataIso = this.montaDataToIso(r.data);
@@ -1144,13 +1191,13 @@
 
     <div x-show="openCobertura" x-cloak class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div x-show="openCobertura" @click="openCobertura = false; editingCoberturaId = null" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900/50 dark:bg-black/60 transition-opacity" aria-hidden="true"></div>
+            <div x-show="openCobertura" @click="if (!saving && !resolvingMontas) { openCobertura = false; editingCoberturaId = null; }" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900/50 dark:bg-black/60 transition-opacity" aria-hidden="true"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div x-show="openCobertura" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white dark:bg-gray-900 rounded-2xl text-left overflow-visible shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full border border-gray-100 dark:border-gray-800">
                 <div class="bg-white dark:bg-gray-900 px-6 pt-6 pb-4">
                     <div class="flex items-start justify-between">
                         <h3 class="text-lg leading-6 font-semibold text-gray-900 dark:text-gray-100" x-text="editingCoberturaId ? 'Alterar cobertura' : 'Registrar cobertura'"></h3>
-                        <button type="button" @click="openCobertura = false; editingCoberturaId = null" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700" title="Fechar">
+                        <button type="button" @click="openCobertura = false; editingCoberturaId = null" :disabled="saving || resolvingMontas" class="w-10 h-10 inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50" title="Fechar">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
@@ -1196,6 +1243,7 @@
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700">Macho/Sêmen</label>
                                                 <input type="text" x-model="m.ref" list="montas-ref-list" @keydown.enter.prevent="applyMontaRef(idx)" @blur="applyMontaRef(idx)" class="mt-1 w-full shadow-sm sm:text-sm border-gray-300 rounded-xl focus:ring-primary-500 focus:border-primary-500" placeholder="M-123 ou S-456">
+                                                <p x-show="m.resolvingRef" role="status" class="mt-1 text-xs text-primary-600">Consultando cadastro...</p>
                                             </div>
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700">Data</label>
@@ -1313,11 +1361,12 @@
                     </div>
                 </div>
                 <div class="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-6 py-4 sm:flex sm:flex-row-reverse sm:items-center sm:gap-3">
-                    <button type="button" @click="saveCobertura()" :disabled="saving" class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 sm:w-auto disabled:opacity-50">
-                        <template x-if="!saving"><span>Salvar</span></template>
+                    <button type="button" @click="saveCobertura()" :disabled="saving || resolvingMontas" class="w-full inline-flex justify-center items-center rounded-xl border border-transparent shadow-sm px-5 py-2.5 bg-primary-600 text-sm font-semibold text-white hover:bg-primary-700 sm:w-auto disabled:opacity-50">
+                        <template x-if="!saving && !resolvingMontas"><span>Salvar</span></template>
+                        <template x-if="resolvingMontas"><span>Consultando macho/sêmen...</span></template>
                         <template x-if="saving"><span>Gravando...</span></template>
                     </button>
-                    <button type="button" @click="openCobertura = false; editingCoberturaId = null" :disabled="saving" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-5 py-2.5 bg-white dark:bg-gray-800 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 sm:mt-0 sm:w-auto disabled:opacity-50">
+                    <button type="button" @click="openCobertura = false; editingCoberturaId = null" :disabled="saving || resolvingMontas" class="mt-3 w-full inline-flex justify-center items-center rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm px-5 py-2.5 bg-white dark:bg-gray-800 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 sm:mt-0 sm:w-auto disabled:opacity-50">
                         Cancelar
                     </button>
                 </div>
