@@ -19,16 +19,30 @@ class MaternidadeParto extends Model
         'cobertura_id',
         'lote',
         'data',
+        'data_termino',
         'hora_inicio',
         'hora_termino',
         'total_vivos',
         'total_mortos',
         'total_mumificados',
+        'qtd_femeas_vivas',
+        'qtd_machos_vivos',
+        'peso_total_leitoes_kg',
+        'localizacao_matriz_parto',
+        'baia',
+        'peso_matriz_kg',
+        'funcionario_nome',
+        'tipo_intervencao',
+        'escore_corporal',
+        'caracteristicas_parto',
         'observacao',
     ];
 
     protected $casts = [
-        'data' => 'date',
+        'data'                     => 'date',
+        'data_termino'             => 'date',
+        'peso_matriz_kg'           => 'decimal:2',
+        'peso_total_leitoes_kg'    => 'decimal:2',
     ];
 
     public function femea()

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Support\SchemaUpdater;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -33,6 +34,13 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
+        // Verifica se há migrações pendentes no banco do tenant.
+        // Se houver, redireciona para a tela de atualização automática.
+        $updater = new SchemaUpdater();
+        if ($updater->hasPending()) {
+            return redirect()->route('schema-update.index');
+        }
+
         return redirect()->intended(route('dashboard', [], false));
     }
 
@@ -50,3 +58,4 @@ class AuthenticatedSessionController extends Controller
         return redirect()->to(route('login', [], false));
     }
 }
+

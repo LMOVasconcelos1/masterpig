@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\PdfLogoHelper;
+use App\Models\Configuracao;
 use App\Services\PigCycleService;
 use App\Models\MaternidadeParto;
 use App\Models\MaternidadeDesmame;
 use App\Models\MaternidadeAdocao;
 use App\Models\Femea;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -299,37 +302,62 @@ class MaternidadeController extends Controller
             'femea_id' => 'required|exists:femea,id',
             'lote' => 'nullable|string|max:50',
             'data' => ['required', 'string', 'max:30'],
-            'hora_inicio' => 'nullable',
-            'hora_termino' => 'nullable',
+            'data_termino' => ['nullable', 'string', 'max:30'],
+            'hora_inicio' => 'nullable|string|max:20',
+            'hora_termino' => 'nullable|string|max:20',
             'total_vivos' => 'required|integer|min:0',
             'total_mortos' => 'required|integer|min:0',
             'total_mumificados' => 'required|integer|min:0',
-            'observacao' => 'nullable|string',
+            'qtd_femeas_vivas' => 'nullable|integer|min:0',
+            'qtd_machos_vivos' => 'nullable|integer|min:0',
+            'peso_total_leitoes_kg' => 'nullable|numeric|min:0',
+            'localizacao_matriz_parto' => 'nullable|string|max:120',
+            'baia' => 'nullable|string|max:40',
+            'peso_matriz_kg' => 'nullable|numeric|min:0',
+            'funcionario_nome' => 'nullable|string|max:120',
+            'tipo_intervencao' => ['nullable', Rule::in(['nenhum','induzido','distocico','outro'])],
+            'escore_corporal' => 'nullable|string|max:30',
+            'caracteristicas_parto' => 'nullable|string|max:2000',
+            'observacao' => 'nullable|string|max:5000',
         ]);
 
         $validated['data'] = $this->parseInputDate($validated['data']);
+        $validated['data_termino'] = $this->parseInputDate($validated['data_termino'] ?? null);
+        $validated['qtd_femeas_vivas'] = (int) ($validated['qtd_femeas_vivas'] ?? 0);
+        $validated['qtd_machos_vivos'] = (int) ($validated['qtd_machos_vivos'] ?? 0);
+        $validated['tipo_intervencao'] = $validated['tipo_intervencao'] ?: null;
 
         $sqlEnum = "ALTER TABLE `femea_movimento` MODIFY COLUMN `acao` ENUM('compra', 'morte', 'descarte', 'venda', 'cio', 'salta_cio', 'cobertura', 'parto', 'desmame', 'morte_leitao') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
 
         try {
             DB::transaction(function () use ($validated) {
-                // Tentar encontrar a última cobertura para vincular
                 $cobertura = DB::table('gestacao_cobertura')
                     ->where('femea_id', $validated['femea_id'])
                     ->orderByDesc('data')
                     ->first();
 
                 $parto = MaternidadeParto::create([
-                    'femea_id' => $validated['femea_id'],
-                    'cobertura_id' => $cobertura?->id,
-                    'lote' => $validated['lote'] ?? null,
-                    'data' => $validated['data'],
-                    'hora_inicio' => $validated['hora_inicio'] ?? null,
-                    'hora_termino' => $validated['hora_termino'] ?? null,
-                    'total_vivos' => $validated['total_vivos'],
-                    'total_mortos' => $validated['total_mortos'],
-                    'total_mumificados' => $validated['total_mumificados'],
-                    'observacao' => $validated['observacao'],
+                    'femea_id'               => $validated['femea_id'],
+                    'cobertura_id'           => $cobertura?->id,
+                    'lote'                   => $validated['lote'] ?? null,
+                    'data'                   => $validated['data'],
+                    'data_termino'           => $validated['data_termino'] ?? null,
+                    'hora_inicio'            => $validated['hora_inicio'] ?? null,
+                    'hora_termino'           => $validated['hora_termino'] ?? null,
+                    'total_vivos'            => $validated['total_vivos'],
+                    'total_mortos'           => $validated['total_mortos'],
+                    'total_mumificados'      => $validated['total_mumificados'],
+                    'qtd_femeas_vivas'       => $validated['qtd_femeas_vivas'],
+                    'qtd_machos_vivos'       => $validated['qtd_machos_vivos'],
+                    'peso_total_leitoes_kg'  => $validated['peso_total_leitoes_kg'] ?? null,
+                    'localizacao_matriz_parto' => $validated['localizacao_matriz_parto'] ?? null,
+                    'baia'                   => $validated['baia'] ?? null,
+                    'peso_matriz_kg'         => $validated['peso_matriz_kg'] ?? null,
+                    'funcionario_nome'       => $validated['funcionario_nome'] ?? null,
+                    'tipo_intervencao'       => $validated['tipo_intervencao'],
+                    'escore_corporal'        => $validated['escore_corporal'] ?? null,
+                    'caracteristicas_parto'  => $validated['caracteristicas_parto'] ?? null,
+                    'observacao'             => $validated['observacao'] ?? null,
                 ]);
 
                 if (! Schema::hasTable('femea_movimento')) {
@@ -352,7 +380,7 @@ class MaternidadeController extends Controller
                     'acao' => 'parto',
                     'data' => $data,
                     'valor' => null,
-                    'peso' => null,
+                    'peso' => $validated['peso_matriz_kg'] ?? null,
                     'fornecedor_id' => null,
                     'observacoes' => 'Parto maternidade #'.(int) $parto->id,
                 ];
@@ -665,5 +693,30 @@ class MaternidadeController extends Controller
         if ($input === null || trim($input) === '') return null;
         $carbon = PigCycleService::parseFilterDate($input);
         return $carbon ? $carbon->format('Y-m-d') : null;
+    }
+
+    public function formularioPartoPdf(Request $request)
+    {
+        $linhas = max(10, min(60, (int) $request->get('linhas', 25)));
+        $logoData = PdfLogoHelper::buildLogoData();
+        $granja = Configuracao::getGranjaAtual();
+        $emitidoEm = $logoData['emitidoEm'];
+        $logoDataUri = $logoData['logoDataUri'];
+        $pdf = Pdf::loadView('maternidade.formulario-parto', [
+            'granja'      => $granja,
+            'emitidoEm'   => $emitidoEm,
+            'logoDataUri' => $logoDataUri,
+            'linhas'      => $linhas,
+        ])->setPaper('a4', 'portrait');
+        $nomeArquivo = 'formulario-parto-maternidade-' . now()->format('Y-m-d-Hi') . '.pdf';
+        if ($request->has('preview')) {
+            return view('maternidade.formulario-parto', [
+                'granja'      => $granja,
+                'emitidoEm'   => $emitidoEm,
+                'logoDataUri' => $logoDataUri,
+                'linhas'      => $linhas,
+            ]);
+        }
+        return $pdf->stream($nomeArquivo);
     }
 }

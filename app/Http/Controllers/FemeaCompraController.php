@@ -198,6 +198,14 @@ class FemeaCompraController extends Controller
             'baia' => ['nullable', 'string', 'max:60'],
         ]);
 
+        $validacaoLimite = Femea::validarLimiteAtivas(1);
+        if (! $validacaoLimite['permitido']) {
+            return response()->json([
+                'message' => $validacaoLimite['mensagem'],
+                'limite' => $validacaoLimite,
+            ], 422);
+        }
+
         $dataCompra = Carbon::parse($validated['data_compra'])->startOfDay();
         $dataNasc = empty($validated['data_nascimento']) ? null : Carbon::parse($validated['data_nascimento'])->startOfDay();
         $dataCob = empty($validated['data_cobertura']) ? null : Carbon::parse($validated['data_cobertura'])->startOfDay();

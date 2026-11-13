@@ -80,6 +80,13 @@ class DashboardController extends Controller
             return [];
         }
 
+        $startB = microtime(true);
+        $bcCounter = 0;
+        $timeoutB = static function () use ($startB, &$bcCounter): bool {
+            if (($bcCounter++ % 50) !== 0) return false;
+            return (microtime(true) - $startB) > 35;
+        };
+
         $durations = PigCycleService::getCycleDurations();
         $cfg = [
             'dias_ate_cio' => $this->metaInt('criterio_cio_intervalo_min', 21),
@@ -96,19 +103,36 @@ class DashboardController extends Controller
         $today = Carbon::today();
         $items = [];
 
-        // 1. Inconsistências de Fêmeas
-        $query = DB::table('femea as f')
-            ->select([
-                'f.id',
-                'f.id_primaria',
-                'f.id_secundaria',
-                'f.tipo_compra',
-                'f.localizacao',
-                'f.data_cobertura as data_cobertura_cadastro',
-                'f.criado_em',
-            ])
-            ->orderBy('f.id_primaria')
-            ->limit(2000);
+        if ($timeoutB()) { return $items; }
+
+        try {
+            $idsFemeasSaida = [];
+            if (Schema::hasTable('femea_movimento')) {
+                $idsFemeasSaida = DB::table('femea_movimento')
+                    ->whereIn('acao', ['morte', 'descarte', 'venda'])
+                    ->distinct()
+                    ->pluck('femea_id')
+                    ->all();
+            }
+
+            if ($timeoutB()) { return $items; }
+
+            // 1. Inconsistências de Fêmeas — 🔥 limite 2000 → 400 e whereNotExists → whereNotIn
+            $query = DB::table('femea as f')
+                ->when(! empty($idsFemeasSaida), static function ($q) use ($idsFemeasSaida) {
+                    $q->whereNotIn('f.id', $idsFemeasSaida);
+                })
+                ->select([
+                    'f.id',
+                    'f.id_primaria',
+                    'f.id_secundaria',
+                    'f.tipo_compra',
+                    'f.localizacao',
+                    'f.data_cobertura as data_cobertura_cadastro',
+                    'f.criado_em',
+                ])
+                ->orderByDesc('f.id')
+                ->limit(400);
 
         if (Schema::hasColumn('femea', 'data_nascimento')) {
             $query->addSelect(['f.data_nascimento']);
@@ -117,13 +141,6 @@ class DashboardController extends Controller
         }
 
         if (Schema::hasTable('femea_movimento')) {
-            $query->whereNotExists(function ($q) {
-                $q->select(DB::raw(1))
-                    ->from('femea_movimento as fm_in')
-                    ->whereColumn('fm_in.femea_id', 'f.id')
-                    ->whereIn('fm_in.acao', ['morte', 'descarte', 'venda']);
-            });
-
             $lastMov = DB::table('femea_movimento')
                 ->selectRaw('MAX(id) as last_id, femea_id')
                 ->groupBy('femea_id');
@@ -171,6 +188,8 @@ class DashboardController extends Controller
             $query->addSelect([DB::raw('NULL as last_salta_cio')]);
         }
 
+        if ($timeoutB()) { return $items; }
+
         $lastPartos = [];
         if (Schema::hasTable('maternidade_parto')) {
             $lastPartosQuery = DB::table('maternidade_parto')
@@ -189,11 +208,24 @@ class DashboardController extends Controller
             $desmames = DB::table('maternidade_desmame')->pluck('parto_id', 'parto_id')->toArray();
         }
 
-        $rows = $query->get();
-        $logged = 0;
+        if ($timeoutB()) { return $items; }
+
+        try {
+            $rows = $query->get();
+        } catch (\Throwable) {
+            $rows = collect([]);
+        }
+
+        $dataVaziaLimite = $today->copy()->subDays($cfg['matriz_vazia_max']);
 
         foreach ($rows as $row) {
+            if ($timeoutB()) { return $items; }
+            if (count($items) >= 150) { break; }
+
             $femeaId = (int) $row->id;
+            $tipo = (string) $row->tipo_compra;
+            $ehLeitoa = $tipo === 'leitoa';
+
             $lastCob = empty($row->last_cobertura) ? null : Carbon::parse($row->last_cobertura)->startOfDay();
             if (!$lastCob && !empty($row->data_cobertura_cadastro)) {
                 $lastCob = Carbon::parse($row->data_cobertura_cadastro)->startOfDay();
@@ -201,28 +233,30 @@ class DashboardController extends Controller
             $lastCio = empty($row->last_cio) ? null : Carbon::parse($row->last_cio)->startOfDay();
             $lastSalta = empty($row->last_salta_cio) ? null : Carbon::parse($row->last_salta_cio)->startOfDay();
 
-            // Verificação de Matriz Vazia Prolongada
-            if (!$lastCob) {
+            // Verificação de Matriz Vazia Prolongada (skip em leitoas — não são "matrizes vazias")
+            if (!$ehLeitoa && !$lastCob) {
                 $baseDate = $lastCio ?: ($lastSalta ?: Carbon::parse($row->criado_em));
-                $daysVazia = $today->diffInDays($baseDate);
-                if ($daysVazia > $cfg['matriz_vazia_max']) {
-                    $items[] = [
-                        'tipo' => 'matriz_vazia_prolongada',
-                        'femea_id' => $femeaId,
-                        'id_primaria' => (string) $row->id_primaria,
-                        'localizacao' => $row->localizacao ?: '-',
-                        'ultima_operacao' => 'Vazia há ' . $daysVazia . ' dias',
-                        'problema' => "Matriz ultrapassou o limite de dias vazia ({$cfg['matriz_vazia_max']} dias).",
-                    ];
+                // Filtro RÁPIDO: data antes do limite → diffInDays caro, só se necessário
+                if ($baseDate->lte($dataVaziaLimite)) {
+                    $daysVazia = $today->diffInDays($baseDate);
+                    if ($daysVazia > $cfg['matriz_vazia_max']) {
+                        $items[] = [
+                            'tipo' => 'matriz_vazia_prolongada',
+                            'femea_id' => $femeaId,
+                            'id_primaria' => (string) $row->id_primaria,
+                            'localizacao' => $row->localizacao ?: '-',
+                            'ultima_operacao' => 'Vazia há ' . $daysVazia . ' dias',
+                            'problema' => "Matriz ultrapassou o limite de dias vazia ({$cfg['matriz_vazia_max']} dias).",
+                        ];
+                    }
                 }
             }
 
-            // Cio Previsto (Só alerta se houver registro de cio anterior e tiver passado o mínimo definido nas metas)
+            // Cio Previsto (leitoas pulam pois ainda não têm cio regular)
             $prevCio = null;
             if ($lastCob) {
                 $prevCio = (clone $lastCob)->addDays($cfg['gestacao_dias'] + $cfg['lactacao_min_dias'] + $cfg['intervalo_desmame_cio_dias']);
-            } elseif ($lastCio) {
-                // Só calcula cio previsto se houver registro de cio anterior E tiver passado o mínimo em dias
+            } elseif (!$ehLeitoa && $lastCio) {
                 $diasDesdeUltimoCio = $today->diffInDays($lastCio);
                 if ($diasDesdeUltimoCio >= max(1, $cfg['dias_ate_cio'])) {
                     $prevCio = (clone $lastCio)->addDays(max(1, $cfg['dias_ate_cio']));
@@ -230,9 +264,7 @@ class DashboardController extends Controller
             }
 
             if ($prevCio && $today->gte($prevCio)) {
-                // Se o último cio/salta registrado for igual ou posterior ao previsto, então já foi atendido.
                 $hasFutureRegistry = ($lastCio && $lastCio->gte($prevCio->startOfDay())) || ($lastSalta && $lastSalta->gte($prevCio->startOfDay()));
-
                 if (!$hasFutureRegistry) {
                     $items[] = [
                         'tipo' => 'cio_previsto_sem_registro',
@@ -282,46 +314,64 @@ class DashboardController extends Controller
             }
         }
 
-        // 2. Inconsistências de Machos (Macho Parado)
+        // 2. Inconsistências de Machos (Macho Parado) 🔥 whereNotExists → whereNotIn + limite + filtro data
         if (Schema::hasTable('macho')) {
-            // Otimizado: Busca data de última cobertura para todos os machos de uma vez
-            $lastUsedDates = [];
-            if (Schema::hasTable('gestacao_cobertura')) {
-                $lastUsedDates = DB::table('gestacao_cobertura')
-                    ->selectRaw('macho_id, MAX(data) as last_data')
-                    ->whereNotNull('macho_id')
-                    ->groupBy('macho_id')
-                    ->pluck('last_data', 'macho_id')
-                    ->toArray();
-            }
-
-            $machos = DB::table('macho as m')
-                ->select(['m.id', 'm.id_primaria', 'm.localizacao', 'm.criado_em'])
-                ->whereNotExists(function ($q) {
-                    $q->select(DB::raw(1))->from('macho_movimento as mm')->whereColumn('mm.macho_id', 'm.id')->whereIn('mm.acao', ['morte', 'descarte', 'venda']);
-                })
-                ->get();
-
-            foreach ($machos as $macho) {
-                $lastUsedRaw = $lastUsedDates[$macho->id] ?? null;
-                $lastUsed = $lastUsedRaw ? Carbon::parse($lastUsedRaw) : null;
-                
-                // Se nunca usou, baseia-se na data de criação do registro
-                $baseDate = $lastUsed ?: Carbon::parse($macho->criado_em);
-                $daysIdle = $today->diffInDays($baseDate);
-
-                if ($daysIdle > $cfg['macho_parado_max']) {
-                    $items[] = [
-                        'tipo' => 'macho_parado',
-                        'femea_id' => $macho->id,
-                        'id_primaria' => 'Macho: ' . $macho->id_primaria,
-                        'localizacao' => $macho->localizacao ?: '-',
-                        'ultima_operacao' => $lastUsed ? 'Última cobertura em ' . PigCycleService::formatDisplayDate($lastUsed) : 'Nunca utilizado',
-                        'problema' => "Macho sem atividade há {$daysIdle} dias (Meta: {$cfg['macho_parado_max']} dias).",
-                    ];
+            if ($timeoutB()) { return $items; }
+            try {
+                $lastUsedDates = [];
+                if (Schema::hasTable('gestacao_cobertura')) {
+                    $lastUsedDates = DB::table('gestacao_cobertura')
+                        ->selectRaw('macho_id, MAX(data) as last_data')
+                        ->whereNotNull('macho_id')
+                        ->groupBy('macho_id')
+                        ->pluck('last_data', 'macho_id')
+                        ->toArray();
                 }
-            }
+
+                $idsMachosSaida = [];
+                if (Schema::hasTable('macho_movimento')) {
+                    $idsMachosSaida = DB::table('macho_movimento')
+                        ->whereIn('acao', ['morte', 'descarte', 'venda'])
+                        ->distinct()
+                        ->pluck('macho_id')
+                        ->all();
+                }
+
+                $machos = DB::table('macho as m')
+                    ->select(['m.id', 'm.id_primaria', 'm.localizacao', 'm.criado_em'])
+                    ->when(! empty($idsMachosSaida), static function ($q) use ($idsMachosSaida) {
+                        $q->whereNotIn('m.id', $idsMachosSaida);
+                    })
+                    ->orderByDesc('m.id')
+                    ->limit(200)
+                    ->get();
+
+                $machoParadoLimite = $today->copy()->subDays($cfg['macho_parado_max']);
+
+                foreach ($machos as $macho) {
+                    if ($timeoutB()) { return $items; }
+                    if (count($items) >= 150) { break; }
+                    $lastUsedRaw = $lastUsedDates[$macho->id] ?? null;
+                    $lastUsed = $lastUsedRaw ? Carbon::parse($lastUsedRaw) : null;
+                    $baseDate = $lastUsed ?: Carbon::parse($macho->criado_em);
+                    // Filtro RÁPIDO por data: 90% dos machos recentes são eliminados aqui
+                    if ($baseDate->gt($machoParadoLimite)) { continue; }
+                    $daysIdle = $today->diffInDays($baseDate);
+                    if ($daysIdle > $cfg['macho_parado_max']) {
+                        $items[] = [
+                            'tipo' => 'macho_parado',
+                            'femea_id' => $macho->id,
+                            'id_primaria' => 'Macho: ' . $macho->id_primaria,
+                            'localizacao' => $macho->localizacao ?: '-',
+                            'ultima_operacao' => $lastUsed ? 'Última cobertura em ' . PigCycleService::formatDisplayDate($lastUsed) : 'Nunca utilizado',
+                            'problema' => "Macho sem atividade há {$daysIdle} dias (Meta: {$cfg['macho_parado_max']} dias).",
+                        ];
+                    }
+                }
+            } catch (\Throwable) {}
         }
+
+        } catch (\Throwable) { }
 
         return $items;
     }
@@ -331,9 +381,12 @@ class DashboardController extends Controller
         // Proteção: Dashboard tem muitas queries de agregação — evita o timeout
         // "Maximum execution time of 30 seconds exceeded" no primeiro acesso.
         if (function_exists('set_time_limit')) {
-            @set_time_limit(120);
+            $limAtual = (int) ini_get('max_execution_time');
+            if ($limAtual > 0 && $limAtual < 300) {
+                @set_time_limit(300);
+            }
         }
-        @ini_set('max_execution_time', '120');
+        @ini_set('max_execution_time', '300');
 
         $estoqueRacoes = 0;
         $leitoasAtivas = 0;

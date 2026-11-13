@@ -269,6 +269,7 @@
     $__menuCanGestacao     = $__can('gestacao');
     $__menuCanMaternidade  = $__can('maternidade');
     $__menuCanProducao     = $__can('producao');
+    $__menuCanInsumos      = $__can('insumos');
     $__menuCanCadastros    = $__can('sistema.cadastros');
     $__menuCanUsuarios     = $__menuIsAdmin || $__can('sistema.usuarios');
     $__menuCanMetas        = $__menuIsAdmin || $__can('sistema.metas');
@@ -360,6 +361,29 @@
                             </div>
                         </div>
 
+                        <!-- Insumos Dropdown -->
+                        <div x-data="{ open: false }" class="relative">
+                            <button @click="open = !open" class="flex items-center px-4 py-2 text-sm font-medium text-amber-100 hover:bg-amber-700 hover:text-white rounded-lg transition-colors">
+                                <i class="fa-solid fa-seedling mr-2"></i>
+                                Insumos
+                                <i class="fa-solid fa-chevron-down ml-2 text-xs"></i>
+                            </button>
+                            <div x-show="open" @click.away="open = false" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-amber-200">
+                                <a {!! $__a($__menuCanInsumos, route('nutricao.index', [], false), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->routeIs('nutricao.*')) !!}>
+                                    <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                    Nutrição
+                                </a>
+                                <a {!! $__a($__menuCanInsumos, route('sanidade.index', [], false), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->routeIs('sanidade.*')) !!}>
+                                    <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                    Sanidade
+                                </a>
+                                <a {!! $__a($__menuCanInsumos, route('almoxarifado.index', [], false), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->routeIs('almoxarifado.*')) !!}>
+                                    <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                    Almoxarifado
+                                </a>
+                            </div>
+                        </div>
+
                         <!-- Cadastros Dropdown -->
                         <div x-data="{ open: false }" class="relative">
                             <button @click="open = !open" class="flex items-center px-4 py-2 text-sm font-medium text-amber-100 hover:bg-amber-700 hover:text-white rounded-lg transition-colors">
@@ -383,6 +407,14 @@
                                 <a {!! $__a($__menuCanCadastros, url('/admin/clientes'), 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->is('admin/clientes*')) !!}>
                                     <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
                                     Cliente
+                                </a>
+                                <a {!! $__a(($__menuCanInsumos || $__menuCanCadastros), route('almoxarifado.index', [], false).'?cadastro=1', 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->routeIs('almoxarifado.*')) !!}>
+                                    <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                    Material (Almoxarifado)
+                                </a>
+                                <a {!! $__a(($__menuCanInsumos || $__menuCanCadastros), route('sanidade.index', [], false).'?cadastro=1', 'block px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-900', request()->routeIs('sanidade.*')) !!}>
+                                    <i class="fa-solid fa-circle-dot text-[8px] mr-2"></i>
+                                    Item (Sanidade)
                                 </a>
                             </div>
                         </div>
@@ -563,6 +595,22 @@
                     </div>
 
                     <div class="space-y-1">
+                        <div class="px-3 py-2 text-xs font-semibold text-amber-200 uppercase tracking-wider">Insumos</div>
+                        <a {!! $__m($__menuCanInsumos, route('nutricao.index', [], false), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->routeIs('nutricao.*')) !!}>
+                            <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
+                            Nutrição
+                        </a>
+                        <a {!! $__m($__menuCanInsumos, route('sanidade.index', [], false), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->routeIs('sanidade.*')) !!}>
+                            <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
+                            Sanidade
+                        </a>
+                        <a {!! $__m($__menuCanInsumos, route('almoxarifado.index', [], false), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->routeIs('almoxarifado.*')) !!}>
+                            <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
+                            Almoxarifado
+                        </a>
+                    </div>
+
+                    <div class="space-y-1">
                         <div class="px-3 py-2 text-xs font-semibold text-amber-200 uppercase tracking-wider">Cadastros</div>
                         <a {!! $__m($__menuCanPlantel, route('admin.plantel.femeas.index', [], false), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', (request()->routeIs('admin.plantel.femeas.index') || request()->routeIs('admin.plantel.femeas.show'))) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
@@ -583,6 +631,14 @@
                         <a {!! $__m($__menuCanCadastros, url('/admin/clientes'), 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->is('admin/clientes*')) !!}>
                             <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
                             Cliente
+                        </a>
+                        <a {!! $__m(($__menuCanInsumos || $__menuCanCadastros), route('almoxarifado.index', [], false).'?cadastro=1', 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->routeIs('almoxarifado.*')) !!}>
+                            <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
+                            Material (Almoxarifado)
+                        </a>
+                        <a {!! $__m(($__menuCanInsumos || $__menuCanCadastros), route('sanidade.index', [], false).'?cadastro=1', 'flex items-center px-4 py-3 text-white hover:bg-amber-700', request()->routeIs('sanidade.*')) !!}>
+                            <i class="fa-solid fa-circle-dot text-[8px] mr-3"></i>
+                            Item (Sanidade)
                         </a>
                     </div>
 

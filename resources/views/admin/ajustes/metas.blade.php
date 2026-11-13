@@ -15,6 +15,31 @@
     ruleTabPlantel: 'leitoa',
     ruleTabGestacao: 'cobertura',
 
+    plantel: {
+        femeas_ativas: 0,
+        femeas_limite: null,
+        femeas_ocupacao_pct: null,
+    },
+
+    get ocupacaoFemeasCor() {
+        const p = this.plantel.femeas_ocupacao_pct;
+        if (p === null) return 'bg-gray-200';
+        if (p < 70) return 'bg-emerald-500';
+        if (p < 90) return 'bg-amber-500';
+        return 'bg-red-500';
+    },
+
+    get ocupacaoFemeasTexto() {
+        if (this.plantel.femeas_limite === null) {
+            return 'Sem limite configurado';
+        }
+        const p = this.plantel.femeas_ocupacao_pct;
+        if (p < 70) return 'Dentro do limite';
+        if (p < 90) return 'Próximo do limite';
+        if (p < 100) return 'Quase esgotado';
+        return 'Limite atingido';
+    },
+
     metas: {
         // --- PLANTEL REPRODUTIVO ---
         meta_entrada_peso_leitoa: '135',
@@ -174,6 +199,9 @@
                         this.metas[k] = String(items[k]);
                     }
                 });
+                if (data.plantel && typeof data.plantel === 'object') {
+                    this.plantel = Object.assign(this.plantel, data.plantel);
+                }
                 if (data.message) this.error = data.message;
                 this.loaded = true;
             })
@@ -281,6 +309,59 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Meta Estoque Matrizes</label><input type="number" x-model="metas.meta_plantel_estoque_matrizes" class="w-full border-gray-200 rounded-xl text-sm" placeholder="100"></div>
                         <div><label class="block text-[10px] font-bold text-gray-400 uppercase">Meta Estoque Leitoas</label><input type="number" x-model="metas.meta_plantel_estoque_leitoas" class="w-full border-gray-200 rounded-xl text-sm" placeholder="50"></div>
+                    </div>
+                    <div class="pt-4 mt-2 border-t border-gray-100 dark:border-gray-800">
+                        <div class="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-800/40">
+                            <div class="flex items-start gap-3">
+                                <div class="mt-1 w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-bold shrink-0">🔒</div>
+                                <div class="space-y-4 flex-1">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-amber-700 dark:text-amber-300 uppercase mb-1">Limite de Fêmeas Ativas <span class="ml-2 px-2 py-0.5 text-[10px] uppercase bg-amber-200/60 dark:bg-amber-800/40 text-amber-800 dark:text-amber-200 rounded-full">Bloqueado</span></label>
+                                        <input type="number" min="0" step="1" disabled x-model="metas.limite_femeas_ativas" class="w-full border-amber-200 dark:border-amber-800 rounded-xl text-lg font-bold text-amber-800 dark:text-amber-200 bg-amber-50/60 dark:bg-amber-900/20 cursor-not-allowed opacity-90" placeholder="0 = sem limite">
+                                    </div>
+
+                                    <div class="p-4 rounded-xl bg-white/70 dark:bg-gray-900/40 border border-amber-100 dark:border-amber-800/40 shadow-sm">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <div>
+                                                <div class="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500">Fêmeas Ativas no Plantel</div>
+                                                <div class="mt-1 flex items-baseline gap-2">
+                                                    <span x-text="Number(plantel.femeas_ativas).toLocaleString('pt-BR')" class="text-3xl font-black text-emerald-600 dark:text-emerald-400 leading-none">0</span>
+                                                    <span class="text-xs text-gray-400 dark:text-gray-500 font-semibold">
+                                                        de <span x-text="plantel.femeas_limite ? Number(plantel.femeas_limite).toLocaleString('pt-BR') : '∞'">∞</span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="text-right">
+                                                <template x-if="plantel.femeas_ocupacao_pct !== null">
+                                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide"
+                                                          :class="{
+                                                              'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300': (plantel.femeas_ocupacao_pct || 0) < 70,
+                                                              'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300': (plantel.femeas_ocupacao_pct || 0) >= 70 && (plantel.femeas_ocupacao_pct || 0) < 90,
+                                                              'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300': (plantel.femeas_ocupacao_pct || 0) >= 90
+                                                          }">
+                                                        <span x-text="plantel.femeas_ocupacao_pct + '%'"></span>
+                                                        <span x-text="ocupacaoFemeasTexto"></span>
+                                                    </span>
+                                                </template>
+                                                <template x-if="plantel.femeas_ocupacao_pct === null">
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+                                                        Sem Limite
+                                                    </span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <div class="w-full h-3 rounded-full bg-gray-200/70 dark:bg-gray-800 overflow-hidden">
+                                            <div class="h-full rounded-full transition-all duration-700 ease-out"
+                                                 :class="ocupacaoFemeasCor"
+                                                 :style="{ width: (plantel.femeas_ocupacao_pct !== null ? plantel.femeas_ocupacao_pct : 0) + '%' }"></div>
+                                        </div>
+                                        <p class="mt-3 text-[11px] text-amber-700/80 dark:text-amber-300/80 leading-snug">
+                                            Contagem atualizada em tempo real, considerando apenas fêmeas cuja última movimentação <b>não</b> seja de <b>morte, venda ou descarte</b>. Ajustes no limite devem ser solicitados diretamente à equipe <b>MasterPig / Sui Control</b>.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

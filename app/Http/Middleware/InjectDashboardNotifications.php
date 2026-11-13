@@ -8,6 +8,7 @@ use Closure;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,9 +26,17 @@ use Symfony\Component\HttpFoundation\Response;
  *     Ou seja: quando chegamos aqui, a conexão DEFAULT JÁ É 'tenant',
  *     a sessão JÁ TEM tenant_db + tenant_user, e o login JÁ FOI
  *     validado. Nunca roda durante o processo de login.
+ *
+ * 🔥 OTIMIZAÇÕES PERFORMANCE (v2):
+ *     - whereNotExists → whereNotIn (reduz de O(N×M) → O(N+M))
+ *     - Timeout global e circuit breakers a cada bloco (previne FatalError)
+ *     - CountAtivas unificado em 1 query GROUP BY (não 2 separadas)
+ *     - Heavy work SÓ rota /dashboard (evita custo em todas as páginas)
  */
 class InjectDashboardNotifications
 {
+    private const MAX_SEGUNDOS = 20;
+
     public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);
@@ -37,7 +46,39 @@ class InjectDashboardNotifications
             'notificacoesCount' => 0,
         ];
 
+        // ⏱️ Timeout global — previne FatalError "Maximum execution time"
+        $startMs = microtime(true);
+        if (function_exists('set_time_limit')) {
+            $limiteAtual = (int) ini_get('max_execution_time');
+            if ($limiteAtual > 0 && $limiteAtual < 300) {
+                @set_time_limit(300);
+            }
+        }
+        @ini_set('max_execution_time', '300');
+        $timeout = static function () use ($startMs): bool {
+            return (microtime(true) - $startMs) > self::MAX_SEGUNDOS;
+        };
+
         try {
+            // Proteção 0: 🔥 SÓ roda queries PESADAS na rota /dashboard.
+            // Demais páginas (relatórios, cadastros etc.) não precisam destes
+            // cálculos — evita 50+ queries DESNECESSÁRIAS em todo clique.
+            $route = Route::current();
+            $isDashboard = false;
+            if ($route !== null) {
+                $routeName = (string) ($route->getName() ?? '');
+                $routeUri  = (string) ($route->uri ?? '');
+                $isDashboard = $routeName === 'dashboard' || str_ends_with($routeUri, '/dashboard');
+            }
+            if (! $isDashboard) {
+                $uri = (string) ($request->server->get('REQUEST_URI') ?? '');
+                $isDashboard = str_starts_with($uri, '/dashboard') || $uri === '/dashboard';
+            }
+            if (! $isDashboard) {
+                View::share($empty);
+                return $response;
+            }
+
             // Proteção 1: só injeta em requests HTML (não API / JSON)
             $accept = (string) ($request->headers->get('Accept') ?? '');
             if ($accept !== '' && ! str_contains($accept, 'text/html')) {
@@ -98,6 +139,8 @@ class InjectDashboardNotifications
         try {
             $notificacoes = [];
 
+            if ($timeout()) { View::share($empty); return $response; }
+
             if (! Auth::check()) {
                 View::share($empty);
                 return $response;
@@ -107,6 +150,8 @@ class InjectDashboardNotifications
                 View::share($empty);
                 return $response;
             }
+
+            if ($timeout()) { View::share($empty); return $response; }
 
             $metas = DB::table('meta')
                 ->whereIn('chave', [
@@ -129,24 +174,42 @@ class InjectDashboardNotifications
                 return $response;
             }
 
-            $hasMov = Schema::hasTable('femea_movimento');
+            if ($timeout()) { View::share($empty); return $response; }
 
-            $countAtivas = function (array $tipos) use ($hasMov) {
-                $query = DB::table('femea')->whereIn('tipo_compra', $tipos);
+            // 🔥 OTIMIZAÇÃO countAtivas:
+            // whereNotExists (subquery correlacionada = O(N×M))
+            //   → 2 queries: ids_saida + WHERE NOT IN + GROUP BY (O(N+M))
+            //   + 1 query única para LEITOA + MATRIZ_VAZIA + MATRIZ_GESTANTE
+            $leitoasAtivas = 0;
+            $matrizesAtivas = 0;
+            $hasMov = Schema::hasTable('femea_movimento');
+            try {
+                $idsSaida = [];
                 if ($hasMov) {
-                    $query->whereNotExists(function ($q) {
-                        $q->select(DB::raw(1))
-                            ->from('femea_movimento as fm')
-                            ->whereColumn('fm.femea_id', 'femea.id')
-                            ->whereIn('fm.acao', ['morte', 'descarte', 'venda']);
-                    });
+                    $idsSaida = DB::table('femea_movimento')
+                        ->whereIn('acao', ['morte', 'descarte', 'venda'])
+                        ->distinct()
+                        ->pluck('femea_id')
+                        ->all();
                 }
 
-                return (int) $query->count();
-            };
+                if ($timeout()) { View::share($empty); return $response; }
 
-            $leitoasAtivas = $countAtivas(['leitoa']);
-            $matrizesAtivas = $countAtivas(['matriz_vazia', 'matriz_gestante']);
+                $stats = DB::table('femea')
+                    ->when(! empty($idsSaida), static function ($q) use ($idsSaida) {
+                        $q->whereNotIn('id', $idsSaida);
+                    })
+                    ->whereIn('tipo_compra', ['leitoa', 'matriz_vazia', 'matriz_gestante'])
+                    ->select('tipo_compra', DB::raw('COUNT(*) as total'))
+                    ->groupBy('tipo_compra')
+                    ->pluck('total', 'tipo_compra');
+
+                $leitoasAtivas = (int) ($stats['leitoa'] ?? 0);
+                $matrizesAtivas = (int) ($stats['matriz_vazia'] ?? 0) + (int) ($stats['matriz_gestante'] ?? 0);
+            } catch (\Throwable) {
+                $leitoasAtivas = 0;
+                $matrizesAtivas = 0;
+            }
 
             if ($metaLeitoas !== null && $metaLeitoas > 0 && $leitoasAtivas < $metaLeitoas) {
                 $notificacoes[] = [
@@ -164,6 +227,8 @@ class InjectDashboardNotifications
                 ];
             }
 
+            if ($timeout()) { View::share($notificacoes + $empty); return $response; }
+
             $inicio = Carbon::now()->subDays(30)->toDateString();
 
             if (
@@ -172,61 +237,72 @@ class InjectDashboardNotifications
                 && Schema::hasColumn('femea_movimento', 'data')
                 && Schema::hasColumn('femea', 'peso_compra')
             ) {
-                $entriesQuery = DB::table('femea_movimento as fm')
+                $entriesBase = DB::table('femea_movimento as fm')
                     ->join('femea as f', 'f.id', '=', 'fm.femea_id')
                     ->where('fm.acao', 'compra')
                     ->where('fm.data', '>=', $inicio);
 
                 if ($metaEntradaPesoLeitoa !== null && $metaEntradaPesoLeitoa > 0) {
-                    $base = (clone $entriesQuery)->where('f.tipo_compra', 'leitoa');
-                    $total = (int) $base->count();
-                    $q = (clone $entriesQuery)->where('f.tipo_compra', 'leitoa')->whereNotNull('f.peso_compra');
-                    $count = (int) $q->count();
-
-                    if ($total > 0 && $count === 0) {
-                        $notificacoes[] = [
-                            'titulo' => 'Entrada de leitoas sem peso informado',
-                            'descricao' => 'Entradas 30d: '.$total.' | Meta: '.number_format($metaEntradaPesoLeitoa, 2, ',', '.').' kg',
-                            'tipo' => 'alerta',
-                        ];
-                    } elseif ($count > 0) {
-                        $avg = (float) $q->avg('f.peso_compra');
-                        if ($avg < $metaEntradaPesoLeitoa) {
-                            $missing = $total > $count ? ' | Sem peso: '.($total - $count) : '';
-                            $notificacoes[] = [
-                                'titulo' => 'Entrada de leitoas abaixo da meta de peso',
-                                'descricao' => 'Média 30d: '.number_format($avg, 2, ',', '.').' kg | Meta: '.number_format($metaEntradaPesoLeitoa, 2, ',', '.').' kg | Entradas: '.$count.$missing,
-                                'tipo' => 'alerta',
-                            ];
+                    if ($timeout()) { View::share($notificacoes + $empty); return $response; }
+                    try {
+                        $base = (clone $entriesBase)->where('f.tipo_compra', 'leitoa');
+                        $total = (int) $base->count();
+                        if ($total > 0) {
+                            $q = (clone $entriesBase)->where('f.tipo_compra', 'leitoa')->whereNotNull('f.peso_compra');
+                            $count = (int) $q->count();
+                            if ($count === 0) {
+                                $notificacoes[] = [
+                                    'titulo' => 'Entrada de leitoas sem peso informado',
+                                    'descricao' => 'Entradas 30d: '.$total.' | Meta: '.number_format($metaEntradaPesoLeitoa, 2, ',', '.').' kg',
+                                    'tipo' => 'alerta',
+                                ];
+                            } else {
+                                $avg = (float) $q->avg('f.peso_compra');
+                                if ($avg < $metaEntradaPesoLeitoa) {
+                                    $missing = $total > $count ? ' | Sem peso: '.($total - $count) : '';
+                                    $notificacoes[] = [
+                                        'titulo' => 'Entrada de leitoas abaixo da meta de peso',
+                                        'descricao' => 'Média 30d: '.number_format($avg, 2, ',', '.').' kg | Meta: '.number_format($metaEntradaPesoLeitoa, 2, ',', '.').' kg | Entradas: '.$count.$missing,
+                                        'tipo' => 'alerta',
+                                    ];
+                                }
+                            }
                         }
-                    }
+                    } catch (\Throwable) {}
                 }
+
+                if ($timeout()) { View::share($notificacoes + $empty); return $response; }
 
                 if ($metaEntradaPesoMatriz !== null && $metaEntradaPesoMatriz > 0) {
-                    $base = (clone $entriesQuery)->whereIn('f.tipo_compra', ['matriz_vazia', 'matriz_gestante']);
-                    $total = (int) $base->count();
-                    $q = (clone $entriesQuery)->whereIn('f.tipo_compra', ['matriz_vazia', 'matriz_gestante'])->whereNotNull('f.peso_compra');
-                    $count = (int) $q->count();
-
-                    if ($total > 0 && $count === 0) {
-                        $notificacoes[] = [
-                            'titulo' => 'Entrada de matrizes sem peso informado',
-                            'descricao' => 'Entradas 30d: '.$total.' | Meta: '.number_format($metaEntradaPesoMatriz, 2, ',', '.').' kg',
-                            'tipo' => 'alerta',
-                        ];
-                    } elseif ($count > 0) {
-                        $avg = (float) $q->avg('f.peso_compra');
-                        if ($avg < $metaEntradaPesoMatriz) {
-                            $missing = $total > $count ? ' | Sem peso: '.($total - $count) : '';
-                            $notificacoes[] = [
-                                'titulo' => 'Entrada de matrizes abaixo da meta de peso',
-                                'descricao' => 'Média 30d: '.number_format($avg, 2, ',', '.').' kg | Meta: '.number_format($metaEntradaPesoMatriz, 2, ',', '.').' kg | Entradas: '.$count.$missing,
-                                'tipo' => 'alerta',
-                            ];
+                    try {
+                        $base = (clone $entriesBase)->whereIn('f.tipo_compra', ['matriz_vazia', 'matriz_gestante']);
+                        $total = (int) $base->count();
+                        if ($total > 0) {
+                            $q = (clone $entriesBase)->whereIn('f.tipo_compra', ['matriz_vazia', 'matriz_gestante'])->whereNotNull('f.peso_compra');
+                            $count = (int) $q->count();
+                            if ($count === 0) {
+                                $notificacoes[] = [
+                                    'titulo' => 'Entrada de matrizes sem peso informado',
+                                    'descricao' => 'Entradas 30d: '.$total.' | Meta: '.number_format($metaEntradaPesoMatriz, 2, ',', '.').' kg',
+                                    'tipo' => 'alerta',
+                                ];
+                            } else {
+                                $avg = (float) $q->avg('f.peso_compra');
+                                if ($avg < $metaEntradaPesoMatriz) {
+                                    $missing = $total > $count ? ' | Sem peso: '.($total - $count) : '';
+                                    $notificacoes[] = [
+                                        'titulo' => 'Entrada de matrizes abaixo da meta de peso',
+                                        'descricao' => 'Média 30d: '.number_format($avg, 2, ',', '.').' kg | Meta: '.number_format($metaEntradaPesoMatriz, 2, ',', '.').' kg | Entradas: '.$count.$missing,
+                                        'tipo' => 'alerta',
+                                    ];
+                                }
+                            }
                         }
-                    }
+                    } catch (\Throwable) {}
                 }
             }
+
+            if ($timeout()) { View::share($notificacoes + $empty); return $response; }
 
             if (
                 Schema::hasTable('macho')
@@ -237,32 +313,44 @@ class InjectDashboardNotifications
                 && $metaEntradaPesoMacho !== null
                 && $metaEntradaPesoMacho > 0
             ) {
-                $base = DB::table('macho_movimento as mm')
-                    ->join('macho as m', 'm.id', '=', 'mm.macho_id')
-                    ->where('mm.acao', 'compra')
-                    ->where('mm.data', '>=', $inicio);
+                try {
+                    $idsMachoSaida = DB::table('macho_movimento')
+                        ->whereIn('acao', ['morte', 'descarte', 'venda'])
+                        ->distinct()
+                        ->pluck('macho_id')
+                        ->all();
 
-                $total = (int) (clone $base)->count();
-                $q = (clone $base)->whereNotNull('m.peso_compra');
-                $count = (int) $q->count();
+                    $base = DB::table('macho_movimento as mm')
+                        ->join('macho as m', 'm.id', '=', 'mm.macho_id')
+                        ->when(! empty($idsMachoSaida), static function ($q) use ($idsMachoSaida) {
+                            $q->whereNotIn('m.id', $idsMachoSaida);
+                        })
+                        ->where('mm.acao', 'compra')
+                        ->where('mm.data', '>=', $inicio);
 
-                if ($total > 0 && $count === 0) {
-                    $notificacoes[] = [
-                        'titulo' => 'Entrada de machos sem peso informado',
-                        'descricao' => 'Entradas 30d: '.$total.' | Meta: '.number_format($metaEntradaPesoMacho, 2, ',', '.').' kg',
-                        'tipo' => 'alerta',
-                    ];
-                } elseif ($count > 0) {
-                    $avg = (float) $q->avg('m.peso_compra');
-                    if ($avg < $metaEntradaPesoMacho) {
-                        $missing = $total > $count ? ' | Sem peso: '.($total - $count) : '';
-                        $notificacoes[] = [
-                            'titulo' => 'Entrada de machos abaixo da meta de peso',
-                            'descricao' => 'Média 30d: '.number_format($avg, 2, ',', '.').' kg | Meta: '.number_format($metaEntradaPesoMacho, 2, ',', '.').' kg | Entradas: '.$count.$missing,
-                            'tipo' => 'alerta',
-                        ];
+                    $total = (int) (clone $base)->count();
+                    if ($total > 0) {
+                        $q = (clone $base)->whereNotNull('m.peso_compra');
+                        $count = (int) $q->count();
+                        if ($count === 0) {
+                            $notificacoes[] = [
+                                'titulo' => 'Entrada de machos sem peso informado',
+                                'descricao' => 'Entradas 30d: '.$total.' | Meta: '.number_format($metaEntradaPesoMacho, 2, ',', '.').' kg',
+                                'tipo' => 'alerta',
+                            ];
+                        } else {
+                            $avg = (float) $q->avg('m.peso_compra');
+                            if ($avg < $metaEntradaPesoMacho) {
+                                $missing = $total > $count ? ' | Sem peso: '.($total - $count) : '';
+                                $notificacoes[] = [
+                                    'titulo' => 'Entrada de machos abaixo da meta de peso',
+                                    'descricao' => 'Média 30d: '.number_format($avg, 2, ',', '.').' kg | Meta: '.number_format($metaEntradaPesoMacho, 2, ',', '.').' kg | Entradas: '.$count.$missing,
+                                    'tipo' => 'alerta',
+                                ];
+                            }
+                        }
                     }
-                }
+                } catch (\Throwable) {}
             }
 
             View::share([

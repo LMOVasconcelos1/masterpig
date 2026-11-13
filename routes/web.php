@@ -30,10 +30,13 @@ use App\Http\Controllers\MachoVendaController;
 use App\Http\Controllers\MaternidadeController;
 use App\Http\Controllers\CrecheController;
 use App\Http\Controllers\MetasController;
+use App\Http\Controllers\NutricaoController;
 use App\Http\Controllers\PlantelApiController;
 use App\Http\Controllers\PlantelRelatorioController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RacaController;
+use App\Http\Controllers\SanidadeController;
+use App\Http\Controllers\AlmoxarifadoController;
 use App\Http\Controllers\RacaoController;
 use App\Http\Controllers\SemenController;
 use App\Http\Controllers\TipoRacaoController;
@@ -41,11 +44,17 @@ use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\UtilitariosController;
 use App\Http\Controllers\TerminacaoController;
 use App\Http\Controllers\ZerarSistemaController;
+use App\Http\Controllers\SchemaUpdateController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect('/login');
 });
+
+// Atualização automática do schema do banco de dados do tenant
+Route::get('/atualizando', [SchemaUpdateController::class, 'index'])->middleware(['auth'])->name('schema-update.index');
+Route::get('/api/schema/status', [SchemaUpdateController::class, 'status'])->middleware(['auth'])->name('schema-update.status');
+Route::post('/api/schema/run-next', [SchemaUpdateController::class, 'runNext'])->middleware(['auth'])->name('schema-update.run-next');
 
 Route::get('/dashboard', DashboardController::class)->middleware(['auth'])->name('dashboard');
 Route::get('/plantel/analises/retencao', function () { return view('plantel.analises.retencao'); })->middleware(['auth'])->name('plantel.analises.retencao');
@@ -121,8 +130,26 @@ Route::get('/gestacao/formulario-cobertura/pdf', function() {
         ->header('Expires', '0');
 })->middleware(['auth'])->name('gestacao.formulario.pdf');
 Route::get('/maternidade', [MaternidadeController::class, 'index'])->middleware(['auth'])->name('maternidade');
+Route::get('/maternidade/relatorios/formulario-parto/pdf', [MaternidadeController::class, 'formularioPartoPdf'])->middleware(['auth'])->name('maternidade.relatorios.formulario-parto.pdf');
 Route::get('/creche', [CrecheController::class, 'index'])->middleware(['auth'])->name('creche');
 Route::get('/creche/lotes/{id}', [CrecheController::class, 'showLote'])->middleware(['auth'])->whereNumber('id')->name('creche.lotes.show');
+Route::get('/nutricao', [NutricaoController::class, 'index'])->middleware(['auth'])->name('nutricao.index');
+Route::post('/nutricao/compras', [NutricaoController::class, 'storeCompra'])->middleware(['auth'])->name('nutricao.compras.store');
+Route::post('/nutricao/consumos', [NutricaoController::class, 'storeConsumo'])->middleware(['auth'])->name('nutricao.consumos.store');
+Route::post('/nutricao/vendas', [NutricaoController::class, 'storeVenda'])->middleware(['auth'])->name('nutricao.vendas.store');
+Route::post('/nutricao/acertos', [NutricaoController::class, 'storeAcerto'])->middleware(['auth'])->name('nutricao.acertos.store');
+Route::get('/sanidade', [SanidadeController::class, 'index'])->middleware(['auth'])->name('sanidade.index');
+Route::post('/sanidade/compras', [SanidadeController::class, 'storeCompra'])->middleware(['auth'])->name('sanidade.compras.store');
+Route::post('/sanidade/consumos', [SanidadeController::class, 'storeConsumo'])->middleware(['auth'])->name('sanidade.consumos.store');
+Route::post('/sanidade/vendas', [SanidadeController::class, 'storeVenda'])->middleware(['auth'])->name('sanidade.vendas.store');
+Route::post('/sanidade/acertos', [SanidadeController::class, 'storeAcerto'])->middleware(['auth'])->name('sanidade.acertos.store');
+Route::post('/sanidade/itens', [SanidadeController::class, 'storeItem'])->middleware(['auth'])->name('sanidade.itens.store');
+Route::get('/almoxarifado', [AlmoxarifadoController::class, 'index'])->middleware(['auth'])->name('almoxarifado.index');
+Route::post('/almoxarifado/compras', [AlmoxarifadoController::class, 'storeCompra'])->middleware(['auth'])->name('almoxarifado.compras.store');
+Route::post('/almoxarifado/consumos', [AlmoxarifadoController::class, 'storeConsumo'])->middleware(['auth'])->name('almoxarifado.consumos.store');
+Route::post('/almoxarifado/vendas', [AlmoxarifadoController::class, 'storeVenda'])->middleware(['auth'])->name('almoxarifado.vendas.store');
+Route::post('/almoxarifado/acertos', [AlmoxarifadoController::class, 'storeAcerto'])->middleware(['auth'])->name('almoxarifado.acertos.store');
+Route::post('/almoxarifado/materiais', [AlmoxarifadoController::class, 'storeMaterial'])->middleware(['auth'])->name('almoxarifado.materiais.store');
 Route::get('/terminacao', [TerminacaoController::class, 'index'])->middleware(['auth'])->name('terminacao');
 Route::get('/terminacao/lotes/{id}', [TerminacaoController::class, 'showLote'])->middleware(['auth'])->whereNumber('id')->name('terminacao.lotes.show');
 Route::post('/terminacao/lotes', [TerminacaoController::class, 'storeLote'])->middleware(['auth'])->name('terminacao.lotes.store');

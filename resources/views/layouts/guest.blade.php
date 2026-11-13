@@ -43,6 +43,9 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
+        <!-- Wallpaper em alta resolução (2000x1156) → nitidez preservada em telas grandes -->
+        <link rel="preload" as="image" href="/login.jpg" fetchpriority="high">
+
         <!-- Scripts / Style -->
         <script>
             if (localStorage.getItem('darkMode') === 'true' || (!('darkMode' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -85,18 +88,21 @@
             }
         </style>
     </head>
-    <body class="font-sans text-gray-900 antialiased">
+    <body class="font-sans text-gray-900 antialiased" style="background-color: #2c1a10;">
         <div class="flex flex-col sm:justify-center items-center pt-6 sm:pt-0 relative"
              style="min-height: 100vh; min-height: 100dvh; padding-top: calc(1.5rem + var(--sat)); padding-right: var(--sar); padding-bottom: calc(1.5rem + var(--sab)); padding-left: var(--sal);">
-            <!-- Wallpaper Background — qualidade máxima (não estica cortes, preserve detalhes) -->
+            <!-- Wallpaper Background — alta resolução (2000x1156), renderização suave -->
             <div class="absolute inset-0 z-0 overflow-hidden">
-                <img src="/login.png"
-                     alt="Background"
-                     class="absolute inset-0 w-full h-full object-cover object-center sm:object-cover"
-                     style="image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges; -ms-interpolation-mode: bicubic; background-repeat: no-repeat; background-position: center; background-size: cover; transform: translateZ(0); backface-visibility: hidden; will-change: transform;">
-                <!-- Overlay suave (mínima opacidade) → não apaga detalhes do wallpaper -->
-                <div class="absolute inset-0 bg-gradient-to-br from-black/10 via-black/5 to-black/25"></div>
-                <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(0,0,0,0)_30%,_rgba(0,0,0,0.35)_100%)]"></div>
+                <img src="/login.jpg"
+                     alt=""
+                     aria-hidden="true"
+                     decoding="async"
+                     fetchpriority="high"
+                     class="absolute inset-0 w-full h-full object-cover object-center"
+                     style="image-rendering: auto; -ms-interpolation-mode: bicubic; transform: translateZ(0); backface-visibility: hidden; will-change: transform;">
+                <!-- Scrim para dar contraste à logo e ao texto, sem apagar os detalhes do wallpaper -->
+                <div class="absolute inset-0 bg-gradient-to-b from-black/25 via-black/5 to-black/30"></div>
+                <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(0,0,0,0)_35%,_rgba(0,0,0,0.35)_100%)]"></div>
             </div>
 
             <!-- Content Overlay -->

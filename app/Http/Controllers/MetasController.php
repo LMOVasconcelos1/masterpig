@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Femea;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -29,8 +30,24 @@ class MetasController extends Controller
             $items[$row->chave] = $row->valor;
         }
 
+        $limite = isset($items['limite_femeas_ativas']) && trim((string) $items['limite_femeas_ativas']) !== ''
+            ? max(0, (int) $items['limite_femeas_ativas'])
+            : null;
+        $limite = $limite > 0 ? $limite : null;
+        $ativas = Femea::countAtivas();
+
+        $ocupacaoPct = null;
+        if ($limite !== null && $limite > 0) {
+            $ocupacaoPct = min(100, (int) round(($ativas / $limite) * 100));
+        }
+
         return response()->json([
             'items' => $items,
+            'plantel' => [
+                'femeas_ativas' => $ativas,
+                'femeas_limite' => $limite,
+                'femeas_ocupacao_pct' => $ocupacaoPct,
+            ],
         ]);
     }
 

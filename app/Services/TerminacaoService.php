@@ -231,137 +231,352 @@ class TerminacaoService
             'mortes_periodo' => 0,
         ];
 
-        if (!Schema::hasTable('terminacao_lotes')) {
-            return $stats;
-        }
+        try {
+            if (!Schema::hasTable('terminacao_lotes')) {
+                return $stats;
+            }
 
-        $stats['lotes_abertos'] = (int) DB::table('terminacao_lotes')->where('situacao', 'aberto')->count();
+            // ⏱️ Timeout — previne FatalError em bases grandes
+            $startGerais = microtime(true);
+            $timeoutGerais = static function () use ($startGerais): bool {
+                return (microtime(true) - $startGerais) > 25;
+            };
 
-        $estoqueTotal = 0;
-        $totalEntradasEstoque = 0;
-        $totalMortesEstoque = 0;
+            $lotesAbertosIds = DB::table('terminacao_lotes')
+                ->where('situacao', 'aberto')
+                ->pluck('id')
+                ->all();
+            $stats['lotes_abertos'] = count($lotesAbertos);
 
-        $lotesAbertos = DB::table('terminacao_lotes')->where('situacao', 'aberto')->pluck('id')->all();
-        foreach ($lotesAbertos as $loteId) {
+            if ($timeoutGerais()) { return $stats; }
+
+            // 🔥 OTIMIZAÇÃO — FIM DO N+1:
+            // Antes: 5 queries × cada lote (50 lotes = 250 queries)
+            // Agora: 6 queries TOTAIS usando SUM(CASE) agrupado por lote_id
+            // + WHERE lote_id IN (lista) = 1 passada por tabela.
+            $estoqueTotal = 0;
+            $totalEntradasEstoque = 0;
+            $totalMortesEstoque = 0;
+
+            if (! empty($lotesAbertosIds)) {
+                $somasPorLote = [];
+
+                try {
+                    if (Schema::hasTable('terminacao_entradas')) {
+                        $rows = DB::table('terminacao_entradas')
+                            ->whereIn('lote_id', $lotesAbertosIds)
+                            ->select('lote_id', DB::raw('COALESCE(SUM(quantidade),0) as total'))
+                            ->groupBy('lote_id')
+                            ->pluck('total', 'lote_id');
+                        foreach ($rows as $lid => $v) {
+                            $somasPorLote[(int)$lid]['entradas'] = (int)$v;
+                        }
+                    }
+                } catch (\Throwable) {}
+
+                if ($timeoutGerais()) { return $stats; }
+
+                try {
+                    if (Schema::hasTable('terminacao_mortes')) {
+                        $rows = DB::table('terminacao_mortes')
+                            ->whereIn('lote_id', $lotesAbertosIds)
+                            ->select('lote_id', DB::raw('COALESCE(SUM(quantidade),0) as total'))
+                            ->groupBy('lote_id')
+                            ->pluck('total', 'lote_id');
+                        foreach ($rows as $lid => $v) {
+                            $somasPorLote[(int)$lid]['mortes'] = (int)$v;
+                        }
+                    }
+                } catch (\Throwable) {}
+
+                if ($timeoutGerais()) { return $stats; }
+
+                try {
+                    if (Schema::hasTable('terminacao_transferencias')) {
+                        $rowsOut = DB::table('terminacao_transferencias')
+                            ->whereIn('lote_origem_id', $lotesAbertosIds)
+                            ->select('lote_origem_id as lid', DB::raw('COALESCE(SUM(quantidade),0) as total'))
+                            ->groupBy('lote_origem_id')
+                            ->pluck('total', 'lid');
+                        foreach ($rowsOut as $lid => $v) {
+                            $somasPorLote[(int)$lid]['transf_out'] = (int)$v;
+                        }
+                        $rowsIn = DB::table('terminacao_transferencias')
+                            ->whereIn('lote_destino_id', $lotesAbertosIds)
+                            ->select('lote_destino_id as lid', DB::raw('COALESCE(SUM(quantidade),0) as total'))
+                            ->groupBy('lote_destino_id')
+                            ->pluck('total', 'lid');
+                        foreach ($rowsIn as $lid => $v) {
+                            $somasPorLote[(int)$lid]['transf_in'] = (int)$v;
+                        }
+                    }
+                } catch (\Throwable) {}
+
+                if ($timeoutGerais()) { return $stats; }
+
+                try {
+                    if (Schema::hasTable('terminacao_vendas')) {
+                        $rows = DB::table('terminacao_vendas')
+                            ->whereIn('lote_id', $lotesAbertosIds)
+                            ->select('lote_id', DB::raw('COALESCE(SUM(quantidade),0) as total'))
+                            ->groupBy('lote_id')
+                            ->pluck('total', 'lote_id');
+                        foreach ($rows as $lid => $v) {
+                            $somasPorLote[(int)$lid]['vendas'] = (int)$v;
+                        }
+                    }
+                } catch (\Throwable) {}
+
+                // Totaliza em memória (array pequeno — 1 passo)
+                foreach ($lotesAbertosIds as $lid) {
+                    $lid = (int) $lid;
+                    $s = $somasPorLote[$lid] ?? [];
+                    $entradas         = (int) ($s['entradas']     ?? 0);
+                    $mortes           = (int) ($s['mortes']       ?? 0);
+                    $transfOut        = (int) ($s['transf_out']   ?? 0);
+                    $transfIn         = (int) ($s['transf_in']    ?? 0);
+                    $vendas           = (int) ($s['vendas']       ?? 0);
+                    $totalEntradas = $entradas + $transfIn;
+                    $totalSaidas   = $mortes + $transfOut + $vendas;
+                    $saldo         = max(0, $totalEntradas - $totalSaidas);
+                    $estoqueTotal         += $saldo;
+                    $totalEntradasEstoque += $entradas;
+                    $totalMortesEstoque   += $mortes;
+                }
+            }
+
+            $stats['estoque_animais'] = $estoqueTotal;
+            $stats['mortalidade_taxa'] = $totalEntradasEstoque > 0
+                ? round(($totalMortesEstoque / $totalEntradasEstoque) * 100, 2)
+                : 0.0;
+
+            if ($timeoutGerais()) { return $stats; }
+
             try {
-                $saldoInfo = self::calcularSaldoLote((int) $loteId);
-                $estoqueTotal += (int) ($saldoInfo['saldo'] ?? 0);
-                $totalEntradasEstoque += (int) ($saldoInfo['entradas'] ?? 0);
-                $totalMortesEstoque += (int) ($saldoInfo['mortes'] ?? 0);
+                if (Schema::hasTable('terminacao_vendas')) {
+                    $inicio30d = Carbon::today()->subDays(30)->startOfDay()->format('Y-m-d');
+                    $stats['vendidos_30d'] = (int) DB::table('terminacao_vendas')
+                        ->where('data_venda', '>=', $inicio30d)
+                        ->sum('quantidade');
+                    $stats['vendidos_periodo'] = $stats['vendidos_30d'];
+                }
+                if (Schema::hasTable('terminacao_mortes')) {
+                    $inicio30d = Carbon::today()->subDays(30)->startOfDay()->format('Y-m-d');
+                    $stats['mortes_periodo'] = (int) DB::table('terminacao_mortes')
+                        ->where('data_morte', '>=', $inicio30d)
+                        ->sum('quantidade');
+                }
             } catch (\Throwable) {
             }
-        }
 
-        $stats['estoque_animais'] = $estoqueTotal;
-        $stats['mortalidade_taxa'] = $totalEntradasEstoque > 0
-            ? round(($totalMortesEstoque / $totalEntradasEstoque) * 100, 2)
-            : 0.0;
-
-        try {
-            if (Schema::hasTable('terminacao_vendas')) {
-                $inicio30d = Carbon::today()->subDays(30)->startOfDay()->format('Y-m-d');
-                $stats['vendidos_30d'] = (int) DB::table('terminacao_vendas')
-                    ->where('data_venda', '>=', $inicio30d)
-                    ->sum('quantidade');
-                $stats['vendidos_periodo'] = $stats['vendidos_30d'];
-            }
-            if (Schema::hasTable('terminacao_mortes')) {
-                $inicio30d = Carbon::today()->subDays(30)->startOfDay()->format('Y-m-d');
-                $stats['mortes_periodo'] = (int) DB::table('terminacao_mortes')
-                    ->where('data_morte', '>=', $inicio30d)
-                    ->sum('quantidade');
-            }
+            return $stats;
         } catch (\Throwable) {
+            return $stats;
         }
-
-        return $stats;
     }
 
     public static function buildInconsistencias(): array
     {
         $alertas = [];
-        if (!Schema::hasTable('terminacao_lotes')) {
-            return $alertas;
-        }
-
-        $limiteDiasSemMov = self::getMetaInt('meta_terminacao_dias_sem_movimento', 15);
-        $limiteMortalidadePct = self::getMetaFloat('meta_terminacao_mortalidade_pct', 3.0);
-        $limiteResidualPct = self::getMetaFloat('meta_terminacao_lote_residual_pct', 10.0);
-        $metaDias = self::getMetaInt('meta_terminacao_dias_permanencia', 90);
-
-        $lotes = DB::table('terminacao_lotes')
-            ->where('situacao', 'aberto')
-            ->get(['id', 'nome', 'data_entrada', 'quantidade_inicial']);
-
-        foreach ($lotes as $lote) {
-            $loteId = (int) $lote->id;
-            $saldoInfo = self::calcularSaldoLote($loteId);
-            $dataEntrada = $lote->data_entrada ? Carbon::parse($lote->data_entrada)->startOfDay() : null;
-            $dias = $dataEntrada ? self::calcularDiasAlojamento($dataEntrada) : 0;
-
-            if ($dias > $metaDias && $saldoInfo['saldo'] > 0) {
-                $alertas[] = [
-                    'tipo' => 'atrasado',
-                    'severidade' => 'warning',
-                    'titulo' => "Lote {$lote->nome}: ultrapassou meta de {$metaDias} dias",
-                    'detalhe' => "Está com {$dias} dias na terminação e ainda tem {$saldoInfo['saldo']} animal(is).",
-                    'acao' => 'Avaliar venda/abate ou justificar permanência.',
-                    'lote_id' => $loteId,
-                    'lote_nome' => $lote->nome,
-                ];
+        try {
+            if (!Schema::hasTable('terminacao_lotes')) {
+                return $alertas;
             }
 
-            if ($saldoInfo['mortalidade_pct'] > $limiteMortalidadePct && $saldoInfo['entradas'] > 0) {
-                $alertas[] = [
-                    'tipo' => 'mortalidade',
-                    'severidade' => 'danger',
-                    'titulo' => "Lote {$lote->nome}: mortalidade acima da meta",
-                    'detalhe' => "Taxa atual: {$saldoInfo['mortalidade_pct']}% (meta: {$limiteMortalidadePct}%).",
-                    'acao' => 'Investigar causas e registrar cada morte com causa correta.',
-                    'lote_id' => $loteId,
-                    'lote_nome' => $lote->nome,
-                ];
-            }
+            $startI = microtime(true);
+            $timeoutI = static function () use ($startI): bool {
+                static $cnt = 0;
+                if ((++$cnt % 20) !== 0) return false;
+                return (microtime(true) - $startI) > 20;
+            };
 
-            $ultimaMov = self::dataUltimaMovimentacao($loteId);
-            $diasSemMov = $ultimaMov ? (int) $ultimaMov->diffInDays(Carbon::today()) : $dias;
-            if ($diasSemMov > $limiteDiasSemMov && $saldoInfo['saldo'] > 0) {
-                $alertas[] = [
-                    'tipo' => 'sem_movimento',
-                    'severidade' => 'warning',
-                    'titulo' => "Lote {$lote->nome}: sem lançamentos há {$diasSemMov} dias",
-                    'detalhe' => 'Última movimentação registrada em ' . ($ultimaMov ? PigCycleService::formatDisplayDate($ultimaMov) : '-'),
-                    'acao' => 'Registrar pesagem, morte, transferência ou ao menos uma observação.',
-                    'lote_id' => $loteId,
-                    'lote_nome' => $lote->nome,
-                ];
-            }
+            $limiteDiasSemMov = self::getMetaInt('meta_terminacao_dias_sem_movimento', 15);
+            $limiteMortalidadePct = self::getMetaFloat('meta_terminacao_mortalidade_pct', 3.0);
+            $limiteResidualPct = self::getMetaFloat('meta_terminacao_lote_residual_pct', 10.0);
+            $metaDias = self::getMetaInt('meta_terminacao_dias_permanencia', 90);
 
-            $qtdInicial = (int) ($lote->quantidade_inicial ?: $saldoInfo['entradas']);
-            if ($qtdInicial > 10 && $saldoInfo['saldo'] > 0 && $saldoInfo['saldo'] < ($qtdInicial * ($limiteResidualPct / 100))) {
-                $alertas[] = [
-                    'tipo' => 'residual',
-                    'severidade' => 'info',
-                    'titulo' => "Lote {$lote->nome}: lote residual pequeno",
-                    'detalhe' => "Saldo atual: {$saldoInfo['saldo']} de {$qtdInicial} inicial (abaixo de {$limiteResidualPct}%).",
-                    'acao' => 'Considere agrupar com outro lote ou fazer venda/abate.',
-                    'lote_id' => $loteId,
-                    'lote_nome' => $lote->nome,
-                ];
-            }
+            if ($timeoutI()) { return $alertas; }
 
-            if ($saldoInfo['saldo'] <= 0 && $dias > 3) {
-                $alertas[] = [
-                    'tipo' => 'zerado',
-                    'severidade' => 'info',
-                    'titulo' => "Lote {$lote->nome}: sem animais há {$dias} dias",
-                    'detalhe' => 'Saldo atual é zero, mas lote continua como "aberto".',
-                    'acao' => 'Fechar o lote (situação = fechado) com data de fechamento.',
-                    'lote_id' => $loteId,
-                    'lote_nome' => $lote->nome,
-                ];
+            // 🔥 OTIMIZAÇÃO FIM DO N+1:
+            // Agrupa agregados em 6 queries TOTAIS (não 10/lote).
+            $lotes = DB::table('terminacao_lotes')
+                ->where('situacao', 'aberto')
+                ->orderByDesc('id')
+                ->limit(100)
+                ->get(['id', 'nome', 'data_entrada', 'quantidade_inicial']);
+
+            if ($lotes->isEmpty()) { return $alertas; }
+
+            $lotesIds = $lotes->pluck('id')->all();
+            $saldos = [];
+            $ultimasMovs = [];
+
+            try {
+                if (Schema::hasTable('terminacao_entradas')) {
+                    $rows = DB::table('terminacao_entradas')
+                        ->whereIn('lote_id', $lotesIds)
+                        ->selectRaw('lote_id, COALESCE(SUM(quantidade),0) as soma, COALESCE(MAX(data_entrada),\'\') as mx')
+                        ->groupBy('lote_id')
+                        ->get();
+                    foreach ($rows as $r) {
+                        $saldos[(int)$r->lote_id]['entradas'] = (int)$r->soma;
+                        if (!empty($r->mx)) $ultimasMovs[(int)$r->lote_id][] = (string)$r->mx;
+                    }
+                }
+                if ($timeoutI()) { return $alertas; }
+
+                if (Schema::hasTable('terminacao_mortes')) {
+                    $rows = DB::table('terminacao_mortes')
+                        ->whereIn('lote_id', $lotesIds)
+                        ->selectRaw('lote_id, COALESCE(SUM(quantidade),0) as soma, COALESCE(MAX(data_morte),\'\') as mx')
+                        ->groupBy('lote_id')
+                        ->get();
+                    foreach ($rows as $r) {
+                        $saldos[(int)$r->lote_id]['mortes'] = (int)$r->soma;
+                        if (!empty($r->mx)) $ultimasMovs[(int)$r->lote_id][] = (string)$r->mx;
+                    }
+                }
+                if ($timeoutI()) { return $alertas; }
+
+                if (Schema::hasTable('terminacao_transferencias')) {
+                    $rowsOut = DB::table('terminacao_transferencias')
+                        ->whereIn('lote_origem_id', $lotesIds)
+                        ->selectRaw('lote_origem_id as lid, COALESCE(SUM(quantidade),0) as soma, COALESCE(MAX(data_transferencia),\'\') as mx')
+                        ->groupBy('lote_origem_id')
+                        ->get();
+                    foreach ($rowsOut as $r) {
+                        $saldos[(int)$r->lid]['transf_out'] = (int)$r->soma;
+                        if (!empty($r->mx)) $ultimasMovs[(int)$r->lid][] = (string)$r->mx;
+                    }
+                    $rowsIn = DB::table('terminacao_transferencias')
+                        ->whereIn('lote_destino_id', $lotesIds)
+                        ->selectRaw('lote_destino_id as lid, COALESCE(SUM(quantidade),0) as soma, COALESCE(MAX(data_transferencia),\'\') as mx')
+                        ->groupBy('lote_destino_id')
+                        ->get();
+                    foreach ($rowsIn as $r) {
+                        $saldos[(int)$r->lid]['transf_in'] = (int)$r->soma;
+                        if (!empty($r->mx)) $ultimasMovs[(int)$r->lid][] = (string)$r->mx;
+                    }
+                }
+                if ($timeoutI()) { return $alertas; }
+
+                if (Schema::hasTable('terminacao_vendas')) {
+                    $rows = DB::table('terminacao_vendas')
+                        ->whereIn('lote_id', $lotesIds)
+                        ->selectRaw('lote_id, COALESCE(SUM(quantidade),0) as soma, COALESCE(MAX(data_venda),\'\') as mx')
+                        ->groupBy('lote_id')
+                        ->get();
+                    foreach ($rows as $r) {
+                        $saldos[(int)$r->lote_id]['vendas'] = (int)$r->soma;
+                        if (!empty($r->mx)) $ultimasMovs[(int)$r->lote_id][] = (string)$r->mx;
+                    }
+                }
+                if ($timeoutI()) { return $alertas; }
+
+                if (Schema::hasTable('terminacao_pesos')) {
+                    $rows = DB::table('terminacao_pesos')
+                        ->whereIn('lote_id', $lotesIds)
+                        ->selectRaw('lote_id, COALESCE(MAX(data_pesagem),\'\') as mx')
+                        ->groupBy('lote_id')
+                        ->get();
+                    foreach ($rows as $r) {
+                        if (!empty($r->mx)) $ultimasMovs[(int)$r->lote_id][] = (string)$r->mx;
+                    }
+                }
+            } catch (\Throwable) {}
+
+            if ($timeoutI()) { return $alertas; }
+
+            $hoje = Carbon::today();
+
+            foreach ($lotes as $lote) {
+                if ($timeoutI()) { return $alertas; }
+                if (count($alertas) >= 80) { break; }
+
+                $loteId = (int) $lote->id;
+                $s = $saldos[$loteId] ?? [];
+                $entradas         = (int) ($s['entradas']     ?? 0);
+                $mortes           = (int) ($s['mortes']       ?? 0);
+                $transfOut        = (int) ($s['transf_out']   ?? 0);
+                $transfIn         = (int) ($s['transf_in']    ?? 0);
+                $vendas           = (int) ($s['vendas']       ?? 0);
+                $totalEntradas = $entradas + $transfIn;
+                $totalSaidas   = $mortes + $transfOut + $vendas;
+                $saldo         = max(0, $totalEntradas - $totalSaidas);
+                $mortalidade   = $entradas > 0 ? round(($mortes / $entradas) * 100, 2) : 0.0;
+
+                $dataEntrada = $lote->data_entrada ? Carbon::parse($lote->data_entrada)->startOfDay() : null;
+                $dias = $dataEntrada ? self::calcularDiasAlojamento($dataEntrada) : 0;
+
+                if ($dias > $metaDias && $saldo > 0) {
+                    $alertas[] = [
+                        'tipo' => 'atrasado',
+                        'severidade' => 'warning',
+                        'titulo' => "Lote {$lote->nome}: ultrapassou meta de {$metaDias} dias",
+                        'detalhe' => "Está com {$dias} dias na terminação e ainda tem {$saldo} animal(is).",
+                        'acao' => 'Avaliar venda/abate ou justificar permanência.',
+                        'lote_id' => $loteId,
+                        'lote_nome' => $lote->nome,
+                    ];
+                }
+
+                if ($mortalidade > $limiteMortalidadePct && $entradas > 0) {
+                    $alertas[] = [
+                        'tipo' => 'mortalidade',
+                        'severidade' => 'danger',
+                        'titulo' => "Lote {$lote->nome}: mortalidade acima da meta",
+                        'detalhe' => "Taxa atual: {$mortalidade}% (meta: {$limiteMortalidadePct}%).",
+                        'acao' => 'Investigar causas e registrar cada morte com causa correta.',
+                        'lote_id' => $loteId,
+                        'lote_nome' => $lote->nome,
+                    ];
+                }
+
+                $ultimaMov = null;
+                $arr = $ultimasMovs[$loteId] ?? [];
+                if (! empty($arr)) {
+                    rsort($arr);
+                    $ultimaMov = Carbon::parse($arr[0])->startOfDay();
+                }
+                $diasSemMov = $ultimaMov ? (int) $hoje->diffInDays($ultimaMov) : $dias;
+                if ($diasSemMov > $limiteDiasSemMov && $saldo > 0) {
+                    $alertas[] = [
+                        'tipo' => 'sem_movimento',
+                        'severidade' => 'warning',
+                        'titulo' => "Lote {$lote->nome}: sem lançamentos há {$diasSemMov} dias",
+                        'detalhe' => 'Última movimentação registrada em ' . ($ultimaMov ? PigCycleService::formatDisplayDate($ultimaMov) : '-'),
+                        'acao' => 'Registrar pesagem, morte, transferência ou ao menos uma observação.',
+                        'lote_id' => $loteId,
+                        'lote_nome' => $lote->nome,
+                    ];
+                }
+
+                $qtdInicial = (int) ($lote->quantidade_inicial ?: $entradas);
+                if ($qtdInicial > 10 && $saldo > 0 && $saldo < ($qtdInicial * ($limiteResidualPct / 100))) {
+                    $alertas[] = [
+                        'tipo' => 'residual',
+                        'severidade' => 'info',
+                        'titulo' => "Lote {$lote->nome}: lote residual pequeno",
+                        'detalhe' => "Saldo atual: {$saldo} de {$qtdInicial} inicial (abaixo de {$limiteResidualPct}%).",
+                        'acao' => 'Considere agrupar com outro lote ou fazer venda/abate.',
+                        'lote_id' => $loteId,
+                        'lote_nome' => $lote->nome,
+                    ];
+                }
+
+                if ($saldo <= 0 && $dias > 3) {
+                    $alertas[] = [
+                        'tipo' => 'zerado',
+                        'severidade' => 'info',
+                        'titulo' => "Lote {$lote->nome}: sem animais há {$dias} dias",
+                        'detalhe' => 'Saldo atual é zero, mas lote continua como "aberto".',
+                        'acao' => 'Fechar o lote (situação = fechado) com data de fechamento.',
+                        'lote_id' => $loteId,
+                        'lote_nome' => $lote->nome,
+                    ];
+                }
             }
-        }
+        } catch (\Throwable) {}
 
         return $alertas;
     }
