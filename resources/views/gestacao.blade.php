@@ -25,6 +25,15 @@
         saltasCio: [],
         editingCoberturaId: null,
 
+        // Análise de gestação
+        analiseTab: 'mapa',
+        analise: null,
+        analiseLoading: false,
+        analiseLoaded: false,
+        analiseErro: '',
+        analiseInicio: '',
+        analiseFim: '',
+
         criteriosLoaded: false,
         calendarType: 'gregoriano',
         activePicker: null,
@@ -312,6 +321,7 @@
             this.loadCoberturas();
             this.loadPerdas();
             this.loadSaltaCio();
+            this.initAnaliseDatas();
         },
 
         get matrizesFiltradas() {
@@ -502,6 +512,89 @@
                     if (data.message) this.error = data.message;
                 })
                 .catch(() => {});
+        },
+
+        initAnaliseDatas() {
+            if (this.analiseFim && this.analiseInicio) return;
+            const pad = (n) => String(n).padStart(2, '0');
+            const fmt = (dt) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+            const hoje = new Date();
+            const inicio = new Date();
+            inicio.setDate(inicio.getDate() - 89);
+            this.analiseFim = fmt(hoje);
+            this.analiseInicio = fmt(inicio);
+        },
+        setPeriodoAnalise(dias) {
+            const pad = (n) => String(n).padStart(2, '0');
+            const fmt = (dt) => `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(dt.getDate())}`;
+            const hoje = new Date();
+            const inicio = new Date();
+            inicio.setDate(inicio.getDate() - (Number(dias) - 1));
+            this.analiseFim = fmt(hoje);
+            this.analiseInicio = fmt(inicio);
+            this.loadAnalise(true);
+        },
+        aplicarPeriodoAnalise() {
+            this.loadAnalise(true);
+        },
+        loadAnalise(force = false) {
+            if (this.analiseLoading) return;
+            if (this.analiseLoaded && !force) return;
+            this.initAnaliseDatas();
+            const params = new URLSearchParams();
+            if (this.analiseInicio) params.set('inicio', this.analiseInicio);
+            if (this.analiseFim) params.set('fim', this.analiseFim);
+            this.analiseLoading = true;
+            this.analiseErro = '';
+            fetch(`/api/gestacao/analise?${params.toString()}`, { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.mapa) {
+                        this.analise = data;
+                        this.analiseLoaded = true;
+                    } else {
+                        this.analiseErro = data?.message || 'Não foi possível carregar as análises.';
+                    }
+                })
+                .catch(() => { this.analiseErro = 'Não foi possível carregar as análises.'; })
+                .finally(() => { this.analiseLoading = false; });
+        },
+        fmtPct(v) {
+            if (v === null || v === undefined || v === '') return '-';
+            return Number(v).toFixed(1).replace('.', ',') + '%';
+        },
+        fmtNum(v) {
+            if (v === null || v === undefined || v === '') return '-';
+            return Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+        },
+        barWidth(v, total) {
+            const t = Number(total) || 0;
+            if (t <= 0) return '0%';
+            return Math.max(2, Math.min(100, (Number(v) || 0) / t * 100)) + '%';
+        },
+        maxValor(lista, campo) {
+            const arr = Array.isArray(lista) ? lista : [];
+            return arr.reduce((m, x) => Math.max(m, Number(x?.[campo] || 0)), 0);
+        },
+        statusGestanteLabel(s) {
+            if (s === 'atrasada') return 'Atrasada';
+            if (s === 'proxima') return 'Próxima';
+            return 'No prazo';
+        },
+        statusGestanteClass(s) {
+            if (s === 'atrasada') return 'bg-red-100 text-red-700 border-red-200';
+            if (s === 'proxima') return 'bg-amber-100 text-amber-700 border-amber-200';
+            return 'bg-green-100 text-green-700 border-green-200';
+        },
+        insightClass(n) {
+            if (n === 'critico') return 'bg-red-50 border-red-200 text-red-800';
+            if (n === 'atencao') return 'bg-amber-50 border-amber-200 text-amber-800';
+            return 'bg-green-50 border-green-200 text-green-800';
+        },
+        insightIcon(n) {
+            if (n === 'critico') return 'fa-circle-exclamation';
+            if (n === 'atencao') return 'fa-triangle-exclamation';
+            return 'fa-circle-check';
         },
 
         deleteCobertura(id) {
@@ -1021,7 +1114,7 @@
                     class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
                     Lançamentos
                 </button>
-                <button type="button" @click="tab = 'analise'" 
+                <button type="button" @click="tab = 'analise'; if (!analiseLoaded) loadAnalise()" 
                     :class="tab === 'analise' ? 'border-primary-500 text-primary-600' : 'border-transparent text-white hover:text-amber-100 hover:border-gray-300'"
                     class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-colors">
                     Análise
@@ -1581,16 +1674,315 @@
     <!-- Aba Análise -->
     <div x-show="tab === 'analise'" x-cloak class="space-y-8">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                    <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Análise</h6>
-                    <div class="text-sm text-gray-500 mt-1">Análises detalhadas, comparativos e métricas do manejo de gestação.</div>
+            <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/50">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <h6 class="font-bold text-primary-700 uppercase text-xs tracking-wider">Análise</h6>
+                        <div class="text-sm text-gray-500 mt-1">Mapa de cobertura, desempenho da gestação e perdas reprodutivas.</div>
+                    </div>
+                    <div class="flex flex-wrap items-end gap-2">
+                        <div class="flex gap-1 bg-gray-100 p-1 rounded-xl">
+                            <button type="button" @click="setPeriodoAnalise(30)" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-700 hover:bg-white transition-colors">30d</button>
+                            <button type="button" @click="setPeriodoAnalise(90)" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-700 hover:bg-white transition-colors">90d</button>
+                            <button type="button" @click="setPeriodoAnalise(365)" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-700 hover:bg-white transition-colors">12m</button>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-gray-500 uppercase mb-1">De</label>
+                                <input type="date" x-model="analiseInicio" class="rounded-lg border-gray-200 text-sm py-2" />
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-gray-500 uppercase mb-1">Até</label>
+                                <input type="date" x-model="analiseFim" class="rounded-lg border-gray-200 text-sm py-2" />
+                            </div>
+                            <button type="button" @click="aplicarPeriodoAnalise()" class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-primary-600 text-white hover:bg-primary-700 transition-all duration-300 transform hover:scale-105" title="Aplicar período">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-xs text-gray-500 mt-2" x-show="analise" x-cloak>
+                    Período: <span class="font-semibold" x-text="analise?.periodo?.inicio_br"></span> a <span class="font-semibold" x-text="analise?.periodo?.fim_br"></span>
+                    · Gestação considerada: <span class="font-semibold" x-text="analise?.periodo?.gestacao_dias"></span> dias
                 </div>
             </div>
-            <div class="p-6">
-                <div class="text-center py-10 text-gray-400 dark:text-gray-500">
-                    <i class="fa-solid fa-chart-line text-4xl mb-3 block text-gray-300 dark:text-gray-600"></i>
-                    <p class="italic text-sm">Em desenvolvimento: painéis analíticos, gráficos e indicadores.</p>
+
+            <div class="px-5 py-3 border-b border-gray-100 bg-white">
+                <div class="flex items-center gap-2 bg-gray-100 p-1.5 rounded-xl overflow-x-auto max-w-full">
+                    <button type="button" @click="analiseTab = 'mapa'" class="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300" :class="analiseTab === 'mapa' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30' : 'text-gray-700 hover:bg-white/80'">
+                        <i class="fa-solid fa-map-location-dot mr-1.5 text-primary-600"></i> Mapa
+                    </button>
+                    <button type="button" @click="analiseTab = 'cobertas'" class="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300" :class="analiseTab === 'cobertas' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30' : 'text-gray-700 hover:bg-white/80'">
+                        <i class="fa-solid fa-heart mr-1.5 text-primary-600"></i> Matrizes cobertas
+                    </button>
+                    <button type="button" @click="analiseTab = 'desempenho'" class="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300" :class="analiseTab === 'desempenho' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30' : 'text-gray-700 hover:bg-white/80'">
+                        <i class="fa-solid fa-gauge-high mr-1.5 text-primary-600"></i> Desempenho
+                    </button>
+                    <button type="button" @click="analiseTab = 'perdas'" class="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300" :class="analiseTab === 'perdas' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30' : 'text-gray-700 hover:bg-white/80'">
+                        <i class="fa-solid fa-skull-crossbones mr-1.5 text-primary-600"></i> Perdas
+                    </button>
+                    <button type="button" @click="analiseTab = 'coberturas'" class="flex-shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300" :class="analiseTab === 'coberturas' ? 'bg-white text-gray-900 shadow-md ring-2 ring-primary-500/30' : 'text-gray-700 hover:bg-white/80'">
+                        <i class="fa-solid fa-chart-column mr-1.5 text-primary-600"></i> Coberturas
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-5">
+                <div x-show="analiseLoading" class="text-center py-12 text-gray-500">
+                    <i class="fa-solid fa-spinner fa-spin text-2xl text-primary-600"></i>
+                    <p class="mt-2 text-sm">Carregando análises...</p>
+                </div>
+
+                <div x-show="!analiseLoading && analiseErro" x-cloak class="text-center py-10 text-sm text-red-600">
+                    <i class="fa-solid fa-circle-exclamation text-2xl block mb-2"></i>
+                    <span x-text="analiseErro"></span>
+                </div>
+
+                <div x-show="!analiseLoading && !analiseErro && analise" x-cloak class="space-y-6">
+
+                    <!-- Sub-aba: Mapa de cobertura -->
+                    <div x-show="analiseTab === 'mapa'" x-cloak class="space-y-6">
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div class="rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-gray-50 p-4 shadow-sm">
+                                <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Coberturas no período</div>
+                                <div class="text-2xl font-bold text-gray-900 mt-1" x-text="fmtNum(analise.mapa.coberturas)"></div>
+                            </div>
+                            <div class="rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-gray-50 p-4 shadow-sm">
+                                <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Matrizes cobertas</div>
+                                <div class="text-2xl font-bold text-gray-900 mt-1" x-text="fmtNum(analise.mapa.matrizes_cobertas)"></div>
+                            </div>
+                            <div class="rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-green-50 p-4 shadow-sm">
+                                <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Gestantes ativas</div>
+                                <div class="text-2xl font-bold text-green-700 mt-1" x-text="fmtNum(analise.mapa.gestantes_ativas)"></div>
+                            </div>
+                            <div class="rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-amber-50 p-4 shadow-sm">
+                                <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Partos previstos (<span x-text="analise.mapa.dias_prev"></span>d)</div>
+                                <div class="text-2xl font-bold text-amber-700 mt-1" x-text="fmtNum(analise.mapa.partos_previstos_janela)"></div>
+                            </div>
+                            <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                                <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Taxa de parição</div>
+                                <div class="text-2xl font-bold text-primary-700 mt-1" x-text="fmtPct(analise.mapa.taxa_parição)"></div>
+                            </div>
+                            <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                                <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Partos registrados</div>
+                                <div class="text-2xl font-bold text-gray-900 mt-1" x-text="fmtNum(analise.mapa.partos_registrados)"></div>
+                            </div>
+                            <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                                <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Taxa de perda</div>
+                                <div class="text-2xl font-bold text-red-700 mt-1" x-text="fmtPct(analise.mapa.taxa_perda)"></div>
+                            </div>
+                            <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm" :class="analise.mapa.matrizes_em_atraso > 0 ? 'ring-2 ring-red-200' : ''">
+                                <div class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Partos em atraso</div>
+                                <div class="text-2xl font-bold mt-1" :class="analise.mapa.matrizes_em_atraso > 0 ? 'text-red-700' : 'text-gray-900'" x-text="fmtNum(analise.mapa.matrizes_em_atraso)"></div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-2xl border border-gray-100 p-4">
+                            <div class="text-sm font-bold text-gray-900 mb-1">Perdas reprodutivas no período</div>
+                            <div class="text-xs text-gray-500 mb-3">Total de <span class="font-semibold" x-text="analise.perdas.total"></span> perda(s) registrada(s).</div>
+                            <template x-for="p in analise.perdas.por_tipo" :key="p.tipo">
+                                <div class="mb-2">
+                                    <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                        <span class="font-medium" x-text="p.label"></span>
+                                        <span><span x-text="p.total"></span> · <span x-text="fmtPct(p.percentual)"></span></span>
+                                    </div>
+                                    <div class="h-2 rounded-full bg-gray-100 overflow-hidden">
+                                        <div class="h-full rounded-full bg-primary-500 transition-all duration-500" :style="'width:' + barWidth(p.total, analise.perdas.total)"></div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Sub-aba: Matrizes cobertas -->
+                    <div x-show="analiseTab === 'cobertas'" x-cloak class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm font-bold text-gray-900">Matrizes cobertas e previsão de parto</div>
+                            <div class="text-xs text-gray-500"><span x-text="analise.mapa.gestantes_ativas"></span> gestante(s)</div>
+                        </div>
+                        <div class="space-y-2">
+                            <template x-for="(g, i) in analise.matrizes_cobertas" :key="i">
+                                <div class="rounded-xl border border-gray-100 p-3 flex items-center justify-between gap-3 hover:bg-gray-50/60 transition-colors">
+                                    <div class="min-w-0">
+                                        <div class="font-semibold text-gray-900 truncate">
+                                            <span x-text="g.matriz"></span>
+                                            <span class="text-xs text-gray-400" x-show="g.matriz_secundaria" x-text="g.matriz_secundaria ? '(' + g.matriz_secundaria + ')' : ''"></span>
+                                        </div>
+                                        <div class="text-xs text-gray-500">Cobertura: <span x-text="g.data_cobertura"></span> · <span x-text="g.dias_gestacao"></span> dias de gestação</div>
+                                    </div>
+                                    <div class="text-right shrink-0">
+                                        <div class="text-sm font-bold text-gray-900" x-text="g.previsao"></div>
+                                        <div class="text-[11px] text-gray-500">Previsão de parto</div>
+                                        <span class="inline-flex mt-1 px-2 py-0.5 rounded-full border text-[11px] font-semibold" :class="statusGestanteClass(g.status)" x-text="statusGestanteLabel(g.status)"></span>
+                                    </div>
+                                </div>
+                            </template>
+                            <div x-show="analise.matrizes_cobertas.length === 0" class="text-center py-8 text-sm text-gray-400 italic">Nenhuma matriz gestante no momento.</div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-aba: Desempenho da gestação -->
+                    <div x-show="analiseTab === 'desempenho'" x-cloak class="space-y-6">
+                        <div class="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                            <template x-for="ind in analise.desempenho.indicadores" :key="ind.chave">
+                                <div class="rounded-xl border border-gray-100 p-3">
+                                    <div class="text-[11px] font-semibold uppercase text-gray-500" x-text="ind.label"></div>
+                                    <div class="text-xl font-bold text-gray-900 mt-1">
+                                        <span x-text="ind.serie === 'percentual' ? fmtPct(ind.valor) : fmtNum(ind.valor)"></span>
+                                        <span class="text-xs font-medium text-gray-400" x-show="ind.unidade && ind.serie !== 'percentual'" x-text="ind.unidade"></span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="rounded-2xl border border-gray-100 p-4">
+                            <div class="text-sm font-bold text-gray-900 mb-1">Evolução mensal</div>
+                            <div class="flex gap-4 mb-3 text-[11px] text-gray-500">
+                                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-primary-500 inline-block"></span>Coberturas</span>
+                                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-green-500 inline-block"></span>Partos</span>
+                                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-red-500 inline-block"></span>Perdas</span>
+                            </div>
+                            <div class="space-y-2">
+                                <template x-for="m in analise.desempenho.serie_mensal" :key="m.mes">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 text-xs text-gray-500 shrink-0" x-text="m.mes"></div>
+                                        <div class="flex-1 space-y-1">
+                                            <div class="h-1.5 rounded-full bg-gray-100 overflow-hidden"><div class="h-full bg-primary-500 transition-all duration-500" :style="'width:' + barWidth(m.coberturas, maxValor(analise.desempenho.serie_mensal, 'coberturas'))"></div></div>
+                                            <div class="h-1.5 rounded-full bg-gray-100 overflow-hidden"><div class="h-full bg-green-500 transition-all duration-500" :style="'width:' + barWidth(m.partos, maxValor(analise.desempenho.serie_mensal, 'coberturas'))"></div></div>
+                                            <div class="h-1.5 rounded-full bg-gray-100 overflow-hidden"><div class="h-full bg-red-500 transition-all duration-500" :style="'width:' + barWidth(m.perdas, maxValor(analise.desempenho.serie_mensal, 'coberturas'))"></div></div>
+                                        </div>
+                                        <div class="w-24 text-right text-[11px] text-gray-500 shrink-0">
+                                            <span class="text-primary-700 font-semibold" x-text="m.coberturas"></span> ·
+                                            <span class="text-green-700 font-semibold" x-text="m.partos"></span> ·
+                                            <span class="text-red-600 font-semibold" x-text="m.perdas"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-aba: Perdas reprodutivas -->
+                    <div x-show="analiseTab === 'perdas'" x-cloak class="space-y-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <template x-for="p in analise.perdas.por_tipo" :key="p.tipo">
+                                <div class="rounded-xl border border-gray-100 p-4">
+                                    <div class="text-[11px] font-semibold uppercase text-gray-500" x-text="p.label"></div>
+                                    <div class="text-2xl font-bold text-gray-900 mt-1" x-text="p.total"></div>
+                                    <div class="text-xs text-gray-500" x-text="fmtPct(p.percentual) + ' das perdas'"></div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="text-sm font-bold text-gray-900">Matrizes com perda reprodutiva</div>
+                            <template x-for="(p, i) in analise.perdas.items" :key="i">
+                                <div class="rounded-xl border border-gray-100 p-3">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div class="font-semibold text-gray-900" x-text="p.matriz"></div>
+                                        <span class="text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-100" x-text="p.data"></span>
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        <span class="font-medium text-gray-700" x-text="p.tipo_label"></span>
+                                        <span x-show="p.dias_desde_cobertura !== null && p.dias_desde_cobertura !== undefined"> · <span x-text="p.dias_desde_cobertura"></span> dias desde a cobertura</span>
+                                        <span x-show="p.localizacao"> · <span x-text="p.localizacao"></span></span>
+                                        <span x-show="p.baia"> · Baia <span x-text="p.baia"></span></span>
+                                    </div>
+                                    <div class="text-xs text-gray-500 italic mt-1" x-show="p.observacoes" x-text="p.observacoes"></div>
+                                </div>
+                            </template>
+                            <div x-show="analise.perdas.items.length === 0" class="text-center py-8 text-sm text-gray-400 italic">Nenhuma perda reprodutiva registrada no período.</div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-aba: Análise de coberturas -->
+                    <div x-show="analiseTab === 'coberturas'" x-cloak class="space-y-6">
+                        <div class="space-y-2">
+                            <div class="text-sm font-bold text-gray-900">Oportunidades de melhoria</div>
+                            <template x-for="(ins, i) in analise.analise.insights" :key="i">
+                                <div class="rounded-xl border p-3 flex items-start gap-3" :class="insightClass(ins.nivel)">
+                                    <i class="fa-solid mt-0.5" :class="insightIcon(ins.nivel)"></i>
+                                    <div class="min-w-0">
+                                        <div class="font-semibold text-sm" x-text="ins.titulo"></div>
+                                        <div class="text-xs opacity-90" x-text="ins.descricao"></div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="rounded-2xl border border-gray-100 p-4">
+                            <div class="text-sm font-bold text-gray-900 mb-3">Desempenho por reprodutor</div>
+                            <template x-for="m in analise.analise.por_macho" :key="m.ref">
+                                <div class="mb-2">
+                                    <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                        <span class="font-medium" x-text="m.ref"></span>
+                                        <span><span x-text="m.coberturas"></span> cob · <span x-text="m.partos"></span> partos · <span x-text="fmtPct(m.taxa)"></span></span>
+                                    </div>
+                                    <div class="h-2 rounded-full bg-gray-100 overflow-hidden">
+                                        <div class="h-full bg-primary-500 transition-all duration-500" :style="'width:' + barWidth(m.coberturas, maxValor(analise.analise.por_macho, 'coberturas'))"></div>
+                                    </div>
+                                </div>
+                            </template>
+                            <div x-show="analise.analise.por_macho.length === 0" class="text-center py-4 text-xs text-gray-400 italic">Sem dados de reprodutor no período.</div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="rounded-2xl border border-gray-100 p-4">
+                                <div class="text-sm font-bold text-gray-900 mb-3">Coberturas por dia da semana</div>
+                                <template x-for="d in analise.analise.por_dia_semana" :key="d.label">
+                                    <div class="mb-1.5">
+                                        <div class="flex justify-between text-[11px] text-gray-600 mb-0.5">
+                                            <span x-text="d.label"></span>
+                                            <span x-text="d.coberturas"></span>
+                                        </div>
+                                        <div class="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                                            <div class="h-full bg-amber-500 transition-all duration-500" :style="'width:' + barWidth(d.coberturas, maxValor(analise.analise.por_dia_semana, 'coberturas'))"></div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div class="rounded-2xl border border-gray-100 p-4">
+                                <div class="text-sm font-bold text-gray-900 mb-3">Coberturas por responsável</div>
+                                <template x-for="u in analise.analise.por_usuario" :key="u.usuario">
+                                    <div class="mb-1.5">
+                                        <div class="flex justify-between text-[11px] text-gray-600 mb-0.5">
+                                            <span class="truncate" x-text="u.usuario"></span>
+                                            <span x-text="u.coberturas"></span>
+                                        </div>
+                                        <div class="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                                            <div class="h-full bg-primary-500 transition-all duration-500" :style="'width:' + barWidth(u.coberturas, maxValor(analise.analise.por_usuario, 'coberturas'))"></div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div x-show="analise.analise.por_usuario.length === 0" class="text-center py-4 text-xs text-gray-400 italic">Sem dados.</div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-2xl border border-gray-100 p-4">
+                            <div class="text-sm font-bold text-gray-900 mb-3">Presença de cio registrada</div>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div class="rounded-xl bg-green-50 border border-green-100 p-3 text-center">
+                                    <div class="text-xl font-bold text-green-700" x-text="analise.analise.presenca_cio.sim"></div>
+                                    <div class="text-[11px] text-gray-600">Sim</div>
+                                </div>
+                                <div class="rounded-xl bg-amber-50 border border-amber-100 p-3 text-center">
+                                    <div class="text-xl font-bold text-amber-700" x-text="analise.analise.presenca_cio.nao"></div>
+                                    <div class="text-[11px] text-gray-600">Não</div>
+                                </div>
+                                <div class="rounded-xl bg-gray-50 border border-gray-100 p-3 text-center">
+                                    <div class="text-xl font-bold text-gray-700" x-text="analise.analise.presenca_cio.sem_registro"></div>
+                                    <div class="text-[11px] text-gray-600">Sem registro</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div x-show="!analiseLoading && !analiseErro && !analise" x-cloak class="text-center py-10 text-gray-400">
+                    <i class="fa-solid fa-chart-line text-4xl mb-3 block text-gray-300"></i>
+                    <p class="italic text-sm">Selecione um período para carregar as análises.</p>
                 </div>
             </div>
         </div>

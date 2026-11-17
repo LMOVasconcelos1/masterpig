@@ -22,3 +22,9 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Arquivos de dados/temporários que NÃO devem ser versionados (LGPD/segurança)
+/tmp_*
+/index-demo.html
+/public/relatorio-*
+/banco_versions/0.1.sql

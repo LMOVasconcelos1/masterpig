@@ -15,6 +15,7 @@ use App\Http\Controllers\FemeaMorteController;
 use App\Http\Controllers\FemeaMovimentoController;
 use App\Http\Controllers\FemeaVendaController;
 use App\Http\Controllers\FornecedorController;
+use App\Http\Controllers\GestacaoAnaliseController;
 use App\Http\Controllers\GestacaoCioController;
 use App\Http\Controllers\GestacaoCoberturaController;
 use App\Http\Controllers\GestacaoController;
@@ -429,47 +430,70 @@ HTML;
     Route::get('/criterios', function() { return redirect()->route('admin.metas.index'); })->name('criterios.index');
     Route::post('/criterios', [MetasController::class, 'store'])->name('criterios.store');
     Route::get('/criterios/logs', [CriteriosLogsController::class, 'page'])->name('criterios.logs');
-    Route::get('/zerar', [ZerarSistemaController::class, 'page'])->name('zerar.index');
-    Route::post('/zerar', [ZerarSistemaController::class, 'store'])->name('zerar.store');
+    // Zerar sistema: ação DESTRUTIVA (TRUNCATE em tabelas de dados).
+    // Restrita a administrador de forma incondicional — não depende do flag global
+    // `enforce_perfil_permissions`, pois este grupo /admin também abriga as rotas
+    // operacionais usadas pelos operadores (não pode ser bloqueado globalmente).
+    Route::group([
+        'middleware' => [
+            static function (\Illuminate\Http\Request $request, \Closure $next) {
+                $auth = \Illuminate\Support\Facades\Auth::class;
+                if (! $auth::check()) {
+                    return redirect()->to(route('login', [], false));
+                }
+                if ((string) ($auth::user()->perfil ?? '') !== \App\Services\PermissaoService::PERFIL_ADMIN) {
+                    abort(403, 'Somente administradores podem zerar o sistema.');
+                }
+                return $next($request);
+            },
+        ],
+    ], function (): void {
+        Route::get('/zerar', [ZerarSistemaController::class, 'page'])->name('zerar.index');
+        Route::post('/zerar', [ZerarSistemaController::class, 'store'])->name('zerar.store');
+    });
     Route::post('/grupo-causa', [GrupoCausaController::class, 'store'])->name('grupo-causa.store');
     Route::get('/alteracoes', [AlteracoesController::class, 'index'])->name('alteracoes.index');
 });
 
-// API Routes
-Route::get('/api/grupos-causa', [GrupoCausaController::class, 'index']);
-Route::get('/api/fornecedores', [FornecedorController::class, 'index']);
-Route::get('/api/tipos-racao', [TipoRacaoController::class, 'index']);
-Route::get('/api/racas', [RacaController::class, 'index']);
-Route::get('/api/semen', [SemenController::class, 'index']);
-Route::post('/api/semen', [SemenController::class, 'store']);
-Route::get('/api/semen/{id}', [SemenController::class, 'show'])->whereNumber('id');
-Route::patch('/api/semen/{id}', [SemenController::class, 'update'])->whereNumber('id');
-Route::delete('/api/semen/{id}', [SemenController::class, 'destroy'])->whereNumber('id');
-Route::get('/api/plantel/femeas/compras', [FemeaCompraController::class, 'index']);
-Route::get('/api/plantel/femeas', [PlantelApiController::class, 'femeas']);
-Route::get('/api/plantel/femeas/cios', [PlantelApiController::class, 'cios']);
-Route::put('/api/plantel/femeas/cios/{id}', [PlantelApiController::class, 'updateCio'])->whereNumber('id');
-Route::delete('/api/plantel/femeas/cios/{id}', [PlantelApiController::class, 'deleteCio'])->whereNumber('id');
-Route::put('/api/plantel/femeas/{id}', [PlantelApiController::class, 'updateFemea'])->whereNumber('id');
-Route::delete('/api/plantel/femeas/{id}', [PlantelApiController::class, 'deleteFemea'])->whereNumber('id');
-Route::get('/api/plantel/causas-morte', [PlantelApiController::class, 'causasMorte']);
-Route::get('/api/plantel/causas-venda', [PlantelApiController::class, 'causasVenda']);
-Route::get('/api/plantel/causas-descarte', [PlantelApiController::class, 'causasDescarte']);
-Route::get('/api/plantel/femeas/mortes', [FemeaMovimentoController::class, 'mortes']);
-Route::get('/api/plantel/femeas/descartes', [FemeaMovimentoController::class, 'descartes']);
-Route::get('/api/plantel/femeas/vendas', [FemeaMovimentoController::class, 'vendas']);
-Route::middleware('auth')->get('/api/plantel/femeas/acompanhamento', [AcompanhamentoFemeasController::class, 'index']);
-Route::middleware('auth')->get('/api/plantel/femeas/acompanhamento/{id}', [AcompanhamentoFemeasController::class, 'show'])->whereNumber('id');
-Route::middleware('auth')->get('/api/plantel/femeas/ficha/{id}', [\App\Http\Controllers\FichaMatrizController::class, 'show'])->whereNumber('id');
-Route::middleware('auth')->get('/admin/plantel/femeas/{id}/ficha-pdf', [\App\Http\Controllers\FichaMatrizController::class, 'generatePdf'])->whereNumber('id')->name('admin.plantel.femeas.ficha-pdf');
-Route::middleware('auth')->get('/api/plantel/femeas/retencao', [\App\Http\Controllers\RetencaoFemeasController::class, 'index']);
-Route::get('/api/plantel/machos/compras', [MachoCompraController::class, 'index']);
-Route::get('/api/plantel/machos', [PlantelApiController::class, 'machos']);
-Route::get('/api/plantel/machos/mortes', [MachoMovimentoController::class, 'mortes']);
-Route::get('/api/plantel/machos/descartes', [MachoMovimentoController::class, 'descartes']);
-Route::get('/api/plantel/machos/vendas', [MachoMovimentoController::class, 'vendas']);
-Route::get('/api/metas', [MetasController::class, 'index']);
-Route::middleware('auth')->get('/api/usuarios', [UsuarioController::class, 'apiIndex']);
+// API Routes — TODAS exigem sessão autenticada.
+// Sem o middleware 'auth', a conexão default do Laravel (base_configuration) era
+// usada por requisições anônimas, expondo/alterando dados reais do tenant.
+Route::middleware('auth')->group(function () {
+    Route::get('/api/grupos-causa', [GrupoCausaController::class, 'index']);
+    Route::get('/api/fornecedores', [FornecedorController::class, 'index']);
+    Route::get('/api/tipos-racao', [TipoRacaoController::class, 'index']);
+    Route::get('/api/racas', [RacaController::class, 'index']);
+    Route::get('/api/semen', [SemenController::class, 'index']);
+    Route::post('/api/semen', [SemenController::class, 'store']);
+    Route::get('/api/semen/{id}', [SemenController::class, 'show'])->whereNumber('id');
+    Route::patch('/api/semen/{id}', [SemenController::class, 'update'])->whereNumber('id');
+    Route::delete('/api/semen/{id}', [SemenController::class, 'destroy'])->whereNumber('id');
+    Route::get('/api/plantel/femeas/compras', [FemeaCompraController::class, 'index']);
+    Route::get('/api/plantel/femeas', [PlantelApiController::class, 'femeas']);
+    Route::get('/api/plantel/femeas/cios', [PlantelApiController::class, 'cios']);
+    Route::put('/api/plantel/femeas/cios/{id}', [PlantelApiController::class, 'updateCio'])->whereNumber('id');
+    Route::delete('/api/plantel/femeas/cios/{id}', [PlantelApiController::class, 'deleteCio'])->whereNumber('id');
+    Route::put('/api/plantel/femeas/{id}', [PlantelApiController::class, 'updateFemea'])->whereNumber('id');
+    Route::delete('/api/plantel/femeas/{id}', [PlantelApiController::class, 'deleteFemea'])->whereNumber('id');
+    Route::get('/api/plantel/causas-morte', [PlantelApiController::class, 'causasMorte']);
+    Route::get('/api/plantel/causas-venda', [PlantelApiController::class, 'causasVenda']);
+    Route::get('/api/plantel/causas-descarte', [PlantelApiController::class, 'causasDescarte']);
+    Route::get('/api/plantel/femeas/mortes', [FemeaMovimentoController::class, 'mortes']);
+    Route::get('/api/plantel/femeas/descartes', [FemeaMovimentoController::class, 'descartes']);
+    Route::get('/api/plantel/femeas/vendas', [FemeaMovimentoController::class, 'vendas']);
+    Route::get('/api/plantel/femeas/acompanhamento', [AcompanhamentoFemeasController::class, 'index']);
+    Route::get('/api/plantel/femeas/acompanhamento/{id}', [AcompanhamentoFemeasController::class, 'show'])->whereNumber('id');
+    Route::get('/api/plantel/femeas/ficha/{id}', [\App\Http\Controllers\FichaMatrizController::class, 'show'])->whereNumber('id');
+    Route::get('/admin/plantel/femeas/{id}/ficha-pdf', [\App\Http\Controllers\FichaMatrizController::class, 'generatePdf'])->whereNumber('id')->name('admin.plantel.femeas.ficha-pdf');
+    Route::get('/api/plantel/femeas/retencao', [\App\Http\Controllers\RetencaoFemeasController::class, 'index']);
+    Route::get('/api/plantel/machos/compras', [MachoCompraController::class, 'index']);
+    Route::get('/api/plantel/machos', [PlantelApiController::class, 'machos']);
+    Route::get('/api/plantel/machos/mortes', [MachoMovimentoController::class, 'mortes']);
+    Route::get('/api/plantel/machos/descartes', [MachoMovimentoController::class, 'descartes']);
+    Route::get('/api/plantel/machos/vendas', [MachoMovimentoController::class, 'vendas']);
+    Route::get('/api/metas', [MetasController::class, 'index']);
+    Route::get('/api/usuarios', [UsuarioController::class, 'apiIndex']);
+});
 if ((bool) config('masterpig.chatbot_enabled', false)) {
     Route::middleware('auth')
         ->post('/api/chatbot', [ChatbotController::class, 'ask'])
@@ -495,6 +519,7 @@ Route::middleware('auth')->post('/api/gestacao/salta-cio', [GestacaoSaltaCioCont
 Route::middleware('auth')->delete('/api/gestacao/salta-cio/{id}', [GestacaoSaltaCioController::class, 'destroy'])->whereNumber('id');
 Route::middleware('auth')->get('/api/gestacao/metas', [GestacaoMetasController::class, 'index']);
 Route::middleware('auth')->post('/api/gestacao/metas', [GestacaoMetasController::class, 'store']);
+Route::middleware('auth')->get('/api/gestacao/analise', [GestacaoAnaliseController::class, 'index']);
 
 Route::middleware('auth')->get('/api/terminacao/lotes', function () {
     if (!Schema::hasTable('terminacao_lotes')) return response()->json([]);

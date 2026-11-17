@@ -512,7 +512,7 @@ function tourCenter() {
                 {
                     titulo: 'Aba Relatórios',
                     descricao: 'Clique na aba ao lado de Análise para abrir os relatórios.',
-                    seletor: 'button:has-text("Relatórios"), [x-data] button:has-text("Relatórios"), [data-tab="relatorios"]',
+                    seletor: 'button:has-text("relatorios"), [x-data] button:has-text("relatorios"), [data-tab="relatorios"]',
                     fallback: { x: '92%', y: '8%' },
                     posicao: 'bottom',
                     icon: 'fa-solid fa-file-invoice',
