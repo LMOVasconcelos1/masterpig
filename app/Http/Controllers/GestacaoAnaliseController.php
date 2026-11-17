@@ -202,7 +202,7 @@ class GestacaoAnaliseController extends Controller
         // ---------------------------------------------------------------
         // Matrizes cobertas (lista com previsão de parto)
         // ---------------------------------------------------------------
-        $matrizesCobertas = $this->montarListaGestantes($gestantesAtivas);
+        $matrizesCobertas = $this->montarListaGestantes($gestantesAtivas->all());
 
         return response()->json([
             'periodo' => [
